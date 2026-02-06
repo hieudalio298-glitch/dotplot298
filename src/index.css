@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Roboto+Mono:wght@400;500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --color-neon-blue: #1677ff;
+  --color-neon-orange: #ff9800;
+  /* Bloomberg Orange */
+  --color-terminal-black: #000000;
+  --color-terminal-gray: #1a1a1a;
+  --color-terminal-border: #333333;
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  margin: 0;
+  background-color: #000000;
+  color: #e0e0e0;
+  font-family: 'Inter', -apple-system, sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* TERMINAL UTILITIES */
+@layer components {
+
+  /* Panels are now solid black with sharp borders, no glass blur */
+  .glass-panel {
+    @apply bg-black border border-[#333333] shadow-none;
+    border-radius: 0px !important;
+  }
+
+  .terminal-border {
+    @apply border border-[#333333];
+  }
+
+  /* Data Table Base */
+  .trading-table {
+    @apply w-full text-xs text-left font-mono;
+    border-collapse: collapse;
+  }
+
+  .trading-table thead th {
+    @apply px-2 py-1 text-[#848e9c] font-bold uppercase tracking-wide border-b border-[#333333] bg-[#0a0a0a];
+    font-size: 10px;
+  }
+
+  .trading-table tbody tr {
+    @apply border-b border-[#1a1a1a] hover:bg-[#1a1a1a] transition-none;
+  }
+
+  .trading-table td {
+    @apply px-2 py-1 font-normal text-[#e0e0e0];
+  }
+}
+
+/* --- ANT DESIGN TERMINAL OVERRIDES --- */
+
+/* 1. Global Reset for Sharpness */
+.ant-btn,
+.ant-input,
+.ant-select-selector,
+.ant-card,
+.ant-modal-content,
+.ant-dropdown-menu {
+  border-radius: 0px !important;
+}
+
+/* 2. Tabs: Terminal Style */
+.ant-tabs-nav {
+  margin-bottom: 0 !important;
+  border-bottom: 1px solid #333 !important;
+}
+
+.ant-tabs-tab {
+  border-radius: 0px !important;
+  margin: 0 !important;
+  padding: 8px 16px !important;
+  border: 1px solid transparent !important;
+  color: #888 !important;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px !important;
+  transition: none !important;
+}
+
+.ant-tabs-tab-active {
+  background: #ff9800 !important;
+  color: #000 !important;
+  /* Black text on Orange */
+}
+
+.ant-tabs-tab-active .ant-tabs-tab-btn {
+  color: #000 !important;
+}
+
+.ant-tabs-ink-bar {
+  display: none !important;
+  /* No underline */
+}
+
+/* 3. Card: Simple Border Box */
+.ant-card {
+  background: #000000 !important;
+  border: 1px solid #333 !important;
+}
+
+.ant-card-head {
+  border-bottom: 1px solid #333 !important;
+  background: #0a0a0a !important;
+  border-radius: 0 !important;
+  min-height: 32px !important;
+  padding: 0 12px !important;
+}
+
+.ant-card-head-title {
+  padding: 8px 0 !important;
+  font-size: 12px !important;
+  text-transform: uppercase;
+  color: #ff9800 !important;
+  font-family: 'Roboto Mono', monospace;
+}
+
+.ant-card-body {
+  padding: 0 !important;
+  /* Maximize space */
+}
+
+/* 4. Table: High Density Data Grid */
+.ant-table {
+  background: #000000 !important;
+  color: #e0e0e0 !important;
+  font-family: 'Roboto Mono', monospace !important;
+  font-size: 11px !important;
+  border-radius: 0 !important;
+}
+
+.ant-table-thead>tr>th {
+  background: #0a0a0a !important;
+  color: #ff9800 !important;
+  /* Orange Headers */
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  border-bottom: 1px solid #333 !important;
+  border-radius: 0 !important;
+  padding: 6px 8px !important;
+  font-size: 10px !important;
+}
+
+.ant-table-tbody>tr>td {
+  border-bottom: 1px solid #1a1a1a !important;
+  padding: 4px 8px !important;
+  transition: none !important;
+}
+
+.ant-table-tbody>tr:hover>td {
+  background: #1a1a1a !important;
+  /* Dark Gray Hover */
+  color: #ff9800 !important;
+  /* Orange Text on Hover */
+}
+
+/* Sticky Column Styling */
+.ant-table-cell-fix-left,
+.ant-table-cell-fix-right {
+  background: #000000 !important;
+}
+
+.ant-table-cell-fix-left-last::after {
+  box-shadow: inset 10px 0 8px -8px rgba(255, 152, 0, 0.2) !important;
+  /* Orange shadow hint */
+}
+
+/* 5. Tooltip */
+.ant-tooltip-inner {
+  background-color: #ff9800 !important;
+  color: #000 !important;
+  border-radius: 0px !important;
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+/* 6. Select Dropdown (Global) */
+.ant-select-dropdown {
+  background-color: #000000 !important;
+  border: 1px solid #333 !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+}
+
+.ant-select-item {
+  border-radius: 0 !important;
+  color: #e0e0e0 !important;
+  font-family: 'Roboto Mono', monospace !important;
+}
+
+.ant-select-item-option-active {
+  background-color: #1a1a1a !important;
+}
+
+.ant-select-item-option-selected {
+  background-color: #ff9800 !important;
+  color: #000 !important;
+}
