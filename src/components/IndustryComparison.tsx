@@ -71,11 +71,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         balance: new Set(),
         cashflow: new Set()
     });
-    const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
+    const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar');
     const [searchSymbol, setSearchSymbol] = useState('');
     const [metricSearch, setMetricSearch] = useState('');
     const [showMetricModal, setShowMetricModal] = useState(false);
     const [activeSource, setActiveSource] = useState<'all' | 'ratios' | 'income' | 'balance' | 'cashflow'>('all');
+    const [tableFontSize, setTableFontSize] = useState(11);
 
     // Fetch all symbols
     useEffect(() => {
@@ -353,18 +354,22 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         // 3. Create series for each symbol
         const series = selectedSymbols.map((symbol, idx) => {
             const symbolData = financialData[symbol] || [];
+            const isStacked = chartType === 'stacked';
+            const type = isStacked ? 'bar' : chartType;
+
             return {
                 name: symbol,
-                type: chartType,
+                type: type,
+                stack: isStacked ? 'total' : undefined,
                 data: sortedPeriods.map(p => {
                     const match = symbolData.find(d => d.period === p);
                     return match ? parseValue(match[chartMetric]) : null;
                 }),
                 connectNulls: true,
-                smooth: true,
+                smooth: chartType === 'line',
                 emphasis: { focus: 'series' },
                 itemStyle: {
-                    borderRadius: chartType === 'bar' ? [4, 4, 0, 0] : 0
+                    borderRadius: type === 'bar' && !isStacked ? [4, 4, 0, 0] : 0
                 }
             };
         });
@@ -374,10 +379,29 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             tooltip: {
                 trigger: 'axis',
                 backgroundColor: 'rgba(20, 20, 20, 0.9)',
-                borderColor: '#333',
+                borderColor: '#444',
+                padding: [10, 15],
                 textStyle: { color: '#e0e0e0', fontSize: 12 },
-                axisPointer: { type: 'cross' }
+                axisPointer: { type: 'cross', label: { backgroundColor: '#333' } }
             },
+            dataZoom: [
+                {
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                },
+                {
+                    type: 'slider',
+                    show: true,
+                    bottom: 10,
+                    height: 20,
+                    borderColor: 'transparent',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    fillerColor: 'rgba(22, 119, 255, 0.2)',
+                    handleStyle: { color: '#1677ff' },
+                    textStyle: { color: '#888' }
+                }
+            ],
             legend: {
                 textStyle: { color: '#888', fontSize: 10 },
                 top: 0
@@ -464,7 +488,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     else if (absVal >= 1000) formatted = val.toLocaleString();
 
                     return (
-                        <span className={`font-mono text-xs ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                        <span className={`font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-gray-400'}`} style={{ fontSize: tableFontSize }}>
                             {formatted}
                         </span>
                     );
@@ -473,7 +497,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         });
 
         return cols;
-    }, [selectedMetrics, selectedSymbols, selectedYear]);
+    }, [selectedMetrics, selectedSymbols, selectedYear, tableFontSize]);
 
     // Available years
     const availableYears = useMemo(() => {
@@ -491,10 +515,14 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         }
     }, [availableYears]);
 
-    const filteredSymbols = allSymbols.filter(s =>
-        s.symbol.toLowerCase().includes(searchSymbol.toLowerCase()) ||
-        s.company_name?.toLowerCase().includes(searchSymbol.toLowerCase())
-    );
+    const filteredSymbols = useMemo(() => {
+        if (!searchSymbol) return allSymbols.slice(0, 100);
+        const search = searchSymbol.toLowerCase();
+        return allSymbols.filter(s =>
+            s.symbol.toLowerCase().includes(search) ||
+            s.company_name?.toLowerCase().includes(search)
+        ).slice(0, 100);
+    }, [allSymbols, searchSymbol]);
 
     return (
         <div className="flex gap-4 h-[calc(100vh-180px)]">
@@ -525,11 +553,18 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             onSearch={setSearchSymbol}
                             onSelect={(val) => { if (val) { addSymbol(val); setSearchSymbol(''); } }}
                             value={undefined}
-                            options={filteredSymbols.slice(0, 50).map(s => ({
+                            options={filteredSymbols.map(s => ({
                                 value: s.symbol,
-                                label: <span><b>{s.symbol}</b> - {s.company_name?.slice(0, 30)}</span>
+                                label: (
+                                    <div className="flex items-center justify-between w-full">
+                                        <span className="font-bold text-[#ff9800]">{s.symbol}</span>
+                                        <span className="text-[10px] text-gray-400 truncate ml-4 max-w-[200px]">
+                                            {s.company_name}
+                                        </span>
+                                    </div>
+                                )
                             }))}
-                            notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không tìm thấy" />}
+                            notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không tìm thấy mã" />}
                         />
 
                         <Select value={period} onChange={setPeriod} style={{ width: 80 }}>
@@ -551,6 +586,23 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         >
                             {availableYears.map(y => <Select.Option key={y} value={y}>{y}</Select.Option>)}
                         </Select>
+
+                        <div className="flex items-center gap-1 bg-[#1a1a1a] px-2 rounded border border-[#333]">
+                            <TrendingUp size={12} className="text-gray-500" />
+                            <Select
+                                value={tableFontSize}
+                                onChange={setTableFontSize}
+                                size="small"
+                                variant="borderless"
+                                style={{ width: 65 }}
+                                options={[
+                                    { value: 9, label: '9pt' },
+                                    { value: 10, label: '10pt' },
+                                    { value: 11, label: '11pt' },
+                                    { value: 12, label: '12pt' },
+                                ]}
+                            />
+                        </div>
                     </div>
 
                     {/* Selected Symbols Tags */}
@@ -656,9 +708,19 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                                                 checked={isChecked}
                                                                 className="metric-checkbox pointer-events-none"
                                                             />
-                                                            <span className={`text-[11px] truncate ${isChecked ? 'text-[#ff9800] font-bold' : 'text-gray-400'}`}>
+                                                            <span className={`text-[11px] truncate flex-1 ${isChecked ? 'text-[#ff9800] font-bold' : 'text-gray-400'}`}>
                                                                 {key}
                                                             </span>
+                                                            <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này">
+                                                                <Activity
+                                                                    size={14}
+                                                                    className={`cursor-pointer hover:text-[#1677ff] transition-colors ${chartMetric === key ? 'text-[#1677ff]' : 'text-gray-700'}`}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setChartMetric(key);
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
                                                         </div>
                                                     );
                                                 })}
@@ -782,16 +844,27 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             </Select>
 
                             <Button.Group size="small" className="min-w-fit">
-                                <Button
-                                    icon={<BarChart3 size={12} />}
-                                    onClick={() => setChartType('bar')}
-                                    type={chartType === 'bar' ? 'primary' : 'default'}
-                                />
-                                <Button
-                                    icon={<LineChart size={12} />}
-                                    onClick={() => setChartType('line')}
-                                    type={chartType === 'line' ? 'primary' : 'default'}
-                                />
+                                <Tooltip title="Biểu đồ cột">
+                                    <Button
+                                        icon={<BarChart3 size={12} />}
+                                        onClick={() => setChartType('bar')}
+                                        type={chartType === 'bar' ? 'primary' : 'default'}
+                                    />
+                                </Tooltip>
+                                <Tooltip title="Biểu đồ cột chồng">
+                                    <Button
+                                        icon={<Layers size={12} />}
+                                        onClick={() => setChartType('stacked')}
+                                        type={chartType === 'stacked' ? 'primary' : 'default'}
+                                    />
+                                </Tooltip>
+                                <Tooltip title="Biểu đồ đường">
+                                    <Button
+                                        icon={<LineChart size={12} />}
+                                        onClick={() => setChartType('line')}
+                                        type={chartType === 'line' ? 'primary' : 'default'}
+                                    />
+                                </Tooltip>
                             </Button.Group>
                         </div>
                     }

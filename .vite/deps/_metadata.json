@@ -2,66 +2,66 @@
   "hash": "f5c15c94",
   "configHash": "785859bd",
   "lockfileHash": "bd575f85",
-  "browserHash": "73292ae4",
+  "browserHash": "829ed2e9",
   "optimized": {
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "6ef51308",
+      "fileHash": "4b4e66b8",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "043a59ac",
       "needsInterop": true
     },
     "antd": {
       "src": "../../node_modules/antd/es/index.js",
       "file": "antd.js",
-      "fileHash": "dba9e878",
+      "fileHash": "4fa420ab",
+      "needsInterop": false
+    },
+    "@dnd-kit/core": {
+      "src": "../../node_modules/@dnd-kit/core/dist/core.esm.js",
+      "file": "@dnd-kit_core.js",
+      "fileHash": "572ebb06",
       "needsInterop": false
     },
     "lucide-react": {
       "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
       "file": "lucide-react.js",
-      "fileHash": "96dd425f",
-      "needsInterop": false
-    },
-    "echarts-for-react": {
-      "src": "../../node_modules/echarts-for-react/esm/index.js",
-      "file": "echarts-for-react.js",
-      "fileHash": "cc25eb59",
-      "needsInterop": false
-    },
-    "react-dom/client": {
-      "src": "../../node_modules/react-dom/client.js",
-      "file": "react-dom_client.js",
-      "fileHash": "645b3049",
-      "needsInterop": true
-    },
-    "@dnd-kit/core": {
-      "src": "../../node_modules/@dnd-kit/core/dist/core.esm.js",
-      "file": "@dnd-kit_core.js",
-      "fileHash": "27b40f37",
+      "fileHash": "c313f5ec",
       "needsInterop": false
     },
     "framer-motion": {
       "src": "../../node_modules/framer-motion/dist/es/index.mjs",
       "file": "framer-motion.js",
-      "fileHash": "ef59779d",
+      "fileHash": "1f1537d6",
       "needsInterop": false
     },
     "@supabase/supabase-js": {
       "src": "../../node_modules/@supabase/supabase-js/dist/index.mjs",
       "file": "@supabase_supabase-js.js",
-      "fileHash": "5629d6f4",
+      "fileHash": "ad577567",
+      "needsInterop": false
+    },
+    "echarts-for-react": {
+      "src": "../../node_modules/echarts-for-react/esm/index.js",
+      "file": "echarts-for-react.js",
+      "fileHash": "13c89f10",
       "needsInterop": false
     }
   },
   "chunks": {
-    "chunk-CJPYQ3QE": {
-      "file": "chunk-CJPYQ3QE.js"
-    },
     "chunk-TNTPHDQH": {
       "file": "chunk-TNTPHDQH.js"
     },
     "chunk-32E4H3EV": {
       "file": "chunk-32E4H3EV.js"
+    },
+    "chunk-CJPYQ3QE": {
+      "file": "chunk-CJPYQ3QE.js"
     },
     "chunk-G3PMV62Z": {
       "file": "chunk-G3PMV62Z.js"
