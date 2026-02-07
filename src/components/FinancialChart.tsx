@@ -41,9 +41,10 @@ const parseFinancialValue = (val: any) => {
 interface Props {
     symbol: string | null;
     user: SupabaseUser | null;
+    refreshTrigger?: number;
 }
 
-const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
+const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) => {
     const dataCache = React.useRef<Record<string, any[]>>({});
     const { modal, message: messageApi } = App.useApp();
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
@@ -81,8 +82,11 @@ const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
     }, [loading]);
 
     useEffect(() => {
+        if (refreshTrigger > 0) {
+            dataCache.current = {}; // Clear cache on manual refresh
+        }
         if (symbol) fetchChartData();
-    }, [symbol, period]);
+    }, [symbol, period, refreshTrigger]);
 
     useEffect(() => {
         loadSavedConfigs();

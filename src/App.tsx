@@ -23,6 +23,7 @@ const { Header, Content, Sider } = Layout;
 const App: React.FC = () => {
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
     const [user, setUser] = useState<SupabaseUser | null>(null);
+    const [refreshTrigger, setRefreshTrigger] = useState(0);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
     const [loading, setLoading] = useState(false);
@@ -182,8 +183,21 @@ const App: React.FC = () => {
                                     >
                                         {/* Control Bar */}
                                         <div className="border border-[#333] bg-black p-3 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                            <div className="flex-1 max-w-lg">
-                                                <StockSelector onSelect={setSelectedSymbol} />
+                                            <div className="flex-1 max-w-lg flex items-center gap-2">
+                                                <div className="flex-1">
+                                                    <StockSelector onSelect={setSelectedSymbol} />
+                                                </div>
+                                                {selectedSymbol && (
+                                                    <Tooltip title="Force Update Data">
+                                                        <Button
+                                                            icon={<RefreshCw size={14} />}
+                                                            onClick={() => setRefreshTrigger(prev => prev + 1)}
+                                                            className="bg-transparent border-[#e91e63] text-[#e91e63] hover:bg-[#e91e63]/10 h-10 px-4 rounded-sm uppercase font-mono font-bold"
+                                                        >
+                                                            UPDATE
+                                                        </Button>
+                                                    </Tooltip>
+                                                )}
                                             </div>
                                             <div className="flex items-center space-x-4 text-xs font-mono text-[#666] uppercase">
                                                 {selectedSymbol ? (
@@ -236,6 +250,7 @@ const App: React.FC = () => {
                                                                             <FinancialChart
                                                                                 symbol={selectedSymbol}
                                                                                 user={user}
+                                                                                refreshTrigger={refreshTrigger}
                                                                             />
                                                                         </div>
                                                                     </div>
