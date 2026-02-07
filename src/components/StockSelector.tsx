@@ -16,8 +16,25 @@ const POPULAR_STOCKS = [
     { symbol: 'VIC', name: 'Vingroup' },
 ];
 
-// Nguồn 1: DNSE (Thường ổn định nhất)
 const getLogoUrl = (symbol: string) => `https://cdn.dnse.com.vn/backend/stock-logo/${symbol.toUpperCase()}.jpg`;
+
+const classifyStock = (icbName2: string | undefined) => {
+    if (!icbName2 || icbName2 === 'N/A') return 'Thương mại - Sản xuất';
+    const name = icbName2.toLowerCase();
+    if (name.includes('ngân hàng')) return 'Ngân hàng';
+    if (name.includes('dịch vụ tài chính')) return 'Chứng khoán';
+    if (name.includes('bảo hiểm')) return 'Bảo hiểm';
+    return 'Thương mại - Sản xuất';
+};
+
+const getCategoryColor = (category: string) => {
+    switch (category) {
+        case 'Ngân hàng': return '#f5222d'; // Red
+        case 'Chứng khoán': return '#1890ff'; // Blue
+        case 'Bảo hiểm': return '#52c41a'; // Green
+        default: return '#8c8c8c'; // Grey
+    }
+};
 
 const StockSelector: React.FC<Props> = ({ onSelect }) => {
     const [loading, setLoading] = useState(false);
@@ -113,8 +130,20 @@ const StockSelector: React.FC<Props> = ({ onSelect }) => {
                     {options.map(d => (
                         <Select.Option key={d.symbol} value={d.symbol} label={d.symbol}>
                             <div className="flex items-center space-x-3 py-1">
-                                <div className="flex flex-col">
-                                    <span className="font-bold text-base text-[#e0e0e0] font-mono">{d.symbol}</span>
+                                <div className="flex flex-col flex-1 overflow-hidden">
+                                    <div className="flex items-center justify-between">
+                                        <span className="font-bold text-base text-[#e0e0e0] font-mono">{d.symbol}</span>
+                                        <span
+                                            className="text-[10px] px-1.5 py-0.5 rounded-sm font-mono font-bold uppercase tracking-tighter"
+                                            style={{
+                                                backgroundColor: `${getCategoryColor(classifyStock(d.icb_name2))}22`,
+                                                color: getCategoryColor(classifyStock(d.icb_name2)),
+                                                border: `1px solid ${getCategoryColor(classifyStock(d.icb_name2))}44`
+                                            }}
+                                        >
+                                            {classifyStock(d.icb_name2)}
+                                        </span>
+                                    </div>
                                     <span className="text-xs text-gray-500 truncate max-w-[300px] uppercase font-mono">{d.company_name}</span>
                                 </div>
                             </div>

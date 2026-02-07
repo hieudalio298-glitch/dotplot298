@@ -1,6 +1,7 @@
 export interface StockSymbol {
     symbol: string;
     company_name: string;
+    icb_name2?: string;
     last_updated_at?: string;
 }
 
