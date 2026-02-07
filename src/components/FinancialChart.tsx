@@ -65,6 +65,20 @@ const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
     const [showLoadModal, setShowLoadModal] = useState(false);
     const [loading, setLoading] = useState(false);
     const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
+    const [secondsWaited, setSecondsWaited] = useState(0);
+
+    useEffect(() => {
+        let timer: any;
+        if (loading) {
+            setSecondsWaited(0);
+            timer = setInterval(() => {
+                setSecondsWaited(prev => prev + 1);
+            }, 1000);
+        } else {
+            setSecondsWaited(0);
+        }
+        return () => clearInterval(timer);
+    }, [loading]);
 
     useEffect(() => {
         if (symbol) fetchChartData();
@@ -541,15 +555,20 @@ const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
     return (
         <div className="space-y-4 relative">
             {loading && (
-                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
-                    <div className="flex flex-col items-center gap-4">
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-6">
                         <Spin
                             size="large"
-                            indicator={<RefreshCw className="text-[#ff9800] animate-spin" size={48} />}
+                            indicator={<RefreshCw className="text-[#ff9800] animate-spin" size={64} />}
                         />
-                        <span className="text-[#ff9800] font-mono text-lg animate-pulse tracking-widest">
-                            Waiting a minutes ......
-                        </span>
+                        <div className="flex flex-col items-center space-y-2">
+                            <span className="text-[#ff9800] font-mono text-xl animate-pulse tracking-widest font-bold">
+                                WAITING A MOMENT...
+                            </span>
+                            <span className="text-[#e0e0e0] font-mono text-4xl font-bold">
+                                {secondsWaited}s
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}
@@ -601,6 +620,20 @@ const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
                     >
                         ADD CHART
                     </Button>
+                    <Tooltip title="Force Update Data">
+                        <Button
+                            size="small"
+                            icon={<RefreshCw size={14} />}
+                            onClick={() => {
+                                // Clear cache to force refetch
+                                dataCache.current = {};
+                                fetchChartData();
+                            }}
+                            className="bg-transparent border-[#e91e63] text-[#e91e63] hover:bg-[#e91e63]/10 rounded-none uppercase font-mono"
+                        >
+                            UPDATE
+                        </Button>
+                    </Tooltip>
                 </Space>
             </div>
 
