@@ -1,0 +1,1128 @@
+import React, { useEffect, useState, useMemo } from 'react';
+import { Table, Radio, Card, Empty, Spin, Checkbox, Tag, Space, Divider, Tooltip, Button, Dropdown, Input, Modal, Slider, Popover } from 'antd';
+import { Activity, BarChart3, TrendingUp, Info, ChevronRight, ChevronDown, RefreshCw, LineChart, BarChart, Layers, Trash2, Settings2, Maximize2, Minimize2, Settings } from 'lucide-react';
+import ReactECharts from 'echarts-for-react';
+import { useDroppable } from '@dnd-kit/core';
+import { supabase } from '../supabaseClient';
+
+// --- CHUẨN VAS (Thông tư 200/2014/TT-BTC) - KẾT QUẢ KINH DOANH (PHÂN CẤP) ---
+// --- CHUẨN VAS (Thông tư 200/2014/TT-BTC) - KẾT QUẢ KINH DOANH (PHÂN CẤC) ---
+export const VAS_INCOME_STRUCTURE: any[] = [
+    {
+        code: '01', name: '1. Doanh thu bán hàng và cung cấp dịch vụ', keys: ['Sales', '01. Doanh thu bán hàng và cung cấp dịch vụ', 'Doanh thu bán hàng và cung cấp dịch vụ', 'Tổng doanh thu hoạt động kinh doanh'],
+        children: [
+            { code: '02', name: '2. Các khoản giảm trừ doanh thu', keys: ['Sales deductions', '02. Các khoản giảm trừ doanh thu', 'Các khoản giảm trừ doanh thu'] }
+        ]
+    },
+    { code: '10', name: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', keys: ['Net sales', '10. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu thuần về bán hàng và cung cấp dịch vụ'], isBold: true },
+    { code: '11', name: '4. Giá vốn hàng bán', keys: ['Cost of sales', '11. Giá vốn hàng bán', 'Giá vốn hàng bán'] },
+    { code: '20', name: '5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', keys: ['Gross Profit', '20. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp'], isBold: true },
+    { code: '21', name: '6. Doanh thu hoạt động tài chính', keys: ['Financial income', '21. Doanh thu hoạt động tài chính', 'Doanh thu hoạt động tài chính'] },
+    {
+        code: '22', name: '7. Chi phí tài chính', keys: ['Financial expenses', '22. Chi phí tài chính', 'Chi phí tài chính'],
+        children: [
+            { code: '23', name: 'Trong đó :Chi phí lãi vay', keys: ['Interest expenses', 'Trong đó: Chi phí lãi vay', '23. Trong đó: Chi phí lãi vay'] }
+        ]
+    },
+    { code: '24', name: '8. Phần lãi/lỗ trong công ty liên doanh, liên kết', keys: ['Gain/(loss) from joint ventures', '24. Phần lãi lỗ trong công ty liên doanh, liên kết', 'Phần lãi lỗ trong công ty liên doanh, liên kết', 'Lãi/lỗ từ công ty liên doanh, liên kết'] },
+    { code: '25', name: '9. Chi phí bán hàng', keys: ['Selling expenses', '25. Chi phí bán hàng', 'Chi phí bán hàng'] },
+    { code: '26', name: '10. Chi phí quản lý doanh nghiệp', keys: ['General and admin expenses', '26. Chi phí quản lý doanh nghiệp', 'Chi phí quản lý doanh nghiệp'] },
+    { code: '30', name: '11. Lợi nhuận thuần từ hoạt động kinh doanh', keys: ['Operating profit/(loss)', '30. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận thuần từ hoạt động kinh doanh'], isBold: true },
+    { code: '31', name: '12. Thu nhập khác', keys: ['Other incomes', '31. Thu nhập khác', 'Thu nhập khác'] },
+    { code: '32', name: '13. Chi phí khác', keys: ['Other expenses', '32. Chi phí khác', 'Chi phí khác'] },
+    { code: '40', name: '14. Lợi nhuận khác', keys: ['Net other income/(expenses)', '40. Lợi nhuận khác', 'Lợi nhuận khác'], isBold: true },
+    { code: 'LK_H_SPEC', name: 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', keys: ['Profit from associate', 'Phần lãi lỗ trong công ty liên doanh, liên kết'] },
+    { code: '50', name: '15. Tổng lợi nhuận kế toán trước thuế', keys: ['Net accounting profit/(loss) before tax', '50. Tổng lợi nhuận kế toán trước thuế', 'Tổng lợi nhuận kế toán trước thuế', 'Lợi nhuận trước thuế'], isBold: true },
+    { code: '51', name: '16. Chi phí thuế TNDN hiện hành', keys: ['Business income tax - current', '51. Chi phí thuế TNDN hiện hành', 'Chi phí thuế TNDN hiện hành'] },
+    { code: '52', name: '17. Chi phí thuế TNDN hoãn lại', keys: ['Business income tax - deferred', '52. Chi phí thuế TNDN hoãn lại', 'Chi phí thuế TNDN hoãn lại'] },
+    { code: '60', name: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp', keys: ['Net profit/(loss) after tax', '60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'], isBold: true },
+    { code: '61', name: 'Lợi ích của cổ đông thiểu số', keys: ['Minority interests', 'Lợi ích của cổ đông thiểu số'] },
+    { code: '70', name: 'Lợi nhuận sau thuế của cổ đông của Công ty mẹ', keys: ['Attributable to parent company', 'Lợi nhuận sau thuế của cổ đông công ty mẹ', 'Lợi nhuận sau thuế của công ty mẹ'] },
+    { code: 'EPS', name: '19. Lãi cơ bản trên cổ phiếu (*) (VNÐ)', keys: ['EPS basic (VND)', '70. Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu (VND)'] }
+];
+
+// --- CẤU TRÚC NGÂN HÀNG (BANKING) ---
+export const BANK_INCOME_STRUCTURE: any[] = [
+    {
+        code: 'I_GRP', name: 'I. Thu nhập lãi thuần', isBold: true,
+        keys: ['I. Thu nhập lãi thuần'],
+        children: [
+            { code: '1', name: '1. Thu nhập lãi và các khoản thu nhập tương tự', keys: ['1. Thu nhập lãi và các khoản thu nhập tương tự'] },
+            { code: '2', name: '2. Chi phí lãi và các chi phí tương tự', keys: ['2. Chi phí lãi và các chi phí tương tự'] }
+        ]
+    },
+    {
+        code: 'II_GRP', name: 'II. Lãi/lỗ thuần từ hoạt động dịch vụ', isBold: true,
+        keys: ['II. Lãi/lỗ thuần từ hoạt động dịch vụ'],
+        children: [
+            { code: '3', name: '3. Thu nhập từ hoạt động dịch vụ', keys: ['3. Thu nhập từ hoạt động dịch vụ'] },
+            { code: '4', name: '4. Chi phí hoạt động dịch vụ', keys: ['4. Chi phí hoạt động dịch vụ'] }
+        ]
+    },
+    { code: 'III', name: 'III. Lãi/lỗ thuần từ HĐ kinh doanh ngoại hối và vàng', keys: ['III. Lãi/lỗ thuần từ hoạt động kinh doanh ngoại hối và vàng'], isBold: true },
+    { code: 'IV', name: 'IV. Lãi/lỗ thuần từ mua bán chứng khoán kinh doanh', keys: ['IV. Lãi/lỗ thuần từ mua bán chứng khoán kinh doanh'], isBold: true },
+    { code: 'V', name: 'V. Lãi/lỗ thuần từ mua bán chứng khoán đầu tư', keys: ['V. Lãi/lỗ thuần từ mua bán chứng khoán đầu tư'], isBold: true },
+    {
+        code: 'VI_GRP', name: 'VI. Lãi/lỗ thuần từ hoạt động khác', isBold: true,
+        keys: ['VI. Lãi/lỗ thuần từ hoạt động khác'],
+        children: [
+            { code: '5', name: '5. Thu nhập từ hoạt động khác', keys: ['5. Thu nhập từ hoạt động khác'] },
+            { code: '6', name: '6. Chi phí hoạt động khác', keys: ['6. Chi phí hoạt động khác'] }
+        ]
+    },
+    { code: 'VII', name: 'VII. Thu nhập từ góp vốn, mua cổ phần', keys: ['VII. Thu nhập từ góp vốn, mua cổ phần'], isBold: true },
+    { code: 'VIII', name: 'VIII. Chi phí hoạt động', keys: ['VIII. Chi phí hoạt động'], isBold: true },
+    { code: 'IX', name: 'IX. Lợi nhuận thuần trước dự phòng rủi ro', keys: ['IX. Lợi nhuận thuần từ hoạt động kinh doanh trước chi phí dự phòng rủi ro tín dụng (I+II+III+IV+V+VI+VII-VIII)'], isBold: true },
+    { code: 'X', name: 'X. Chi phí dự phòng rủi ro tín dụng', keys: ['X. Chi phí dự phòng rủi ro tín dụng'], isBold: true },
+    { code: 'XI', name: 'XI. Tổng lợi nhuận trước thuế', keys: ['XI. Tổng lợi nhuận trước thuế (IX-X)'], isBold: true },
+    {
+        code: 'XII_GRP', name: 'XII. Chi phí thuế TNDN', isBold: true,
+        keys: ['XII. Chi phí thuế TNDN'],
+        children: [
+            { code: '7', name: '7. Chi phí thuế TNDN hiện hành', keys: ['Business income tax - current', '51. Chi phí thuế TNDN hiện hành', 'Chi phí thuế TNDN hiện hành'] },
+            { code: '8', name: '8. Chi phí thuế TNDN hoãn lại', keys: ['Business income tax - deferred', '52. Chi phí thuế TNDN hoãn lại', 'Chi phí thuế TNDN hoãn lại'] }
+        ]
+    },
+    { code: 'XIII', name: 'XIII. Lợi nhuận sau thuế', keys: ['XIII. Lợi nhuận sau thuế (XI-XII)'], isBold: true },
+    { code: 'XIV', name: 'XIV. Lợi ích của cổ đông thiểu số', keys: ['Minority interests', 'Lợi ích của cổ đông thiểu số'] },
+    { code: 'XV', name: 'XV. LNST của cổ đông Ngân hàng mẹ', keys: ['XV. Lợi nhuận sau thuế của cổ đông của Ngân hàng mẹ (XIII-XIV)'], isBold: true },
+    { code: 'EPS', name: 'Lãi cơ bản trên cổ phiếu (BCTC)', keys: ['Lãi cơ bản trên cổ phiếu (BCTC) (VNÐ)'] }
+];
+
+// --- CẤU TRÚC CHỨNG KHOÁN (SECURITIES) ---
+export const SECURITIES_INCOME_STRUCTURE: any[] = [
+    {
+        code: 'I', name: 'I. DOANH THU HOẠT ĐỘNG', isBold: true,
+        keys: ['I. DOANH THU HOẠT ĐỘNG'],
+        children: [
+            {
+                code: '1.1', name: '1.1. Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)', isBold: true,
+                keys: ['1.1. Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)'],
+                children: [
+                    { code: '1.1.a', name: 'a. Lãi bán các tài sản tài chính', keys: ['a. Lãi bán các tài sản tài chính'] },
+                    { code: '1.1.b', name: 'b. Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ', keys: ['b. Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ'] },
+                    { code: '1.1.c', name: 'c. Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL', keys: ['c. Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL'] },
+                    { code: '1.1.d', name: 'd. Chênh lệch giảm do đánh giá lại phải trả chứng quyền đang lưu hành', keys: ['d. Chênh lệch giảm do đánh giá lại phải trả chứng quyền đang lưu hành'] }
+                ]
+            },
+            { code: '1.2', name: '1.2. Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)', keys: ['1.2. Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)'] },
+            { code: '1.3', name: '1.3. Lãi từ các khoản cho vay và phải thu', keys: ['1.3. Lãi từ các khoản cho vay và phải thu'] },
+            { code: '1.4', name: '1.4. Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)', keys: ['1.4. Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)'] },
+            { code: '1.5', name: '1.5. Lãi từ các công cụ phái sinh phòng ngừa rủi ro', keys: ['1.5. Lãi từ các công cụ phái sinh phòng ngừa rủi ro'] },
+            {
+                code: '1.6', name: '1.6. Doanh thu môi giới chứng khoán', keys: ['1.6. Doanh thu môi giới chứng khoán'],
+                children: [
+                    { code: '1.6.sub', name: '- Doanh thu hoạt động đầu tư chứng khoán, góp vốn', keys: ['- Doanh thu hoạt động đầu tư chứng khoán, góp vốn'] }
+                ]
+            },
+            {
+                code: '1.7', name: '1.7. Doanh thu bảo lãnh phát hành, đại lý phát hành chứng khoán', keys: ['1.7. Doanh thu bảo lãnh phát hành, đại lý phát hành chứng khoán'],
+                children: [
+                    { code: '1.7.sub', name: '- Doanh thu quản lý danh mục đầu tư cho  người uỷ thác đầu tư', keys: ['- Doanh thu quản lý danh mục đầu tư cho  người uỷ thác đầu tư'] }
+                ]
+            },
+            { code: '1.8', name: '1.8. Doanh thu hoạt động tư vấn', keys: ['1.8. Doanh thu hoạt động tư vấn'] },
+            { code: '1.9', name: '1.9. Doanh thu hoạt động ủy thác đấu giá', keys: ['1.9. Doanh thu hoạt động ủy thác đấu giá'] },
+            {
+                code: '1.10', name: '1.10. Doanh thu lưu ký chứng khoán', keys: ['1.10. Doanh thu lưu ký chứng khoán'],
+                children: [
+                    { code: '1.10.sub', name: '- Doanh thu cho thuê sử dụng tài sản', keys: ['- Doanh thu cho thuê sử dụng tài sản'] }
+                ]
+            },
+            { code: '1.11', name: '1.11. Thu nhập hoạt động khác', keys: ['1.11. Thu nhập hoạt động khác'] }
+        ]
+    },
+    { code: '20', name: 'Các khoản giảm trừ doanh thu', keys: ['Các khoản giảm trừ doanh thu'] },
+    { code: '21', name: 'Cộng doanh thu hoạt động (01->11)', isBold: true, keys: ['Cộng doanh thu hoạt động (01->11)'] },
+    { code: '22', name: 'Doanh thu thuần', isBold: true, keys: ['Doanh thu thuần'] },
+    {
+        code: 'II', name: 'II. CHI PHÍ HOẠT ĐỘNG', isBold: true,
+        keys: ['II. CHI PHÍ HOẠT ĐỘNG'],
+        children: [
+            {
+                code: '2.1', name: '2.1. Lỗ các tài sản tài chính ghi nhận thông qua lỗ (FVTPL)', isBold: true,
+                keys: ['2.1. Lỗ các tài sản tài chính ghi nhận thông qua lỗ (FVTPL)'],
+                children: [
+                    { code: '2.1.a', name: 'a. Lỗ bán các tài sản tài chính', keys: ['a. Lỗ bán các tài sản tài chính'] },
+                    { code: '2.1.b', name: 'b. Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ', keys: ['b. Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ'] },
+                    { code: '2.1.c', name: 'c. Chi phí giao dịch mua các tài sản tài chính (FVTPL)', keys: ['c. Chi phí giao dịch mua các tài sản tài chính (FVTPL)'] },
+                    { code: '2.1.d', name: 'd. Chênh lệch tăng do đánh giá lại phải trả chứng quyền đang lưu hành', keys: ['d. Chênh lệch tăng do đánh giá lại phải trả chứng quyền đang lưu hành'] }
+                ]
+            },
+            { code: '2.2', name: '2.2. Lỗ các khoản đầu tư năm giữ đến ngày đáo hạn (HTM)', keys: ['2.2. Lỗ các khoản đầu tư năm giữ đến ngày đáo hạn (HTM)'] },
+            { code: '2.3', name: '2.3. Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu', keys: ['2.3. Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu'] },
+            { code: '2.4', name: '2.4 Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)', keys: ['2.4 Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)'] },
+            { code: '32', name: 'Chi phí dự phòng TSTC, xử lý tổn thất các khoản phải thu khó đòi và lỗ suy giảm TSTC và chi phí đi vay của các khoản cho vay', keys: ['Chi phí dự phòng TSTC, xử lý tổn thất các khoản phải thu khó đòi và lỗ suy giảm TSTC và chi phí đi vay của các khoản cho vay'] },
+            { code: '2.5', name: '2.5. Lỗ từ các tài sản tài chính phái sinh phòng ngừa rủi ro', keys: ['2.5. Lỗ từ các tài sản tài chính phái sinh phòng ngừa rủi ro'] },
+            { code: '2.6', name: '2.6. Chi phí hoạt động tự doanh', keys: ['2.6. Chi phí hoạt động tự doanh'] },
+            { code: '2.7', name: '2.7. Chi phí môi giới chứng khoán', keys: ['2.7. Chi phí môi giới chứng khoán'] },
+            { code: '2.8', name: '2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành chứng  khoán', keys: ['2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành chứng  khoán'] },
+            { code: '2.9', name: '2.9. Chi phí tư vấn', keys: ['2.9. Chi phí tư vấn'] },
+            { code: '2.10', name: '2.10. Chi phí hoạt động đấu giá, ủy thác', keys: ['2.10. Chi phí hoạt động đấu giá, ủy thác'] },
+            { code: '2.11', name: '2.11. Chi phí lưu ký chứng khoán', keys: ['2.11. Chi phí lưu ký chứng khoán'] },
+            {
+                code: '2.12', name: '2.12. Chi phí khác', keys: ['2.12. Chi phí khác'],
+                children: [
+                    { code: '41', name: 'Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác', keys: ['Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác'] },
+                    { code: '42', name: '- Chi phí trực tiếp hoạt động kinh doanh chứng khoán', keys: ['- Chi phí trực tiếp hoạt động kinh doanh chứng khoán'] },
+                    { code: '43', name: '- Chi phí dự phòng chứng khoán', keys: ['- Chi phí dự phòng chứng khoán'] }
+                ]
+            }
+        ]
+    },
+    { code: '44', name: 'Cộng chi phí hoạt động (21->33)', isBold: true, keys: ['Cộng chi phí hoạt động (21->33)'] },
+    { code: '45', name: 'Lợi nhuận gộp của hoạt động kinh doanh', isBold: true, keys: ['Lợi nhuận gộp của hoạt động kinh doanh'] },
+    {
+        code: 'III', name: 'III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH', isBold: true,
+        keys: ['III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH'],
+        children: [
+            { code: '3.1', name: '3.1. Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện', keys: ['3.1. Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện'] },
+            { code: '3.2', name: '3.2. Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ', keys: ['3.2. Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ'] },
+            { code: '3.3', name: '3.3. Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh', keys: ['3.3. Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
+            { code: '3.4', name: '3.4. Doanh thu khác về đầu tư', keys: ['3.4. Doanh thu khác về đầu tư'] }
+        ]
+    },
+    { code: '51', name: 'Cộng doanh thu hoạt động tài chính (41->44)', isBold: true, keys: ['Cộng doanh thu hoạt động tài chính (41->44)'] },
+    {
+        code: 'IV', name: 'IV. CHÍ PHÍ TÀI CHÍNH', isBold: true,
+        keys: ['IV. CHÍ PHÍ TÀI CHÍNH'],
+        children: [
+            { code: '4.1', name: '4.1. Chênh lệch lỗ tỷ giá hối đoái đã và chưa thưc hiện', keys: ['4.1. Chênh lệch lỗ tỷ giá hối đoái đã và chưa thưc hiện'] },
+            { code: '4.2', name: '4.2. Chi phí lãi vay', keys: ['4.2. Chi phí lãi vay'] },
+            { code: '4.3', name: '4.3. Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh', keys: ['4.3. Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
+            { code: '4.4', name: '4.4. Chi phí đầu tư khác', keys: ['4.4. Chi phí đầu tư khác'] }
+        ]
+    },
+    { code: '57', name: 'Cộng chi phí tài chính (51->54)', isBold: true, keys: ['Cộng chi phí tài chính (51->54)'] },
+    { code: 'V', name: 'V. CHI PHÍ BÁN HÀNG', isBold: true, keys: ['V. CHI PHÍ BÁN HÀNG'] },
+    { code: 'VI', name: 'VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN', isBold: true, keys: ['VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN'] },
+    { code: 'VII', name: 'VII. KẾT QUẢ HOẠT ĐỘNG', isBold: true, keys: ['VII. KẾT QUẢ HOẠT ĐỘNG'] },
+    {
+        code: 'VIII', name: 'VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC', isBold: true,
+        keys: ['VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC'],
+        children: [
+            { code: '8.1', name: '8.1. Thu nhập khác', keys: ['8.1. Thu nhập khác'] },
+            { code: '8.2', name: '8.2. Chi phí khác', keys: ['8.2. Chi phí khác'] }
+        ]
+    },
+    { code: '64', name: 'Cộng kết quả hoạt động khác', isBold: true, keys: ['Cộng kết quả hoạt động khác'] },
+    { code: '65', name: 'Lãi/lỗ từ công ty liên doanh, liên kết', keys: ['Lãi/lỗ từ công ty liên doanh, liên kết'] },
+    {
+        code: 'IX', name: 'IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ', isBold: true,
+        keys: ['IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ'],
+        children: [
+            { code: '9.1', name: '9.1. Lợi nhuận đã thực hiện', keys: ['9.1. Lợi nhuận đã thực hiện'] },
+            { code: '9.2', name: '9.2. Lợi nhuận chưa thực hiện', keys: ['9.2. Lợi nhuận chưa thực hiện'] }
+        ]
+    },
+    {
+        code: 'X', name: 'X. CHI PHÍ THUẾ THU NHẬP DOANH NGHIỆP', isBold: true,
+        keys: ['X. CHI PHÍ THUẾ THU NHẬP DOANH NGHIỆP'],
+        children: [
+            { code: '10.1', name: '10.1. Chi phí thuế TNDN hiện hành', keys: ['10.1. Chi phí thuế TNDN hiện hành'] },
+            { code: '10.2', name: '10.2. Chi phí thuế TNDN hoãn lại', keys: ['10.2. Chi phí thuế TNDN hoãn lại'] }
+        ]
+    },
+    {
+        code: 'XI', name: 'XI.  LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN', isBold: true,
+        keys: ['XI.  LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN'],
+        children: [
+            { code: '11.1', name: '11.1. Lợi nhuận sau thuế phân bổ cho chủ sở hữu', keys: ['11.1. Lợi nhuận sau thuế phân bổ cho chủ sở hữu'] },
+            { code: '11.2', name: '11.2. Lợi nhuận sau thuế trích các Quỹ (Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)', keys: ['11.2. Lợi nhuận sau thuế trích các Quỹ (Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)', '11.2. Lợi nhuận sau thuế trích các Quỹ'] },
+            { code: '11.3', name: '11.3.  Lợi nhuận thuần phân bổ cho  lợi ích cổ đông không kiểm soát', keys: ['11.3.  Lợi nhuận thuần phân bổ cho  lợi ích cổ đông không kiểm soát'] }
+        ]
+    },
+    {
+        code: 'XII', name: 'XII. THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN', isBold: true,
+        keys: ['XII. THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN'],
+        children: [
+            { code: '12.1', name: '12.1. Lãi/(Lỗ) từ đánh giá lại các khoản đầu tư giữ đến ngày đáo hạn', keys: ['12.1. Lãi/(Lỗ) từ đánh giá lại các khoản đầu tư giữ đến ngày đáo hạn'] },
+            { code: '12.2', name: '12.2.Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán', keys: ['12.2.Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán'] },
+            { code: '12.3', name: '12.3. Lãi (lỗ) toàn diện khác được chia từ hoạt động đầu tư vào công ty con, đầu tư liên kết, liên doanh', keys: ['12.3. Lãi (lỗ) toàn diện khác được chia từ hoạt động đầu tư vào công ty con, đầu tư liên kết, liên doanh'] },
+            { code: '12.4', name: '12.4. Lãi/(Lỗ) từ đánh giá lại các công cụ tài chính phái sinh', keys: ['12.4. Lãi/(Lỗ) từ đánh giá lại các công cụ tài chính phái sinh'] },
+            { code: '12.5', name: '12.5. Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài', keys: ['12.5. Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài'] },
+            { code: '12.6', name: '12.6. Lãi, lỗ từ các khoản đầu tư vào công ty con. Công ty liên kết, liên doanh chưa chia', keys: ['12.6. Lãi, lỗ từ các khoản đầu tư vào công ty con. Công ty liên kết, liên doanh chưa chia'] },
+            { code: '12.7', name: '12.7. Lãi, lỗ đánh giá công cụ phái sinh', keys: ['12.7. Lãi, lỗ đánh giá công cụ phái sinh'] },
+            { code: '12.8', name: '12.8. Lãi, lỗ đánh giá lại tài sản cố định theo mô hình giá trị hợp lý', keys: ['12.8. Lãi, lỗ đánh giá lại tài sản cố định theo mô hình giá trị hợp lý'] }
+        ]
+    },
+    { code: '85', name: 'Tổng thu nhập toàn diện', isBold: true, keys: ['Tổng thu nhập toàn diện'] },
+    { code: '86', name: 'Thu nhập toàn diện phân bổ cho chủ sở hữu', isBold: true, keys: ['Thu nhập toàn diện phân bổ cho chủ sở hữu'] },
+    { code: '87', name: 'Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát', keys: ['Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát'] },
+    {
+        code: 'XIII', name: 'XIII. THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG', isBold: true,
+        keys: ['XIII. THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG'],
+        children: [
+            { code: '13.1', name: '13.1.Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu) (VNÐ)', keys: ['13.1.Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu) (VNÐ)'] },
+            { code: '13.2', name: '13.2.Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)', keys: ['13.2.Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)'] }
+        ]
+    }
+];
+
+
+
+
+export const INSURANCE_INCOME_STRUCTURE: any[] = [
+    {
+        code: '01', name: '1. Doanh thu phí bảo hiểm', isBold: true,
+        keys: ['1. Doanh thu phí bảo hiểm', 'Doanh thu phí bảo hiểm'],
+        children: [
+            { code: '01.1', name: '- Thu phí bảo hiểm gốc', keys: ['- Thu phí bảo hiểm gốc', 'Thu phí bảo hiểm gốc'] },
+            { code: '01.2', name: '- Thu phí nhận tái bảo hiểm', keys: ['- Thu phí nhận tái bảo hiểm', 'Thu phí nhận tái bảo hiểm'] },
+            { code: '01.3', name: '- Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', keys: ['- Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng giảm dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm'] }
+        ]
+    },
+    {
+        code: '02', name: '2. Phí nhượng tái bảo hiểm', isBold: true,
+        keys: ['2. Phí nhượng tái bảo hiểm', 'Phí nhượng tái bảo hiểm'],
+        children: [
+            { code: '02.1', name: '- Phí nhượng tái bảo hiểm', keys: ['- Phí nhượng tái bảo hiểm', 'Phí nhượng tái bảo hiểm'] },
+            { code: '02.2', name: '- Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', keys: ['- Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', 'Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', 'Tăng giảm dự phòng phí nhượng tái bảo hiểm'] }
+        ]
+    },
+    {
+        code: '03_GRP', name: 'Các khoản giảm trừ',
+        keys: ['Các khoản giảm trừ'],
+        children: [
+            { code: '03.1', name: '- Giảm phí Bảo hiểm', keys: ['- Giảm phí Bảo hiểm', 'Giảm phí Bảo hiểm'] },
+            { code: '03.2', name: '- Hoàn phí Bảo hiểm', keys: ['- Hoàn phí Bảo hiểm', 'Hoàn phí Bảo hiểm'] },
+            { code: '03.3', name: '- Các khoản giảm trừ khác', keys: ['- Các khoản giảm trừ khác', 'Các khoản giảm trừ khác'] }
+        ]
+    },
+    { code: '03.4', name: 'Tăng (giảm) dự phòng phí, dự phòng toán học', keys: ['Tăng (giảm) dự phòng phí, dự phòng toán học', 'Tăng giảm dự phòng phí, dự phòng toán học'] },
+    { code: '03', name: '3. Doanh thu phí bảo hiểm thuần', isBold: true, keys: ['3. Doanh thu phí bảo hiểm thuần', 'Doanh thu phí bảo hiểm thuần'] },
+    {
+        code: '04', name: '4. Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH', isBold: true,
+        keys: ['4. Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH', 'Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH'],
+        children: [
+            { code: '04.1', name: '- Thu hoa hồng nhượng tái Bảo hiểm', keys: ['- Thu hoa hồng nhượng tái Bảo hiểm', 'Thu hoa hồng nhượng tái Bảo hiểm'] },
+            { code: '04.2', name: '- Thu khác hoạt động kinh doanh Bảo hiểm', keys: ['- Thu khác hoạt động kinh doanh Bảo hiểm', 'Thu khác hoạt động kinh doanh Bảo hiểm'] },
+            { code: '04.3', name: '+ Thu khác nhận tái Bảo hiểm', keys: ['+ Thu khác nhận tái Bảo hiểm', 'Thu khác nhận tái Bảo hiểm'] },
+            { code: '04.4', name: '+ Thu khác nhượng tái bảo hiểm', keys: ['+ Thu khác nhượng tái bảo hiểm', 'Thu khác nhượng tái bảo hiểm'] },
+            { code: '04.5', name: '+ Thu khác (giám định, đại lý,…)', keys: ['+ Thu khác (giám định, đại lý,…)', 'Thu khác (giám định, đại lý,…)'] }
+        ]
+    },
+    { code: '10', name: '5. Doanh thu thuần HĐKD BH', isBold: true, keys: ['5. Doanh thu thuần HĐKD BH', 'Doanh thu thuần HĐKD BH', '10. Doanh thu thuần hoạt động kinh doanh bảo hiểm', 'Doanh thu thuần hoạt động kinh doanh bảo hiểm'] },
+    { code: '10.1', name: '5.1. Doanh thuần BH và CCDV', keys: ['5.1. Doanh thuần BH và CCDV', 'Doanh thuần BH và CCDV'] },
+    {
+        code: '11', name: '6. Chi bồi thường', isBold: true,
+        keys: ['6. Chi bồi thường', 'Chi bồi thường'],
+        children: [
+            { code: '11.1', name: '- Tổng chi bồi thường', keys: ['- Tổng chi bồi thường', 'Tổng chi bồi thường'] },
+            { code: '11.2', name: '+ Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm', keys: ['+ Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm', 'Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm'] },
+            { code: '11.3', name: '+ Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm', keys: ['+ Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm', 'Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm'] },
+            { code: '11.4', name: '- Các khoản giảm trừ', keys: ['- Các khoản giảm trừ', 'Các khoản giảm trừ'] },
+            { code: '11.5', name: '+ Thu đòi người thứ ba bồi hoàn', keys: ['+ Thu đòi người thứ ba bồi hoàn', 'Thu đòi người thứ ba bồi hoàn'] },
+            { code: '11.6', name: '+ Thu hàng đã xử lý bồi thường 100%', keys: ['+ Thu hàng đã xử lý bồi thường 100%', 'Thu hàng đã xử lý bồi thường 100%'] }
+        ]
+    },
+    { code: '12', name: '7. Thu bồi thường nhượng tái bảo hiểm', keys: ['7. Thu bồi thường nhượng tái bảo hiểm', 'Thu bồi thường nhượng tái bảo hiểm'] },
+    { code: '13', name: 'Tăng (giảm) dự phòng toán học (dành riêng BVH)', keys: ['Tăng (giảm) dự phòng toán học (dành riêng BVH)', 'Tăng (giảm) dự phòng toán học', 'Tăng giảm dự phòng toán học'] },
+    { code: '14', name: '8. Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', keys: ['8. Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm'] },
+    {
+        code: '09', name: '9. Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm',
+        keys: ['9. Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm', 'Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm'],
+        children: [
+            { code: '09.1', name: '9.1. Tăng (giảm) dự phòng bồi thường', keys: ['9.1. Tăng (giảm) dự phòng bồi thường'] }
+        ]
+    },
+    { code: '15', name: '10. Tổng chi bồi thường bảo hiểm', isBold: true, keys: ['10. Tổng chi bồi thường bảo hiểm', 'Tổng chi bồi thường bảo hiểm'] },
+    {
+        code: '11_GRP', name: '11. Tăng (giảm) dự phòng dao động lớn',
+        keys: ['11. Tăng (giảm) dự phòng dao động lớn', 'Tăng (giảm) dự phòng dao động lớn'],
+        children: [
+            { code: '11_sub', name: 'Chi bồi thường từ dự phòng dao động lớn', keys: ['Chi bồi thường từ dự phòng dao động lớn'] }
+        ]
+    },
+    {
+        code: '12', name: '12. Chi khác hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['12. Chi khác hoạt động kinh doanh bảo hiểm', 'Chi khác hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '12.1', name: '- Chi hoa hồng bảo hiểm', keys: ['- Chi hoa hồng bảo hiểm', 'Chi hoa hồng bảo hiểm'] },
+            { code: '12.2', name: '- Chi phí khác hoạt động kinh doanh bảo hiểm', keys: ['- Chi phí khác hoạt động kinh doanh bảo hiểm', 'Chi phí khác hoạt động kinh doanh bảo hiểm'] },
+            {
+                code: '12.3', name: '+ Chi khác hoạt động kinh doanh bảo hiểm gốc', keys: ['+ Chi khác hoạt động kinh doanh bảo hiểm gốc', 'Chi khác hoạt động kinh doanh bảo hiểm gốc'],
+                children: [
+                    { code: '12.3.1', name: '• Chi giám định tổn thất', keys: ['• Chi giám định tổn thất', 'Chi giám định tổn thất'] },
+                    { code: '12.3.2', name: '• Chi đòi người thứ 3', keys: ['• Chi đòi người thứ 3', 'Chi đòi người thứ 3'] },
+                    { code: '12.3.3', name: '• Chi xử lý hàng bồi thường 100%', keys: ['• Chi xử lý hàng bồi thường 100%', 'Chi xử lý hàng bồi thường 100%'] },
+                    { code: '12.3.4', name: '• Chi đánh giá rủi ro của đối tượng bảo hiểm', keys: ['• Chi đánh giá rủi ro của đối tượng bảo hiểm', 'Chi đánh giá rủi ro của đối tượng bảo hiểm'] },
+                    { code: '12.3.5', name: '• Chi đề phòng hạn chế rủi ro, tổn thất', keys: ['• Chi đề phòng hạn chế rủi ro, tổn thất', 'Chi đề phòng hạn chế rủi ro, tổn thất'] },
+                    { code: '12.3.6', name: '• Chi khác', keys: ['• Chi khác', 'Chi khác'] }
+                ]
+            },
+            {
+                code: '12.4', name: '+ Chi khác hoạt động kinh doanh nhận tái bảo hiểm', keys: ['+ Chi khác hoạt động kinh doanh nhận tái bảo hiểm', 'Chi khác hoạt động kinh doanh nhận tái bảo hiểm'],
+                children: [
+                    { code: '12.4.1', name: '• Chi hoa hồng nhận tái bảo hiểm', keys: ['• Chi hoa hồng nhận tái bảo hiểm', 'Chi hoa hồng nhận tái bảo hiểm'] }
+                ]
+            },
+            { code: '12.5', name: '+ Chi hoạt động nhượng tái bảo hiểm', keys: ['+ Chi hoạt động nhượng tái bảo hiểm', 'Chi hoạt động nhượng tái bảo hiểm'] },
+            { code: '12.6', name: '+ Chi phí trực tiếp kinh doanh hoạt động khác', keys: ['+ Chi phí trực tiếp kinh doanh hoạt động khác', 'Chi phí trực tiếp kinh doanh hoạt động khác'] }
+        ]
+    },
+    {
+        code: '13', name: '13. Tổng chi phí hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['13. Tổng chi phí hoạt động kinh doanh bảo hiểm', 'Tổng chi phí hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '13.1', name: '13.1. Giá vốn cung cấp hàng hóa, dịch vụ khác', keys: ['13.1. Giá vốn cung cấp hàng hóa, dịch vụ khác', 'Giá vốn cung cấp hàng hóa, dịch vụ khác'] }
+        ]
+    },
+    {
+        code: '14', name: '14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', 'Lợi nhuận gộp hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '14.1', name: '14.1. Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác', keys: ['14.1. Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác', 'Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác'] },
+            { code: '14.2', name: '14.2. Lợi nhuận thuần hoạt động kinh doanh bảo hiểm', keys: ['14.2. Lợi nhuận thuần hoạt động kinh doanh bảo hiểm', 'Lợi nhuận thuần hoạt động kinh doanh bảo hiểm'] }
+        ]
+    },
+    { code: '15', name: '15. Doanh thu kinh doanh bất động sản đầu tư', keys: ['15. Doanh thu kinh doanh bất động sản đầu tư', 'Doanh thu kinh doanh bất động sản đầu tư'] },
+    { code: '16', name: '16. Giá vốn bất động sản đầu tư', keys: ['16. Giá vốn bất động sản đầu tư', 'Giá vốn bất động sản đầu tư'] },
+    { code: '17', name: '17. Lợi nhuận từ hoạt động đầu tư bất động sản', isBold: true, keys: ['17. Lợi nhuận từ hoạt động đầu tư bất động sản', 'Lợi nhuận từ hoạt động đầu tư bất động sản', '(22=20-21)'] },
+    { code: '18', name: '18. Doanh thu hoạt động tài chính', isBold: true, keys: ['18. Doanh thu hoạt động tài chính', 'Doanh thu hoạt động tài chính'] },
+    {
+        code: '19', name: '19. Chi hoạt động tài chính', isBold: true,
+        keys: ['19. Chi hoạt động tài chính', 'Chi hoạt động tài chính'],
+        children: [
+            { code: '19.1', name: '- Dự phòng toán học trích lãi từ đầu tư', keys: ['- Dự phòng toán học trích lãi từ đầu tư', 'Dự phòng toán học trích lãi từ đầu tư'] },
+            { code: '19.2', name: '- Dự phòng chia lãi', keys: ['- Dự phòng chia lãi', 'Dự phòng chia lãi'] },
+            { code: '19.3', name: '- Chi khác hoạt động tài chính', keys: ['- Chi khác hoạt động tài chính', 'Chi khác hoạt động tài chính'] }
+        ]
+    },
+    { code: '20', name: '20. Lợi nhuận gộp hoạt động tài chính', isBold: true, keys: ['20. Lợi nhuận gộp hoạt động tài chính', 'Lợi nhuận gộp hoạt động tài chính'] },
+    { code: 'CP_BH', name: 'Chi phí bán hàng', keys: ['Chi phí bán hàng'] },
+    { code: '21', name: '21. Chi phí quản lý doanh nghiệp', isBold: true, keys: ['21. Chi phí quản lý doanh nghiệp', 'Chi phí quản lý doanh nghiệp'] },
+    { code: '22', name: '22. Lợi nhuận thuần từ hoạt động kinh doanh', isBold: true, keys: ['22. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận thuần từ hoạt động kinh doanh'] },
+    { code: '23', name: '23. Thu nhập khác', keys: ['23. Thu nhập khác', 'Thu nhập khác'] },
+    { code: '24', name: '24. Chi phí khác', keys: ['24. Chi phí khác', 'Chi phí khác'] },
+    { code: '25', name: '25. Lợi nhuận khác', isBold: true, keys: ['25. Lợi nhuận khác', 'Lợi nhuận khác'] },
+    { code: 'LK_LD', name: 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', keys: ['Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', 'Phần lãi lỗ trong công ty liên doanh, liên kết', 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh'] },
+    { code: '26', name: '26. Tổng lợi nhuận kế toán trước thuế', isBold: true, keys: ['26. Tổng lợi nhuận kế toán trước thuế', 'Tổng lợi nhuận kế toán trước thuế'] },
+    { code: 'ADJ_TAX', name: 'Các khoản điều chỉnh tăng (+) hoặc giảm (-) lợi nhuận để xác định lợi nhuận chịu thuế TNDN', keys: ['Các khoản điều chỉnh tăng (+) hoặc giảm (-) lợi nhuận để xác định lợi nhuận chịu thuế TNDN'] },
+    { code: 'TOTAL_TAX_PROFIT', name: 'Tổng lợi nhuận trước thuế thu nhập doanh nghiệp', keys: ['Tổng lợi nhuận trước thuế thu nhập doanh nghiệp'] },
+    { code: 'DP_CAN_DOI', name: 'Dự phòng đảm bảo cân đối', keys: ['Dự phòng đảm bảo cân đối'] },
+    { code: 'TAX_PROFIT', name: 'Lợi nhuận chịu thuế thu nhập doanh nghiệp', keys: ['Lợi nhuận chịu thuế thu nhập doanh nghiệp'] },
+    { code: '27', name: '27. Chi phí thuế thu nhập hiện hành', keys: ['27. Chi phí thuế thu nhập hiện hành', 'Chi phí thuế thu nhập hiện hành'] },
+    { code: '28', name: '28. Chi phí thuế thu nhập hoãn lại', keys: ['28. Chi phí thuế thu nhập hoãn lại', 'Chi phí thuế thu nhập hoãn lại'] },
+    { code: '29', name: '29. Lợi nhuận sau thuế thu nhập doanh nghiệp', isBold: true, keys: ['29. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'] },
+    { code: '30', name: '30. Lợi ích của cổ đông thiểu số', keys: ['30. Lợi ích của cổ đông thiểu số', 'Lợi ích của cổ đông thiểu số'] },
+    { code: '31', name: '31. Lợi nhuận sau thuế của cổ đông của Công ty mẹ', isBold: true, keys: ['31. Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông của công ty mẹ'] },
+    { code: '32', name: '32. Lãi cơ bản trên cổ phiếu. (VNÐ)', keys: ['32. Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu. (VNÐ)'] }
+];
+
+interface VASIncomeStatementProps {
+    symbol: string | null;
+}
+
+const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
+    const [loading, setLoading] = useState(false);
+    const [period, setPeriod] = useState<'year' | 'quarter'>('quarter');
+    const [rawRecords, setRawRecords] = useState<any[]>([]);
+    const [chartType, setChartType] = useState<'line' | 'bar' | 'stack'>('line');
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Doanh thu thuần về bán hàng và cung cấp dịch vụ']);
+    const [metricAxes, setMetricAxes] = useState<Record<string, number>>({});
+    const [metricTypes, setMetricTypes] = useState<Record<string, 'line' | 'bar' | 'stack'>>({});
+    const [metricColors, setMetricColors] = useState<Record<string, string>>({});
+    const [searchQuery, setSearchQuery] = useState('');
+    const [industry, setIndustry] = useState<string>('');
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [columnWidth, setColumnWidth] = useState(450);
+
+    const currentStructure = useMemo(() => {
+        const ind = industry.toLowerCase();
+        if (ind.includes('ngân hàng')) return BANK_INCOME_STRUCTURE;
+        if (ind.includes('dịch vụ tài chính')) return SECURITIES_INCOME_STRUCTURE;
+        if (ind.includes('bảo hiểm')) return INSURANCE_INCOME_STRUCTURE;
+        return VAS_INCOME_STRUCTURE;
+    }, [industry]);
+
+    const COLORS = ['#1677ff', '#52c41a', '#f5222d', '#faad14', '#13c2c2', '#722ed1', '#eb2f96'];
+
+    const { setNodeRef, isOver } = useDroppable({
+        id: 'vas-income-chart-droppable',
+    });
+
+    useEffect(() => {
+        if (symbol) fetchData();
+    }, [symbol, period]);
+
+    useEffect(() => {
+        const handleGlobalDrop = (e: any) => {
+            if (e.detail.overId === 'vas-income-chart-droppable') {
+                const metric = e.detail.metric;
+                if (!selectedMetrics.includes(metric)) {
+                    setSelectedMetrics(prev => [...prev, metric]);
+                    setMetricTypes(prev => ({ ...prev, [metric]: 'line' }));
+                    setMetricColors(prev => ({ ...prev, [metric]: COLORS[selectedMetrics.length % COLORS.length] }));
+                }
+            }
+        };
+        document.addEventListener('financialMetricDropped', handleGlobalDrop);
+        return () => document.removeEventListener('financialMetricDropped', handleGlobalDrop);
+    }, [selectedMetrics]);
+
+    const fetchData = async () => {
+        setLoading(true);
+        try {
+            const [stmRes, metaRes] = await Promise.all([
+                supabase.from('financial_statements')
+                    .select('*')
+                    .eq('symbol', symbol)
+                    .eq('statement_type', 'income_statement')
+                    .eq('period_type', period),
+                supabase.from('stock_symbols')
+                    .select('icb_name2')
+                    .eq('symbol', symbol)
+                    .single()
+            ]);
+
+            setIndustry(metaRes.data?.icb_name2 || '');
+
+            const data = stmRes.data || [];
+            if (stmRes.error) throw stmRes.error;
+
+            // Xử lý làm sạch keys và parse data
+            const processed = (data || []).flatMap(record => {
+                const innerData = Array.isArray(record.data) ? record.data : [record.data];
+                return innerData.map((d: any) => {
+                    const cleanObj: any = {};
+                    Object.keys(d).forEach((k: string) => {
+                        const cleanKey = k.replace(/^_+/, '');
+                        const val = d[k];
+                        // Chuyển đổi string sang number nếu có thể, xử lý null
+                        if (val === null || val === undefined || val === '') {
+                            cleanObj[cleanKey] = 0;
+                        } else if (typeof val === 'string') {
+                            // Xóa dấu phẩy nếu là chuỗi định dạng số
+                            const num = parseFloat(val.replace(/,/g, ''));
+                            cleanObj[cleanKey] = isNaN(num) ? 0 : num;
+                        } else {
+                            cleanObj[cleanKey] = val;
+                        }
+                    });
+                    return cleanObj;
+                });
+            });
+
+            // Sắp xếp thời gian (Sort by Year, then Quarter if available)
+            processed.sort((a, b) => {
+                const ya = parseInt(a['Năm'] || a['year'] || 0);
+                const yb = parseInt(b['Năm'] || b['year'] || 0);
+                if (ya !== yb) return yb - ya;
+                const qa = parseInt(a['Quý'] || 0);
+                const qb = parseInt(b['Quý'] || 0);
+                return qb - qa;
+            });
+
+            setRawRecords(processed);
+        } catch (e) {
+            console.error('Fetch Error:', e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const processedData = useMemo(() => {
+        return rawRecords.map(record => {
+            const result: any = { ...record };
+            const getVal = (item: any) => {
+                // 1. Exact keys match
+                for (const k of item.keys) {
+                    if (record[k] !== undefined && record[k] !== null) return record[k];
+                }
+                const allKeys = Object.keys(record);
+                // 2. Specialized Case: EPS and Parent Profit
+                if (item.code === 'EPS') {
+                    const epsKey = allKeys.find(k => k.includes('Lãi cơ bản') || k.includes('EPS'));
+                    if (epsKey) return record[epsKey];
+                }
+                if (item.code === '70') {
+                    const mKey = allKeys.find(k => (k.includes('Lợi nhuận sau thuế') || k.includes('LNST')) && (k.includes('công ty mẹ') || k.includes('Công ty mẹ')));
+                    if (mKey) return record[mKey];
+                }
+                // 3. Code match
+                if (item.code && !isNaN(parseInt(item.code))) {
+                    const codeMatch = allKeys.find(k => k.includes(`(${item.code})`) || k.startsWith(`${item.code}.`));
+                    if (codeMatch) return record[codeMatch];
+                }
+                // 4. Fuzzy name match (strip numbering)
+                const cleanName = item.name.toLowerCase()
+                    .replace(/^[ivx]+\.\s*/, '')
+                    .replace(/^\d+[a-z]*\.\s*/, '')
+                    .replace(/^[a-d]\.\s*/, '')
+                    .replace(/^- \s*/, '')
+                    .replace('- ', '')
+                    .trim();
+                const fuzzyKey = allKeys.find((k: string) => k.toLowerCase().includes(cleanName));
+                if (fuzzyKey) return record[fuzzyKey];
+                return 0;
+            };
+
+            const mapRecursive = (items: any[]) => {
+                items.forEach(item => {
+                    result[item.name] = getVal(item);
+                    if (item.children) mapRecursive(item.children);
+                });
+            };
+
+            mapRecursive(currentStructure);
+
+            // Standard VAS Calculations if missing
+            if (!result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] === 0) {
+                const dt = result['1. Doanh thu bán hàng và cung cấp dịch vụ'] || 0;
+                const gt = result['2. Các khoản giảm trừ doanh thu'] || 0;
+                result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] = dt - gt;
+            }
+            if (!result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] || result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] === 0) {
+                const dtt = result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || 0;
+                const gv = result['4. Giá vốn hàng bán'] || 0;
+                result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] = dtt - gv;
+            }
+
+            const y = result['Năm'] || result['year'] || '';
+            const q = result['Quý'] || result['quarter'] || '';
+            result.periodLabel = period === 'year' ? `${y}` : `Q${q}/${y.toString().slice(-2)}`;
+            return result;
+        });
+    }, [rawRecords, period]);
+
+    const fullStructure = useMemo(() => {
+        const structure = [...currentStructure];
+
+        // Find keys used in structure
+        const usedKeys = new Set<string>();
+        const extractUsedKeys = (items: any[]) => {
+            items.forEach(item => {
+                if (item.keys) item.keys.forEach((k: string) => usedKeys.add(k.toLowerCase()));
+                if (item.children) extractUsedKeys(item.children);
+            });
+        };
+        extractUsedKeys(structure);
+
+        // Find keys in raw data that are NOT in usedKeys
+        // Removed as per user request (unmapped metrics)
+        return structure;
+    }, [currentStructure, rawRecords]);
+
+    const allMetrics = useMemo(() => {
+        const list: any[] = [];
+        const extract = (items: any[]) => {
+            items.forEach(i => {
+                list.push(i);
+                if (i.children) extract(i.children);
+            });
+        };
+        extract(fullStructure);
+        return list;
+    }, [fullStructure]);
+
+    const displayPeriods = useMemo(() => processedData.map((d: any) => d.periodLabel), [processedData]);
+
+    const formatValue = (val: any, isEPS = false) => {
+        if (val === null || val === undefined || val === 0) return '-';
+        if (typeof val !== 'number') return val;
+
+        // EPS GIỮ NGUYÊN ĐỊNH DẠNG (VND)
+        if (isEPS) {
+            return new Intl.NumberFormat('en-US').format(val);
+        }
+
+        // Đơn vị Tỷ đồng (Billion VND)
+        const inBillions = val / 1e9;
+        return new Intl.NumberFormat('en-US', {
+            minimumFractionDigits: Math.abs(inBillions) < 10 ? 2 : 1,
+            maximumFractionDigits: 2
+        }).format(inBillions);
+    };
+
+    // --- CHART CONFIG ---
+    const chartOption = useMemo(() => {
+        const reverseData = [...processedData].reverse();
+
+        return {
+            backgroundColor: 'transparent',
+            tooltip: {
+                trigger: 'axis',
+                axisPointer: { type: 'shadow' },
+                backgroundColor: 'rgba(15, 15, 15, 0.9)',
+                borderColor: 'rgba(255, 255, 255, 0.1)',
+                textStyle: { color: '#fff' },
+                formatter: (params: any) => {
+                    let res = `<div style="color: #848e9c; font-size: 11px; margin-bottom: 4px;">${params[0].name}</div>`;
+                    params.forEach((p: any) => {
+                        const isEPS = p.seriesName.includes('EPS');
+                        const isRatio = p.seriesName.toLowerCase().includes('tỷ lệ') || p.seriesName.toLowerCase().includes('biên');
+                        let valText = '';
+                        if (isEPS) valText = p.value.toLocaleString();
+                        else if (isRatio) valText = p.value.toFixed(2) + '%';
+                        else valText = (p.value / 1e9).toFixed(2) + ' tỷ';
+
+                        res += `<div style="display: flex; justify-content: space-between; gap: 20px; font-size: 12px; margin-bottom: 2px;">
+                                    <span style="display: flex; align-items: center; gap: 6px;">${p.marker} ${p.seriesName}</span>
+                                    <span style="font-weight: bold; color: #fff">${valText}</span>
+                                </div>`;
+                    });
+                    return res;
+                }
+            },
+            legend: {
+                show: false // Tắt legend mặc định vì đã có Tags ở dưới
+            },
+            grid: { left: '3%', right: '3%', bottom: '10%', top: '10%', containLabel: true },
+            xAxis: {
+                type: 'category',
+                data: reverseData.map(d => d.periodLabel),
+                axisLine: { lineStyle: { color: '#2a2e39' } },
+                axisLabel: { color: '#848e9c', fontSize: 10 }
+            },
+            yAxis: [
+                {
+                    type: 'value',
+                    name: 'Tỷ VNĐ',
+                    axisLine: { show: false },
+                    splitLine: { lineStyle: { color: '#1e222d' } },
+                    axisLabel: { color: '#848e9c', fontSize: 10, formatter: (value: number) => (value / 1e9).toLocaleString() }
+                },
+                {
+                    type: 'value',
+                    name: 'VND / %',
+                    splitLine: { show: false },
+                    axisLabel: { color: '#1677ff', fontSize: 10, formatter: (value: number) => value.toLocaleString() }
+                }
+            ],
+            series: selectedMetrics.map((m, idx) => {
+                const isEPS = m.includes('EPS') || m.toLowerCase().includes('tỷ lệ') || m.toLowerCase().includes('biên');
+                const color = metricColors[m] || COLORS[idx % COLORS.length];
+                const axisIndex = metricAxes[m] !== undefined ? metricAxes[m] : (isEPS ? 1 : 0);
+                const mType = metricTypes[m] || chartType;
+
+                const base: any = {
+                    name: m,
+                    yAxisIndex: axisIndex,
+                    data: reverseData.map(d => d[m]),
+                    itemStyle: { color },
+                    emphasis: { focus: 'series' }
+                };
+
+                if (mType === 'line') {
+                    return {
+                        ...base,
+                        type: 'line',
+                        smooth: true,
+                        symbol: 'circle',
+                        symbolSize: 8,
+                        lineStyle: { width: 3 }
+                    };
+                } else if (mType === 'bar') {
+                    return {
+                        ...base,
+                        type: 'bar',
+                        barMaxWidth: 30,
+                        itemStyle: { ...base.itemStyle, borderRadius: [2, 2, 0, 0] }
+                    };
+                } else {
+                    return {
+                        ...base,
+                        type: 'bar',
+                        stack: 'total',
+                        barMaxWidth: 30
+                    };
+                }
+            })
+        };
+    }, [processedData, selectedMetrics, chartType, metricAxes, metricTypes, metricColors]);
+
+    const handleResetChart = () => {
+        setSelectedMetrics(['Doanh thu thuần về bán hàng và cung cấp dịch vụ']);
+        setChartType('line');
+        setMetricAxes({});
+        setMetricTypes({});
+        setMetricColors({});
+    };
+
+    const updateMetricAxis = (metric: string, axis: number) => setMetricAxes(prev => ({ ...prev, [metric]: axis }));
+    const updateMetricType = (metric: string, type: 'line' | 'bar' | 'stack') => setMetricTypes(prev => ({ ...prev, [metric]: type }));
+    const updateMetricColor = (metric: string, color: string) => setMetricColors(prev => ({ ...prev, [metric]: color }));
+
+
+    // --- TABLE COLUMNS ---
+    const columns = [
+        {
+            title: (
+                <div className="flex items-center justify-between group">
+                    <span className="text-[10px] text-gray-500">CHỈ TIÊU (TỶ VNĐ)</span>
+                    <Popover
+                        content={
+                            <div className="w-48">
+                                <p className="text-xs mb-2">Độ rộng cột: {columnWidth}px</p>
+                                <Slider
+                                    min={200}
+                                    max={800}
+                                    value={columnWidth}
+                                    onChange={(v: number) => setColumnWidth(v)}
+                                />
+                            </div>
+                        }
+                        title="Cấu hình hiển thị"
+                        trigger="click"
+                    >
+                        <Settings size={12} className="text-gray-400 cursor-pointer hover:text-neon-blue transition-colors" />
+                    </Popover>
+                </div>
+            ),
+            dataIndex: 'name',
+            key: 'name',
+            fixed: 'left',
+            width: columnWidth,
+            render: (text: string, record: any) => (
+                <Tooltip title={text} placement="topLeft" mouseEnterDelay={0.5}>
+                    <span className={`inline-block align-middle w-full ${record.isBold ? 'font-bold' : ''} text-[10px] truncate`}>
+                        {text}
+                    </span>
+                </Tooltip>
+            )
+        },
+        ...displayPeriods.map(p => ({
+            title: p,
+            dataIndex: p,
+            key: p,
+            align: 'right',
+            width: 80, // Narrower columns
+            render: (_: any, record: any) => {
+                const val = processedData.find(d => d.periodLabel === p)?.[record.name];
+                const isEPS = record.code === 'EPS';
+                return <span className={`${record.isBold ? 'font-bold' : ''}`}>{formatValue(val, isEPS)}</span>;
+            }
+        }))
+    ];
+
+    if (loading && rawRecords.length === 0) return <div className="h-64 flex items-center justify-center"><Spin /></div>;
+
+    return (
+        <div className="flex flex-col gap-4">
+            {/* --- VISUALIZATION BOX --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+                {/* CHART AREA */}
+                <Card
+                    className="lg:col-span-3 border-none bg-[#0b0e11]/80 backdrop-blur-md shadow-xl overflow-hidden"
+                    title={
+                        <div className="flex items-center gap-3 text-white">
+                            <BarChart3 size={18} className="text-neon-blue" />
+                            <span>Biểu đồ Phân tích</span>
+                        </div>
+                    }
+                    extra={
+                        <Space split={<Divider type="vertical" className="bg-gray-800" />}>
+                            <Radio.Group
+                                value={chartType}
+                                onChange={e => {
+                                    const next = e.target.value;
+                                    setChartType(next);
+                                    selectedMetrics.forEach(m => updateMetricType(m, next));
+                                }}
+                                size="small"
+                                buttonStyle="solid"
+                            >
+                                <Radio.Button value="line"><LineChart size={14} /></Radio.Button>
+                                <Radio.Button value="bar"><BarChart size={14} /></Radio.Button>
+                                <Radio.Button value="stack"><Layers size={14} /></Radio.Button>
+                            </Radio.Group>
+                            <Button size="small" type="text" onClick={handleResetChart} className="text-gray-500 hover:text-white flex items-center gap-1">
+                                <RefreshCw size={12} /> Reset
+                            </Button>
+                        </Space>
+                    }
+                >
+                    <div ref={setNodeRef} style={{ height: 400 }} className={`transition-all ${isOver ? 'bg-neon-blue/5' : ''}`}>
+                        {selectedMetrics.length === 0 ? (
+                            <div className="h-full flex flex-col items-center justify-center text-gray-600 gap-4 bg-black/20 rounded-xl border border-white/5">
+                                <Layers size={48} className="opacity-20 text-neon-blue" />
+                                <p className="text-xs font-bold uppercase tracking-widest text-gray-500">Kéo thả chỉ tiêu để bắt đầu phân tích</p>
+                            </div>
+                        ) : (
+                            <div className="h-full flex flex-col">
+                                <div className="flex-1 min-h-0">
+                                    <ReactECharts option={chartOption} style={{ height: '100%' }} notMerge={true} />
+                                </div>
+                                {/* METRIC TAGS */}
+                                <div className="mt-2 flex flex-wrap gap-2 justify-center pb-2">
+                                    {selectedMetrics.map((m, idx) => (
+                                        <div key={m} className="px-2 py-0.5 bg-white/5 border border-white/10 rounded-full text-[10px] text-gray-400 flex items-center gap-1.5 hover:bg-white/10 transition-all group">
+                                            <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: metricColors[m] || COLORS[idx % COLORS.length] }} />
+                                            <span>{m} {metricAxes[m] === 1 ? '(Trục 2)' : ''}</span>
+
+                                            <Dropdown
+                                                menu={{
+                                                    items: [
+                                                        { key: 'axis-0', label: 'Dùng Trục 1', onClick: () => updateMetricAxis(m, 0) },
+                                                        { key: 'axis-1', label: 'Dùng Trục 2', onClick: () => updateMetricAxis(m, 1) },
+                                                        { type: 'divider' },
+                                                        { key: 'type-line', label: 'Dạng Đường', icon: <LineChart size={12} />, onClick: () => updateMetricType(m, 'line') },
+                                                        { key: 'type-bar', label: 'Dạng Cột', icon: <BarChart size={12} />, onClick: () => updateMetricType(m, 'bar') },
+                                                        { key: 'type-stack', label: 'Dạng Cột chồng', icon: <Layers size={12} />, onClick: () => updateMetricType(m, 'stack') },
+                                                        { type: 'divider' },
+                                                        {
+                                                            key: 'colors',
+                                                            label: 'Chọn màu sắc',
+                                                            children: COLORS.map(c => ({
+                                                                key: c,
+                                                                label: <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ background: c }} /> {c}</div>,
+                                                                onClick: () => updateMetricColor(m, c)
+                                                            }))
+                                                        }
+                                                    ],
+                                                    selectedKeys: [
+                                                        `axis-${metricAxes[m] || 0}`,
+                                                        `type-${metricTypes[m] || 'bar'}`
+                                                    ]
+                                                }}
+                                                trigger={['click']}
+                                            >
+                                                <Settings2 size={10} className="cursor-pointer text-neon-blue hover:text-white opacity-60 hover:opacity-100 transition-all" />
+                                            </Dropdown>
+
+                                            <Trash2
+                                                size={10}
+                                                className="cursor-pointer hover:text-red-400 opacity-40 group-hover:opacity-100 transition-opacity"
+                                                onClick={() => setSelectedMetrics(prev => prev.filter(sm => sm !== m))}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </Card>
+
+                {/* SIDEBAR METRICS */}
+                <Card className="border-none bg-[#0b0e11]/80 backdrop-blur-md"
+                    title={
+                        <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center gap-2 text-white">
+                                <TrendingUp size={18} className="text-neon-green" />
+                                <span>Chỉ tiêu phân tích</span>
+                            </div>
+                            <Tooltip title="Xóa tất cả">
+                                <Trash2 size={14} className="text-gray-600 cursor-pointer hover:text-red-500 transition-colors" onClick={() => setSelectedMetrics([])} />
+                            </Tooltip>
+                        </div>
+                    }>
+                    <div className="flex flex-col gap-3">
+                        <Input
+                            placeholder="Tìm chỉ tiêu..."
+                            size="small"
+                            prefix={<Activity size={12} className="text-gray-500" />}
+                            className="bg-transparent border-gray-800 text-gray-300 placeholder:text-gray-600 focus:border-neon-blue"
+                            allowClear
+                            onChange={e => setSearchQuery(e.target.value)}
+                        />
+                        <div className="flex flex-col gap-2 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
+                            <Checkbox.Group
+                                value={selectedMetrics}
+                                onChange={(checked) => {
+                                    const newMetrics = checked as string[];
+                                    const added = newMetrics.find(m => !selectedMetrics.includes(m));
+                                    if (added) {
+                                        setMetricTypes(prev => ({ ...prev, [added]: chartType }));
+                                        setMetricColors(prev => ({ ...prev, [added]: COLORS[newMetrics.length % COLORS.length] }));
+                                    }
+                                    setSelectedMetrics(newMetrics);
+                                }}
+                                className="flex flex-col gap-3"
+                            >
+                                {allMetrics
+                                    .filter(v => v.code !== '23' && v.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                                    .map(item => (
+                                        <Checkbox key={item.name} value={item.name} className="text-gray-400 hover:text-white transition-colors">
+                                            <span className="text-[11px] leading-tight block">{item.name}</span>
+                                        </Checkbox>
+                                    ))
+                                }
+                            </Checkbox.Group>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            {/* --- DATA TABLE --- */}
+            <Card
+                className="border-none bg-[#0b0e11] shadow-2xl"
+                extra={
+                    <Space>
+                        <Popover
+                            content={
+                                <div className="w-64 p-2">
+                                    <div className="text-xs text-gray-400 mb-2">Độ rộng cột chỉ tiêu: {columnWidth}px</div>
+                                    <Slider
+                                        min={200}
+                                        max={800}
+                                        value={columnWidth}
+                                        onChange={setColumnWidth}
+                                        trackStyle={{ backgroundColor: '#1677ff' }}
+                                        handleStyle={{ borderColor: '#1677ff' }}
+                                    />
+                                </div>
+                            }
+                            trigger="click"
+                            placement="bottomRight"
+                            arrow={false}
+                        >
+                            <Button
+                                type="text"
+                                size="small"
+                                className="text-gray-500 hover:text-white flex items-center gap-1"
+                                icon={<Settings size={14} />}
+                            >
+                                Cấu hình
+                            </Button>
+                        </Popover>
+                        <Tooltip title="Mở rộng bảng">
+                            <Button
+                                type="text"
+                                size="small"
+                                onClick={() => setIsExpanded(true)}
+                                className="text-gray-500 hover:text-neon-blue transition-colors"
+                                icon={<Maximize2 size={16} />}
+                            />
+                        </Tooltip>
+                    </Space>
+                }
+                title={
+                    <div className="flex justify-between items-center w-full">
+                        <Space split={<Divider type="vertical" className="bg-gray-700" />}>
+                            <span className="text-white text-lg font-bold">CHUẨN VAS - {symbol}</span>
+                            <Radio.Group value={period} onChange={e => setPeriod(e.target.value)} buttonStyle="solid" size="small">
+                                <Radio.Button value="year">NĂM</Radio.Button>
+                                <Radio.Button value="quarter">QUÝ</Radio.Button>
+                            </Radio.Group>
+                        </Space>
+                        <Tooltip title="Đơn vị: VND. Dữ liệu đã được chuẩn hóa theo Thông tư 200/2014/TT-BTC">
+                            <Info size={16} className="text-gray-500 cursor-help" />
+                        </Tooltip>
+                    </div>
+                }
+            >
+                <Table
+                    dataSource={fullStructure}
+                    columns={columns as any}
+                    pagination={false}
+                    scroll={{ x: 1200, y: 500 }}
+                    size="middle"
+                    rowKey="code"
+                    className="vas-table-custom"
+                    rowClassName={(record: any) => record.isBold ? 'financial-row-group' : 'financial-row-item'}
+                    defaultExpandAllRows={true}
+                    expandable={{
+                        expandIcon: ({ expanded, onExpand, record }) =>
+                            record.children ? (
+                                <span
+                                    className="cursor-pointer mr-2 text-neon-blue hover:text-white transition-all inline-flex items-center justify-center w-4 h-4"
+                                    onClick={e => onExpand(record, e)}
+                                >
+                                    {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                            ) : <span className="inline-block w-6" />
+                    }}
+                />
+            </Card>
+
+            {/* EXPANDED MODAL */}
+            <Modal
+                open={isExpanded}
+                onCancel={() => setIsExpanded(false)}
+                footer={null}
+                width="95vw"
+                style={{ top: 20 }}
+                styles={{ body: { padding: 0, background: '#0b0e11' } }}
+                closeIcon={<Minimize2 size={18} className="text-gray-400 hover:text-white" />}
+                title={
+                    <div className="flex justify-between items-center w-full pr-8">
+                        <Space split={<Divider type="vertical" className="bg-gray-700" />}>
+                            <span className="text-white text-lg font-bold">KẾT QUẢ KINH DOANH (VAS) - {symbol}</span>
+                            <Radio.Group value={period} onChange={e => setPeriod(e.target.value)} buttonStyle="solid" size="small">
+                                <Radio.Button value="year">NĂM</Radio.Button>
+                                <Radio.Button value="quarter">QUÝ</Radio.Button>
+                            </Radio.Group>
+                        </Space>
+                        <Tooltip title="Đơn vị: VND. Chuẩn Thông tư 200.">
+                            <Info size={16} className="text-gray-500 cursor-help" />
+                        </Tooltip>
+                    </div>
+                }
+            >
+                <Table
+                    dataSource={currentStructure}
+                    columns={columns as any}
+                    pagination={false}
+                    scroll={{ x: 1600, y: 'calc(90vh - 120px)' }}
+                    size="middle"
+                    rowKey="code"
+                    className="vas-table-custom vas-table-expanded"
+                    rowClassName={(record: any) => record.isBold ? 'financial-row-group' : 'financial-row-item'}
+                    defaultExpandAllRows={true}
+                    expandable={{
+                        expandIcon: ({ expanded, onExpand, record }) =>
+                            record.children ? (
+                                <span
+                                    className="cursor-pointer mr-2 text-neon-blue hover:text-white transition-all inline-flex items-center justify-center w-4 h-4"
+                                    onClick={e => onExpand(record, e)}
+                                >
+                                    {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
+                            ) : <span className="inline-block w-6" />
+                    }}
+                />
+            </Modal>
+
+            <style>{`
+                .vas-table-custom .ant-table { background: transparent !important; color: #fff; font-size: 10px !important; }
+                .vas-table-custom .ant-table-thead > tr > th { 
+                    background: #131722 !important; 
+                    color: #848e9c !important; 
+                    border-bottom: 2px solid #2a2e39 !important; 
+                    font-size: 9px !important; 
+                    text-transform: uppercase; 
+                    letter-spacing: 0.5px; 
+                    padding: 4px 6px !important;
+                }
+                .vas-table-custom .ant-table-tbody > tr > td { 
+                    border-bottom: 1px solid #1e222d !important; 
+                    padding: 3px 6px !important; 
+                    white-space: nowrap !important;
+                    line-height: 1.1 !important;
+                }
+                .vas-table-custom .ant-table-cell-fix-left { background: #0b0e11 !important; }
+                .vas-table-custom .ant-table-row-indent { margin-right: 12px !important; }
+                .vas-table-custom .ant-table-row:hover > td { background: rgba(0, 102, 255, 0.08) !important; }
+                .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+                .custom-scrollbar::-webkit-scrollbar-thumb { background: #2a2e39; border-radius: 10px; }
+                
+                /* Expanded modal styles */
+                .vas-table-expanded .ant-table-thead > tr > th {
+                    font-size: 11px !important;
+                    padding: 8px 12px !important;
+                }
+                .vas-table-expanded .ant-table-tbody > tr > td {
+                    font-size: 12px !important;
+                    padding: 6px 12px !important;
+                }
+                .vas-table-expanded .ant-table-cell-fix-left:first-child {
+                    min-width: 500px !important;
+                }
+                .ant-modal-content {
+                    background: #0b0e11 !important;
+                    border: 1px solid #2a2e39 !important;
+                }
+                .ant-modal-header {
+                    background: #131722 !important;
+                    border-bottom: 1px solid #2a2e39 !important;
+                }
+                .ant-modal-title {
+                    color: #fff !important;
+                }
+            `}</style>
+        </div>
+    );
+};
+
+export default VASIncomeStatement;
