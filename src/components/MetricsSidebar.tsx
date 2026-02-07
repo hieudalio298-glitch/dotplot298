@@ -21,6 +21,8 @@ const DraggableItem: React.FC<DraggableItemProps> = ({ id, label }) => {
         zIndex: 999,
     } : {};
 
+    const isSubMetric = /^([0-9]+\.|[IVXLCDM]+\.|-)\s+/.test(label);
+
     return (
         <motion.div
             ref={setNodeRef}
@@ -28,11 +30,11 @@ const DraggableItem: React.FC<DraggableItemProps> = ({ id, label }) => {
             {...listeners}
             {...attributes}
             whileHover={{ x: 2 }}
-            className={`flex items-center space-x-2 p-2 mb-1 bg-[#111] border border-[#333] cursor-grab active:cursor-grabbing hover:border-[#ff9800] group transition-all rounded-none ${transform ? 'shadow-[0_0_15px_rgba(255,152,0,0.5)] border-[#ff9800] bg-black' : ''}`}
+            className={`flex items-center space-x-2 p-2 mb-1 bg-[#111] border border-[#333] cursor-grab active:cursor-grabbing hover:border-[#ff9800] group transition-all rounded-none ${transform ? 'shadow-[0_0_15px_rgba(255,152,0,0.5)] border-[#ff9800] bg-black' : ''} ${isSubMetric ? 'ml-4 bg-[#0a0a0a]' : ''}`}
         >
             <GripVertical size={10} className="text-[#444] group-hover:text-[#ff9800] transition-colors" />
-            <span className="text-[11px] font-mono text-[#aaa] group-hover:text-[#fff] truncate uppercase tracking-tight">
-                {label.length > 30 ? label.substring(0, 28) + '...' : label}
+            <span className={`text-[11px] font-mono text-[#aaa] group-hover:text-[#fff] truncate uppercase tracking-tight ${isSubMetric ? 'text-[10px]' : ''}`}>
+                {label.length > 35 ? label.substring(0, 33) + '...' : label}
             </span>
         </motion.div>
     );

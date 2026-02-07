@@ -1,9 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
-import { Card, Radio, Empty, Button, Space, Tooltip, Dropdown, Modal, Input, message } from 'antd';
+import { Card, Radio, Empty, Button, Space, Tooltip, Dropdown, Modal, Input, message, App, Spin, Divider } from 'antd';
 import { useDroppable } from '@dnd-kit/core';
-import { Activity, RefreshCw, BarChart, LineChart, Layers, X, Settings2, Plus, Trash2, Maximize2, Minimize2, Save, FolderOpen, Edit2, Check } from 'lucide-react';
+import { Activity, RefreshCw, BarChart, LineChart, Layers, X, Settings2, Plus, Trash2, Maximize2, Minimize2, Save, FolderOpen, Edit2, Check, FilePlus } from 'lucide-react';
 import { supabase } from '../supabaseClient';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface ChartInstance {
     id: string;
@@ -25,11 +26,26 @@ interface SavedChartConfig {
     updated_at: string;
 }
 
+const parseFinancialValue = (val: any) => {
+    if (val === null || val === undefined || val === '') return 0;
+    if (typeof val === 'number') return val;
+    let s = String(val).replace(/,/g, '').replace(/\s/g, '').trim();
+    // Handle (1,234.56) -> -1234.56
+    if (s.startsWith('(') && s.endsWith(')')) {
+        s = '-' + s.substring(1, s.length - 1);
+    }
+    const n = parseFloat(s);
+    return isNaN(n) ? 0 : n;
+};
+
 interface Props {
     symbol: string | null;
+    user: SupabaseUser | null;
 }
 
-const FinancialChart: React.FC<Props> = ({ symbol }) => {
+const FinancialChart: React.FC<Props> = ({ symbol, user }) => {
+    const dataCache = React.useRef<Record<string, any[]>>({});
+    const { modal, message: messageApi } = App.useApp();
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
     const [chartData, setChartData] = useState<any[]>([]);
     const [chartInstances, setChartInstances] = useState<ChartInstance[]>([
@@ -47,11 +63,16 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
     const [savedConfigs, setSavedConfigs] = useState<SavedChartConfig[]>([]);
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [currentConfigId, setCurrentConfigId] = useState<string | null>(null);
 
     useEffect(() => {
         if (symbol) fetchChartData();
-        loadSavedConfigs();
     }, [symbol, period]);
+
+    useEffect(() => {
+        loadSavedConfigs();
+    }, [user, showLoadModal]);
 
     const ALIAS = {
         REV: ['Doanh thu thuần', 'Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu bán hàng và cung cấp dịch vụ', 'Thu nhập lãi', 'Doanh thu'],
@@ -83,10 +104,7 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
             const ca = cleanStr(alias);
             const match = keys.find(k => cleanStr(k) === ca);
             if (match !== undefined) {
-                const val = data[match];
-                if (val !== null && val !== undefined && val !== '') {
-                    return typeof val === 'string' ? parseFloat(val.replace(/,/g, '').replace(/\s/g, '')) : Number(val);
-                }
+                return parseFinancialValue(data[match]);
             }
         }
 
@@ -95,16 +113,22 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
             if (ca.length < 5) continue;
             const match = keys.find(k => cleanStr(k).includes(ca));
             if (match !== undefined) {
-                const val = data[match];
-                if (val !== null && val !== undefined && val !== '') {
-                    return typeof val === 'string' ? parseFloat(val.replace(/,/g, '').replace(/\s/g, '')) : Number(val);
-                }
+                return parseFinancialValue(data[match]);
             }
         }
         return 0;
     };
 
     const fetchChartData = async () => {
+        if (!symbol) return;
+
+        const cacheKey = `${symbol}_${period}`;
+        if (dataCache.current[cacheKey]) {
+            setChartData(dataCache.current[cacheKey]);
+            return;
+        }
+
+        setLoading(true);
         try {
             const [stmRes, ratioRes] = await Promise.all([
                 supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('period_type', period),
@@ -335,8 +359,11 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
             });
 
             setChartData(enrichedData);
+            dataCache.current[cacheKey] = enrichedData;
         } catch (e) {
             console.error(e);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -355,83 +382,151 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
 
     const loadSavedConfigs = async () => {
         try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                setSavedConfigs([]);
+                return;
+            }
 
             const { data, error } = await supabase
                 .from('user_chart_configs')
                 .select('*')
-                .eq('symbol', symbol)
+                .eq('user_id', user.id)
                 .order('updated_at', { ascending: false });
 
             if (error) throw error;
             setSavedConfigs(data || []);
         } catch (error) {
             console.error('Error loading configs:', error);
+            setSavedConfigs([]);
         }
     };
 
     const saveConfiguration = async () => {
         if (!configName.trim()) {
-            message.error('Please enter a configuration name');
+            messageApi.error('Please enter a configuration name');
             return;
         }
 
         try {
-            const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
-                message.error('Please login to save configurations');
+                messageApi.error('Please login to save configurations');
                 return;
             }
 
-            const { error } = await supabase
-                .from('user_chart_configs')
-                .insert({
-                    user_id: user.id,
-                    chart_name: configName,
-                    symbol: symbol,
-                    period: period,
-                    chart_instances: chartInstances
-                });
+            const configData = {
+                user_id: user.id,
+                chart_name: configName,
+                symbol: symbol,
+                period: period,
+                chart_instances: chartInstances,
+                updated_at: new Date().toISOString()
+            };
 
-            if (error) throw error;
+            if (currentConfigId) {
+                // Update existing
+                const { error } = await supabase
+                    .from('user_chart_configs')
+                    .update(configData)
+                    .eq('id', currentConfigId);
 
-            message.success('Configuration saved successfully!');
+                if (error) throw error;
+                messageApi.success(`Updated configuration: ${configName}`);
+            } else {
+                // Insert new
+                const { data, error } = await supabase
+                    .from('user_chart_configs')
+                    .insert(configData)
+                    .select()
+                    .single();
+
+                if (error) throw error;
+                if (data) {
+                    setCurrentConfigId(data.id);
+                }
+                messageApi.success('Configuration saved successfully!');
+            }
+
             setShowSaveModal(false);
-            setConfigName('');
             loadSavedConfigs();
         } catch (error) {
             console.error('Error saving config:', error);
-            message.error('Failed to save configuration');
+            messageApi.error('Failed to save configuration');
         }
     };
 
     const loadConfiguration = (config: SavedChartConfig) => {
+        setCurrentConfigId(config.id);
+        setConfigName(config.chart_name);
         setChartInstances(config.chart_instances);
         setPeriod(config.period);
         setShowLoadModal(false);
-        message.success(`Loaded: ${config.chart_name}`);
+        messageApi.success(`Loaded: ${config.chart_name}`);
     };
 
-    const deleteConfiguration = async (configId: string) => {
-        try {
-            const { error } = await supabase
-                .from('user_chart_configs')
-                .delete()
-                .eq('id', configId);
+    const deleteConfiguration = (configId: string, name: string) => {
+        modal.confirm({
+            title: 'Delete Configuration',
+            content: `Are you sure you want to delete "${name}"?`,
+            okText: 'Delete',
+            okType: 'danger',
+            cancelText: 'Cancel',
+            centered: true,
+            styles: {
+                mask: { backdropFilter: 'blur(4px)' }
+            },
+            onOk: async () => {
+                const hide = messageApi.loading('Deleting...', 0);
+                try {
+                    const { error } = await supabase
+                        .from('user_chart_configs')
+                        .delete()
+                        .eq('id', configId);
 
-            if (error) throw error;
+                    if (error) throw error;
 
-            message.success('Configuration deleted');
-            loadSavedConfigs();
-        } catch (error) {
-            console.error('Error deleting config:', error);
-            message.error('Failed to delete configuration');
-        }
+                    messageApi.success('Configuration deleted successfully');
+                    loadSavedConfigs();
+                } catch (error) {
+                    console.error('Error deleting config:', error);
+                    messageApi.error('Failed to delete configuration');
+                } finally {
+                    hide();
+                }
+            }
+        });
+    };
+
+    const createNewConfig = () => {
+        modal.confirm({
+            title: 'Create New Configuration',
+            content: 'This will reset your current chart setup. Any unsaved changes will be lost. Continue?',
+            okText: 'Yes, New Config',
+            cancelText: 'Cancel',
+            centered: true,
+            styles: {
+                mask: { backdropFilter: 'blur(4px)' }
+            },
+            onOk: () => {
+                setConfigName('');
+                setCurrentConfigId(null);
+                setChartInstances([
+                    {
+                        id: '1',
+                        name: 'Chart 1',
+                        selectedMetrics: [],
+                        metricAxes: {},
+                        metricTypes: {},
+                        metricColors: {},
+                        chartType: 'line'
+                    }
+                ]);
+                messageApi.success('Started new configuration');
+            }
+        });
     };
 
     const removeChart = (id: string) => {
-        if (chartInstances.length === 1) return; // Keep at least one
+        if (chartInstances.length === 1) return;
         setChartInstances(chartInstances.filter(c => c.id !== id));
     };
 
@@ -444,7 +539,20 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
     if (!symbol) return <Empty description="Select symbol" image={Empty.PRESENTED_IMAGE_SIMPLE} />;
 
     return (
-        <div className="space-y-4">
+        <div className="space-y-4 relative">
+            {loading && (
+                <div className="fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="flex flex-col items-center gap-4">
+                        <Spin
+                            size="large"
+                            indicator={<RefreshCw className="text-[#ff9800] animate-spin" size={48} />}
+                        />
+                        <span className="text-[#ff9800] font-mono text-lg animate-pulse tracking-widest">
+                            Waiting a minutes ......
+                        </span>
+                    </div>
+                </div>
+            )}
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2">
                     <Activity className="text-[#ff9800]" size={16} />
@@ -455,6 +563,16 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                         <Radio.Button value="year" className="!text-[#e0e0e0]">YEAR</Radio.Button>
                         <Radio.Button value="quarter" className="!text-[#e0e0e0]">QTR</Radio.Button>
                     </Radio.Group>
+                    <Tooltip title="Start New Configuration">
+                        <Button
+                            size="small"
+                            icon={<FilePlus size={14} />}
+                            onClick={createNewConfig}
+                            className="bg-transparent border-[#00e676] text-[#00e676] hover:bg-[#00e676]/10 rounded-none uppercase font-mono"
+                        >
+                            New
+                        </Button>
+                    </Tooltip>
                     <Tooltip title="Load Saved Configuration">
                         <Button
                             size="small"
@@ -481,12 +599,11 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                         onClick={addNewChart}
                         className="bg-[#ff9800] border-none text-black hover:bg-[#ff9800]/80 rounded-none uppercase font-mono font-bold"
                     >
-                        Add Chart
+                        ADD CHART
                     </Button>
                 </Space>
             </div>
 
-            {/* Grid of sortable charts */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {chartInstances.map((chart) => (
                     <ChartCard
@@ -501,7 +618,6 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                 ))}
             </div>
 
-            {/* Save Configuration Modal */}
             <Modal
                 title={
                     <div className="flex items-center gap-2">
@@ -546,7 +662,6 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                 </div>
             </Modal>
 
-            {/* Load Configuration Modal */}
             <Modal
                 title={
                     <div className="flex items-center gap-2">
@@ -587,6 +702,7 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                                             </span>
                                         </div>
                                         <div className="mt-1 text-[#888] text-xs space-x-3">
+                                            <span className="text-[#ff9800] bg-[#ff9800]/10 px-1 border border-[#ff9800]/20">{config.symbol}</span>
                                             <span>Period: {config.period === 'year' ? 'Yearly' : 'Quarterly'}</span>
                                             <span>Updated: {new Date(config.updated_at).toLocaleDateString()}</span>
                                         </div>
@@ -598,7 +714,7 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
                                         icon={<Trash2 size={12} />}
                                         onClick={(e) => {
                                             e.stopPropagation();
-                                            deleteConfiguration(config.id);
+                                            deleteConfiguration(config.id, config.chart_name);
                                         }}
                                         className="opacity-0 group-hover:opacity-100 transition-opacity"
                                     />
@@ -612,7 +728,6 @@ const FinancialChart: React.FC<Props> = ({ symbol }) => {
     );
 };
 
-// Individual Chart Card Component
 interface ChartCardProps {
     chart: ChartInstance;
     chartData: any[];
@@ -627,12 +742,16 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
     const [isEditingName, setIsEditingName] = useState(false);
     const [tempName, setTempName] = useState(chart.name);
 
-    // Droppable hook for metrics
     const { setNodeRef, isOver } = useDroppable({
         id: `financial-chart-${chart.id}`,
     });
 
-    const COLORS = ['#ff9800', '#1677ff', '#00e676', '#e91e63', '#9c27b0', '#00bcd4', '#ffc107'];
+    const COLORS = [
+        '#ff9800', '#1677ff', '#00e676', '#e91e63', '#9c27b0',
+        '#00bcd4', '#ffc107', '#795548', '#607d8b', '#f44336',
+        '#2196f3', '#4caf50', '#ffeb3b', '#673ab7', '#3f51b5',
+        '#e0e0e0', '#333333', '#1a237e', '#004d40', '#b71c1c'
+    ];
 
     useEffect(() => {
         const handleGlobalDrop = (e: any) => {
@@ -678,6 +797,17 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
         const series = chart.selectedMetrics.map((metric, index) => {
             const color = chart.metricColors[metric] || COLORS[index % COLORS.length];
             const axisIndex = chart.metricAxes[metric] || 0;
+
+            // Determine type: specific override > chart global type > default
+            // If chart is 'stack', force series to be 'bar' with stack property
+            let displayType = chart.metricTypes[metric] || chart.chartType;
+            let stackProp = undefined;
+
+            if (chart.chartType === 'stack') {
+                displayType = 'bar';
+                stackProp = 'total';
+            }
+
             const baseSeries: any = {
                 name: metric,
                 yAxisIndex: axisIndex,
@@ -691,39 +821,27 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                         );
                         if (fuzzyKey) val = item[fuzzyKey];
                     }
-                    if (val === null || val === undefined) return 0;
-                    if (typeof val === 'string') {
-                        const cleanVal = val.replace(/,/g, '').trim();
-                        return parseFloat(cleanVal) || 0;
-                    }
-                    return val;
+                    return parseFinancialValue(val);
                 }),
                 itemStyle: { color },
                 emphasis: { focus: 'series' }
             };
 
-            const mType = chart.metricTypes[metric] || chart.chartType;
-
-            if (mType === 'line') {
+            if (displayType === 'line') {
                 return {
                     ...baseSeries,
                     type: 'line',
-                    smooth: false,
+                    smooth: true,
                     symbol: 'circle',
                     symbolSize: isZoomed ? 6 : 4,
                     lineStyle: { width: isZoomed ? 3 : 2 },
                 };
-            } else if (mType === 'bar') {
-                return {
-                    ...baseSeries,
-                    type: 'bar',
-                    barMaxWidth: isZoomed ? 25 : 15,
-                };
             } else {
+                // Bar or Stack (which is a bar)
                 return {
                     ...baseSeries,
                     type: 'bar',
-                    stack: 'total',
+                    stack: stackProp,
                     barMaxWidth: isZoomed ? 25 : 15,
                 };
             }
@@ -731,28 +849,41 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
 
         return {
             backgroundColor: '#000000',
+            legend: isZoomed ? {
+                show: true,
+                textStyle: { color: '#888', fontSize: 10, fontFamily: 'Roboto Mono' },
+                top: '0%',
+                type: 'scroll',
+                pageIconColor: '#ff9800',
+                pageTextStyle: { color: '#fff' }
+            } : { show: false },
             tooltip: {
-                trigger: 'axis',
+                trigger: 'item',
                 backgroundColor: 'rgba(20, 20, 20, 0.95)',
                 borderColor: '#333',
                 textStyle: { color: '#e0e0e0', fontSize: isZoomed ? 12 : 10 },
                 formatter: (params: any) => {
-                    if (!params || !params.length) return '';
-                    let result = `<div style="font-weight:700;margin-bottom:6px;color:#ff9800;font-size:${isZoomed ? 13 : 11}px;">${params[0].axisValue}</div>`;
-                    params.forEach((item: any) => {
-                        const val = item.value;
-                        const name = item.seriesName;
-                        const isPercent = name.includes('%') || ['ROIC', 'ROE', 'ROA', 'Biên', 'Tăng trưởng'].some((k: string) => name.includes(k));
-                        const formattedVal = isPercent
-                            ? Number(val).toFixed(2) + '%'
-                            : Math.abs(val) >= 1e9
-                                ? (val / 1e9).toFixed(2) + ' B'
-                                : Number(val).toLocaleString();
-                        result += `<div style="display:flex;justify-content:space-between;gap:16px;font-size:${isZoomed ? 11 : 10}px;margin-bottom:2px;">
-                            <span>${item.marker} <span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${name}</span></span>
-                            <span style="font-weight:600;color:#fff;">${formattedVal}</span>
-                        </div>`;
-                    });
+                    if (!params) return '';
+                    // Khi dùng trigger: 'item', params là 1 object đơn lẻ thay vì array
+                    const item = Array.isArray(params) ? params[0] : params;
+                    const val = item.value;
+                    const name = item.seriesName;
+                    const axisValue = item.name || item.axisValue; // Lấy kỳ báo cáo
+
+                    let result = `<div style="font-weight:700;margin-bottom:6px;color:#ff9800;font-size:${isZoomed ? 13 : 11}px;">${axisValue}</div>`;
+
+                    const isPercent = name.includes('%') || ['ROIC', 'ROE', 'ROA', 'Biên', 'Tăng trưởng'].some((k: string) => name.includes(k));
+                    const formattedVal = isPercent
+                        ? Number(val).toFixed(2) + '%'
+                        : Math.abs(val) >= 1e9
+                            ? (val / 1e9).toFixed(2) + ' B'
+                            : Number(val).toLocaleString();
+
+                    result += `<div style="display:flex;justify-content:space-between;gap:16px;font-size:${isZoomed ? 11 : 10}px;margin-bottom:2px;">
+                        <span>${item.marker} <span style="max-width:200px;overflow:hidden;text-overflow:ellipsis;">${name}</span></span>
+                        <span style="font-weight:600;color:#fff;">${formattedVal}</span>
+                    </div>`;
+
                     return result;
                 }
             },
@@ -871,7 +1002,29 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                     </div>
                 }
                 extra={
-                    <Space size={4}>
+                    <Space size={8}>
+                        <div className="flex bg-[#000] border border-[#333] rounded p-0.5 gap-0.5 items-center">
+                            {[
+                                { id: 'line', icon: LineChart, label: 'Line' },
+                                { id: 'bar', icon: BarChart, label: 'Bar' },
+                                { id: 'stack', icon: Layers, label: 'Stack' }
+                            ].map((type) => (
+                                <Tooltip title={type.label} key={type.id}>
+                                    <button
+                                        onClick={() => onUpdate({ chartType: type.id as any })}
+                                        className={`
+                                            w-6 h-6 flex items-center justify-center rounded-sm transition-all
+                                            ${chart.chartType === type.id
+                                                ? 'bg-[#ff9800] text-black shadow-sm'
+                                                : 'text-[#666] hover:text-[#e0e0e0] hover:bg-[#222]'}
+                                        `}
+                                    >
+                                        <type.icon size={13} strokeWidth={2} />
+                                    </button>
+                                </Tooltip>
+                            ))}
+                        </div>
+                        <Divider type="vertical" className="bg-[#333] h-4" />
                         <Tooltip title="Reset">
                             <Button
                                 size="small"
@@ -897,10 +1050,12 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                     ref={setNodeRef}
                     style={{
                         height: '300px',
-                        border: isOver ? '2px dashed #ff9800' : '1px solid #1a1a1a',
-                        background: isOver ? 'rgba(255, 152, 0, 0.05)' : '#000000',
+                        border: isOver ? '2px solid #ff9800' : '1px solid #1a1a1a',
+                        background: isOver ? 'rgba(255, 152, 0, 0.15)' : '#000000',
+                        boxShadow: isOver ? '0 0 30px rgba(255, 152, 0, 0.3), inset 0 0 20px rgba(255,152,0,0.1)' : 'none',
+                        transform: isOver ? 'scale-[1.01]' : 'scale(1)',
+                        transition: 'all 0.3s ease',
                         borderRadius: '4px',
-                        transition: 'all 0.2s ease'
                     }}
                 >
                     {chart.selectedMetrics.length === 0 ? (
@@ -949,11 +1104,25 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                                                     label: <span className="text-[10px] font-bold text-[#888]">COLOR</span>,
                                                     type: 'group',
                                                 },
-                                                ...COLORS.map(c => ({
-                                                    key: `color-${c}`,
-                                                    label: <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full" style={{ background: c }} /></div>,
-                                                    onClick: () => updateMetricColor(m, c)
-                                                }))
+                                                {
+                                                    key: 'color-picker',
+                                                    label: (
+                                                        <div className="grid grid-cols-5 gap-1.5 p-1 max-h-[120px] overflow-y-auto customized-scrollbar" onMouseDown={e => e.stopPropagation()}>
+                                                            {COLORS.map(c => (
+                                                                <div
+                                                                    key={c}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        updateMetricColor(m, c);
+                                                                    }}
+                                                                    className="w-4 h-4 rounded-full cursor-pointer hover:scale-110 transition-transform border border-white/10 hover:border-white"
+                                                                    style={{ background: c }}
+                                                                    title={c}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )
+                                                }
                                             ],
                                             selectedKeys: [
                                                 `axis-${chart.metricAxes[m] || 0}`,
@@ -977,7 +1146,6 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                 )}
             </Card>
 
-            {/* Zoom Modal */}
             <Modal
                 title={
                     <div className="flex items-center gap-2">
@@ -1006,11 +1174,16 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                 </div>
                 <div className="mt-4 flex flex-wrap gap-2">
                     {chart.selectedMetrics.map((m, idx) => (
-                        <div key={m} className="px-3 py-1.5 bg-[#111] border border-[#333] text-[11px] text-[#aaa] flex items-center gap-2 rounded">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: chart.metricColors[m] || COLORS[idx % COLORS.length] }} />
-                            <span className="font-mono">{m}</span>
-                            {chart.metricAxes[m] === 1 && <span className="text-[#ff9800] text-[9px]">(Axis 2)</span>}
-                        </div>
+                        <Tooltip title="Click to remove" key={m}>
+                            <div
+                                onClick={() => removeMetric(m)}
+                                className="px-3 py-1.5 bg-[#111] border border-[#333] hover:border-red-500/50 hover:bg-red-500/5 cursor-pointer text-[11px] text-[#aaa] flex items-center gap-2 rounded group transition-all"
+                            >
+                                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: chart.metricColors[m] || COLORS[idx % COLORS.length] }} />
+                                <span className="font-mono group-hover:text-red-500">{m}</span>
+                                <X size={10} className="opacity-0 group-hover:opacity-100 text-red-500 transition-opacity" />
+                            </div>
+                        </Tooltip>
                     ))}
                 </div>
             </Modal>

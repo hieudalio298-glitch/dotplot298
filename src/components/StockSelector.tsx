@@ -10,7 +10,10 @@ interface Props {
 
 const POPULAR_STOCKS = [
     { symbol: 'HPG', name: 'Hoa Phat Group' },
-
+    { symbol: 'GAS', name: 'PV GAS' },
+    { symbol: 'FPT', name: 'FPT Corporation' },
+    { symbol: 'VCB', name: 'Vietcombank' },
+    { symbol: 'VIC', name: 'Vingroup' },
 ];
 
 // Nguồn 1: DNSE (Thường ổn định nhất)
@@ -25,14 +28,35 @@ const StockSelector: React.FC<Props> = ({ onSelect }) => {
     const fetchSymbols = async (query: string) => {
         setLoading(true);
         try {
-            const { data, error } = await supabase
+            let request = supabase
                 .from('stock_symbols')
-                .select('*')
-                .or(`symbol.ilike.%${query}%,company_name.ilike.%${query}%`)
-                .limit(query ? 20 : 10);
+                .select('*');
+
+            if (query) {
+                request = request.or(`symbol.ilike.%${query}%,company_name.ilike.%${query}%`)
+                    .order('symbol', { ascending: true })
+                    .limit(100); // Tăng giới hạn lên 100 để không bỏ lỡ mã
+            } else {
+                request = request.limit(20)
+                    .order('symbol', { ascending: true });
+            }
+
+            const { data, error } = await request;
 
             if (data) {
-                setOptions(data);
+                // Sắp xếp ưu tiên mã khớp chính xác lên đầu
+                if (query) {
+                    const sortedData = [...data].sort((a, b) => {
+                        const aFullMatch = a.symbol.toLowerCase() === query.toLowerCase();
+                        const bFullMatch = b.symbol.toLowerCase() === query.toLowerCase();
+                        if (aFullMatch && !bFullMatch) return -1;
+                        if (!aFullMatch && bFullMatch) return 1;
+                        return a.symbol.localeCompare(b.symbol);
+                    });
+                    setOptions(sortedData);
+                } else {
+                    setOptions(data);
+                }
             }
         } catch (error) {
             console.error('Error fetching symbols:', error);
