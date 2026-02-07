@@ -166,9 +166,10 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
 
-    const [chartMetric, setChartMetric] = useState<string>('ROE (%)');
+    const [availableKeys, setAvailableKeys] = useState<string[]>([]);
     const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
     const [searchSymbol, setSearchSymbol] = useState('');
+    const [metricSearch, setMetricSearch] = useState('');
 
     // Fetch all symbols
     useEffect(() => {
@@ -248,6 +249,19 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             }
 
             setFinancialData(results);
+
+            // Extract all available keys for metric selection
+            const allKeys = new Set<string>();
+            Object.values(results).forEach(symbolData => {
+                symbolData.forEach(d => {
+                    Object.keys(d).forEach(k => {
+                        if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year'].includes(k)) {
+                            allKeys.add(k);
+                        }
+                    });
+                });
+            });
+            setAvailableKeys(Array.from(allKeys).sort());
         } catch (e) {
             console.error(e);
         } finally {
@@ -349,54 +363,79 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         return stats;
     }, [comparisonData, selectedMetrics]);
 
-    // Chart options
+    // Unmapped metrics (Dynamic metrics from data not in predefined list)
+    const unmappedMetrics = useMemo(() => {
+        const mappedKeys = new Set(COMPARISON_METRICS.map(m => m.key));
+        return availableKeys.filter(k => !mappedKeys.has(k));
+    }, [availableKeys]);
+
+    // Filtered metrics based on search
+    const getFilteredMetrics = (metricsList: { key: string; label: string }[]) => {
+        if (!metricSearch) return metricsList;
+        return metricsList.filter(m =>
+            m.label.toLowerCase().includes(metricSearch.toLowerCase()) ||
+            m.key.toLowerCase().includes(metricSearch.toLowerCase())
+        );
+    };
+
+    // Chart options - Support multiple series
     const chartOptions = useMemo(() => {
-        const chartData = comparisonData.map(d => ({
-            name: d.symbol,
-            value: d[chartMetric] || 0
-        })).filter(d => d.value !== 0);
+        if (selectedSymbols.length === 0 || selectedMetrics.length === 0) return {};
+
+        const series = selectedMetrics.map((metric, mIdx) => {
+            return {
+                name: metric,
+                type: chartType,
+                data: selectedSymbols.map(symbol => {
+                    const row = comparisonData.find(d => d.symbol === symbol);
+                    return row ? row[metric] : 0;
+                }),
+                barMaxWidth: 40,
+                emphasis: { focus: 'series' },
+                smooth: true,
+                itemStyle: {
+                    borderRadius: chartType === 'bar' ? [4, 4, 0, 0] : 0
+                }
+            };
+        });
 
         return {
+            backgroundColor: 'transparent',
             tooltip: {
                 trigger: 'axis',
-                backgroundColor: '#1a1a1a',
+                backgroundColor: 'rgba(20, 20, 20, 0.9)',
                 borderColor: '#333',
-                textStyle: { color: '#e0e0e0' }
+                textStyle: { color: '#e0e0e0', fontSize: 12 },
+                axisPointer: { type: 'shadow' }
             },
             legend: {
-                show: false
+                data: selectedMetrics,
+                textStyle: { color: '#888', fontSize: 10 },
+                top: 0
             },
             grid: {
-                left: '3%',
+                left: '2%',
                 right: '4%',
-                bottom: '10%',
-                top: '10%',
+                bottom: '8%',
+                top: '15%',
                 containLabel: true
             },
             xAxis: {
                 type: 'category',
-                data: chartData.map(d => d.name),
-                axisLabel: { color: '#888', rotate: 45 },
-                axisLine: { lineStyle: { color: '#333' } }
+                data: selectedSymbols,
+                axisLabel: { color: '#888', rotate: 30, fontSize: 10 },
+                axisLine: { lineStyle: { color: '#222' } }
             },
             yAxis: {
                 type: 'value',
-                axisLabel: { color: '#888' },
-                splitLine: { lineStyle: { color: '#222' } },
-                axisLine: { lineStyle: { color: '#333' } }
+                axisLabel: { color: '#666', fontSize: 10 },
+                splitLine: { lineStyle: { color: '#1a1a1a' } },
+                axisLine: { show: false }
             },
-            series: [{
-                name: chartMetric,
-                type: chartType,
-                data: chartData.map((d, i) => ({
-                    value: d.value,
-                    itemStyle: { color: CHART_COLORS[i % CHART_COLORS.length] }
-                })),
-                barWidth: '60%',
-                smooth: true
-            }]
+            color: CHART_COLORS,
+            series
         };
-    }, [comparisonData, chartMetric, chartType]);
+    }, [comparisonData, selectedSymbols, selectedMetrics, chartType]);
 
     // Table columns
     const tableColumns = useMemo(() => {
@@ -526,47 +565,77 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 <div className="bg-[#0a0a0a] -m-3 p-3">
                                     <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#333]">
                                         <span className="text-xs font-bold text-[#ff9800]">CHỌN CHỈ TIÊU PHÂN TÍCH</span>
+                                        <Input
+                                            size="small"
+                                            placeholder="Tìm chỉ tiêu..."
+                                            prefix={<Search size={10} />}
+                                            className="w-32 bg-[#1a1a1a] border-[#333] text-[10px]"
+                                            value={metricSearch}
+                                            onChange={e => setMetricSearch(e.target.value)}
+                                        />
                                         <Space>
                                             <Button size="small" type="text" className="text-gray-500 text-[10px]" onClick={() => setSelectedMetrics([])}>
-                                                Bỏ chọn tất cả
+                                                Xóa
                                             </Button>
                                             <Button size="small" type="text" className="text-[#ff9800] text-[10px]" onClick={() => setSelectedMetrics(COMPARISON_METRICS.slice(0, 8).map(m => m.key))}>
-                                                Chỉ tiêu phổ biến
+                                                Mặc định
                                             </Button>
                                         </Space>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
-                                        {Object.entries(METRIC_CATEGORIES).map(([key, cat]) => (
-                                            <div key={key} className="bg-[#111] border border-[#222] rounded p-2">
-                                                <div
-                                                    className="text-[10px] font-bold mb-2 pb-1 border-b flex items-center justify-between"
-                                                    style={{ color: cat.color, borderColor: `${cat.color}33` }}
-                                                >
-                                                    <span>{cat.name}</span>
-                                                    <span className="text-gray-600 text-[9px]">
-                                                        {cat.metrics.filter(m => selectedMetrics.includes(m.key)).length}/{cat.metrics.length}
-                                                    </span>
+                                    <div className="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
+                                        {Object.entries(METRIC_CATEGORIES).map(([key, cat]) => {
+                                            const filtered = getFilteredMetrics(cat.metrics);
+                                            if (metricSearch && filtered.length === 0) return null;
+                                            return (
+                                                <div key={key} className="bg-[#111] border border-[#222] rounded p-2">
+                                                    <div
+                                                        className="text-[10px] font-bold mb-2 pb-1 border-b flex items-center justify-between"
+                                                        style={{ color: cat.color, borderColor: `${cat.color}33` }}
+                                                    >
+                                                        <span>{cat.name}</span>
+                                                    </div>
+                                                    <div className="space-y-1">
+                                                        {filtered.map(m => (
+                                                            <Checkbox
+                                                                key={m.key}
+                                                                checked={selectedMetrics.includes(m.key)}
+                                                                onChange={e => {
+                                                                    if (e.target.checked) setSelectedMetrics([...selectedMetrics, m.key]);
+                                                                    else setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
+                                                                }}
+                                                                className="block text-[11px] text-gray-400 hover:text-white"
+                                                            >
+                                                                {m.label}
+                                                            </Checkbox>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                                <div className="space-y-1 max-h-40 overflow-y-auto">
-                                                    {cat.metrics.map(m => (
+                                            );
+                                        })}
+
+                                        {/* UNMAPPED / DYNAMIC METRICS */}
+                                        {(unmappedMetrics.length > 0) && (
+                                            <div className="bg-[#111] border border-[#222] rounded p-2 col-span-2">
+                                                <div className="text-[10px] font-bold mb-2 pb-1 border-b border-gray-800 text-gray-500">
+                                                    🎯 CHỈ TIÊU TỪ DỮ LIỆU GỐC (DYNAMIC)
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+                                                    {getFilteredMetrics(unmappedMetrics.map(k => ({ key: k, label: k }))).map(m => (
                                                         <Checkbox
                                                             key={m.key}
                                                             checked={selectedMetrics.includes(m.key)}
                                                             onChange={e => {
-                                                                if (e.target.checked) {
-                                                                    setSelectedMetrics([...selectedMetrics, m.key]);
-                                                                } else {
-                                                                    setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
-                                                                }
+                                                                if (e.target.checked) setSelectedMetrics([...selectedMetrics, m.key]);
+                                                                else setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
                                                             }}
-                                                            className="block text-[11px] text-gray-300 hover:text-white transition-colors"
+                                                            className="block text-[11px] text-gray-500 hover:text-white"
                                                         >
                                                             {m.label}
                                                         </Checkbox>
                                                     ))}
                                                 </div>
                                             </div>
-                                        ))}
+                                        )}
                                     </div>
                                     <div className="mt-3 pt-2 border-t border-[#333] flex justify-between items-center">
                                         <span className="text-[10px] text-gray-500">
@@ -670,9 +739,6 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 <span className="text-[#e0e0e0] font-mono font-bold">BIỂU ĐỒ SO SÁNH</span>
                             </Space>
                             <Space>
-                                <Select value={chartMetric} onChange={setChartMetric} style={{ width: 180 }} size="small">
-                                    {selectedMetrics.map(m => <Select.Option key={m} value={m}>{m}</Select.Option>)}
-                                </Select>
                                 <Button.Group size="small">
                                     <Button
                                         icon={<BarChart3 size={12} />}
