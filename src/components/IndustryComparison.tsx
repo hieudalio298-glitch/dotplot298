@@ -23,27 +23,126 @@ interface FinancialData {
     [key: string]: any;
 }
 
-const COMPARISON_METRICS = [
-    // Profitability
-    { key: 'ROE (%)', label: 'ROE (%)', category: 'Profitability' },
-    { key: 'ROA (%)', label: 'ROA (%)', category: 'Profitability' },
-    { key: 'Biên lợi nhuận gộp (%)', label: 'Gross Margin (%)', category: 'Profitability' },
-    { key: 'Biên lợi nhuận ròng (%)', label: 'Net Margin (%)', category: 'Profitability' },
+// ==================== COMPREHENSIVE FINANCIAL METRICS ====================
+const METRIC_CATEGORIES = {
+    // Key Ratios
+    RATIOS: {
+        name: '📊 CHỈ SỐ TÀI CHÍNH',
+        color: '#ff9800',
+        metrics: [
+            { key: 'ROE (%)', label: 'ROE (%)' },
+            { key: 'ROA (%)', label: 'ROA (%)' },
+            { key: 'ROIC (%)', label: 'ROIC (%)' },
+            { key: 'P/E', label: 'P/E' },
+            { key: 'P/B', label: 'P/B' },
+            { key: 'P/S', label: 'P/S' },
+            { key: 'EV/EBITDA', label: 'EV/EBITDA' },
+            { key: 'EPS', label: 'EPS' },
+            { key: 'BVPS', label: 'BVPS' },
+            { key: 'Biên lợi nhuận gộp (%)', label: 'Gross Margin (%)' },
+            { key: 'Biên lợi nhuận ròng (%)', label: 'Net Margin (%)' },
+            { key: 'Biên EBITDA (%)', label: 'EBITDA Margin (%)' },
+        ]
+    },
+    // Income Statement
+    INCOME: {
+        name: '📈 BÁO CÁO THU NHẬP',
+        color: '#00e676',
+        metrics: [
+            { key: 'Doanh thu thuần', label: 'Doanh thu thuần' },
+            { key: 'Giá vốn hàng bán', label: 'Giá vốn hàng bán' },
+            { key: 'Lợi nhuận gộp', label: 'Lợi nhuận gộp' },
+            { key: 'Chi phí bán hàng', label: 'Chi phí bán hàng' },
+            { key: 'Chi phí quản lý doanh nghiệp', label: 'Chi phí QLDN' },
+            { key: 'Chi phí tài chính', label: 'Chi phí tài chính' },
+            { key: 'Lợi nhuận thuần từ hoạt động kinh doanh', label: 'LNTT từ HĐKD' },
+            { key: 'Lợi nhuận trước thuế', label: 'Lợi nhuận trước thuế' },
+            { key: 'Lợi nhuận sau thuế', label: 'Lợi nhuận sau thuế' },
+            { key: 'EBITDA', label: 'EBITDA' },
+        ]
+    },
+    // Balance Sheet - Assets
+    BALANCE_ASSETS: {
+        name: '💰 TÀI SẢN',
+        color: '#2196f3',
+        metrics: [
+            { key: 'Tổng tài sản', label: 'Tổng tài sản' },
+            { key: 'Tài sản ngắn hạn', label: 'Tài sản ngắn hạn' },
+            { key: 'Tiền và tương đương tiền', label: 'Tiền mặt' },
+            { key: 'Đầu tư tài chính ngắn hạn', label: 'ĐTTC ngắn hạn' },
+            { key: 'Các khoản phải thu ngắn hạn', label: 'Phải thu ngắn hạn' },
+            { key: 'Hàng tồn kho', label: 'Hàng tồn kho' },
+            { key: 'Tài sản dài hạn', label: 'Tài sản dài hạn' },
+            { key: 'Tài sản cố định', label: 'Tài sản cố định' },
+            { key: 'Bất động sản đầu tư', label: 'BĐS đầu tư' },
+            { key: 'Lợi thế thương mại', label: 'Goodwill' },
+        ]
+    },
+    // Balance Sheet - Liabilities & Equity
+    BALANCE_LIAB: {
+        name: '📋 NỢ & VỐN CSH',
+        color: '#e91e63',
+        metrics: [
+            { key: 'Tổng nợ phải trả', label: 'Tổng nợ phải trả' },
+            { key: 'Nợ ngắn hạn', label: 'Nợ ngắn hạn' },
+            { key: 'Nợ dài hạn', label: 'Nợ dài hạn' },
+            { key: 'Vay ngắn hạn', label: 'Vay ngắn hạn' },
+            { key: 'Vay dài hạn', label: 'Vay dài hạn' },
+            { key: 'Vốn chủ sở hữu', label: 'Vốn CSH' },
+            { key: 'Vốn điều lệ', label: 'Vốn điều lệ' },
+            { key: 'Lợi nhuận chưa phân phối', label: 'LNCPP' },
+            { key: 'Tỷ lệ nợ/vốn CSH', label: 'D/E Ratio' },
+        ]
+    },
+    // Cash Flow
+    CASHFLOW: {
+        name: '💵 LƯU CHUYỂN TIỀN',
+        color: '#9c27b0',
+        metrics: [
+            { key: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', label: 'CF từ HĐKD' },
+            { key: 'Lưu chuyển tiền thuần từ hoạt động đầu tư', label: 'CF từ HĐĐT' },
+            { key: 'Lưu chuyển tiền thuần từ hoạt động tài chính', label: 'CF từ HĐTC' },
+            { key: 'Lưu chuyển tiền thuần trong kỳ', label: 'CF thuần trong kỳ' },
+            { key: 'Tiền và tương đương tiền đầu kỳ', label: 'Tiền đầu kỳ' },
+            { key: 'Tiền và tương đương tiền cuối kỳ', label: 'Tiền cuối kỳ' },
+            { key: 'Khấu hao tài sản cố định', label: 'Khấu hao TSCĐ' },
+            { key: 'Chi đầu tư TSCĐ', label: 'CAPEX' },
+            { key: 'Free Cash Flow', label: 'Free Cash Flow' },
+        ]
+    },
+    // Efficiency & Liquidity
+    EFFICIENCY: {
+        name: '⚡ HIỆU QUẢ & THANH KHOẢN',
+        color: '#00bcd4',
+        metrics: [
+            { key: 'Thanh toán hiện hành (Current Ratio)', label: 'Current Ratio' },
+            { key: 'Thanh toán nhanh (Quick Ratio)', label: 'Quick Ratio' },
+            { key: 'Vòng quay hàng tồn kho (lần)', label: 'Vòng quay HTK' },
+            { key: 'Số ngày tồn kho (DSI)', label: 'Số ngày tồn kho' },
+            { key: 'Vòng quay khoản phải thu (lần)', label: 'Vòng quay phải thu' },
+            { key: 'Số ngày thu tiền (DSO)', label: 'Số ngày thu tiền' },
+            { key: 'Vòng quay tổng tài sản', label: 'Vòng quay tài sản' },
+            { key: 'Vòng quay vốn CSH', label: 'Vòng quay vốn CSH' },
+        ]
+    },
     // Growth
-    { key: 'Tăng trưởng doanh thu (%)', label: 'Revenue Growth (%)', category: 'Growth' },
-    { key: 'Tăng trưởng LNST (%)', label: 'Net Income Growth (%)', category: 'Growth' },
-    // Valuation
-    { key: 'P/E', label: 'P/E', category: 'Valuation' },
-    { key: 'P/B', label: 'P/B', category: 'Valuation' },
-    { key: 'EPS', label: 'EPS', category: 'Valuation' },
-    // Liquidity
-    { key: 'Thanh toán hiện hành (Current Ratio)', label: 'Current Ratio', category: 'Liquidity' },
-    { key: 'Thanh toán nhanh (Quick Ratio)', label: 'Quick Ratio', category: 'Liquidity' },
-    // Efficiency
-    { key: 'Vòng quay hàng tồn kho (lần)', label: 'Inventory Turnover', category: 'Efficiency' },
-    { key: 'Số ngày tồn kho (DSI)', label: 'DSI', category: 'Efficiency' },
-    { key: 'Vòng quay khoản phải thu (lần)', label: 'Receivables Turnover', category: 'Efficiency' },
-];
+    GROWTH: {
+        name: '📈 TĂNG TRƯỞNG',
+        color: '#8bc34a',
+        metrics: [
+            { key: 'Tăng trưởng doanh thu (%)', label: 'Tăng trưởng DT (%)' },
+            { key: 'Tăng trưởng LNST (%)', label: 'Tăng trưởng LNST (%)' },
+            { key: 'Tăng trưởng EPS (%)', label: 'Tăng trưởng EPS (%)' },
+            { key: 'Tăng trưởng tổng tài sản (%)', label: 'Tăng trưởng TS (%)' },
+            { key: 'Tăng trưởng vốn CSH (%)', label: 'Tăng trưởng vốn (%)' },
+        ]
+    }
+};
+
+// Flatten for backward compatibility
+const COMPARISON_METRICS = Object.values(METRIC_CATEGORIES).flatMap(cat =>
+    cat.metrics.map(m => ({ ...m, category: cat.name, color: cat.color }))
+);
 
 const CHART_COLORS = ['#ff9800', '#00e676', '#2196f3', '#e91e63', '#9c27b0', '#00bcd4', '#ff5722', '#8bc34a'];
 
@@ -417,38 +516,95 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         ))}
                     </div>
 
-                    {/* Metric Selector */}
+                    {/* Metric Selector - Professional Finance UI */}
                     <div className="mb-4">
                         <Popover
                             trigger="click"
                             placement="bottomLeft"
+                            overlayStyle={{ width: 480 }}
                             content={
-                                <div className="w-64 max-h-80 overflow-y-auto">
-                                    {['Profitability', 'Growth', 'Valuation', 'Liquidity', 'Efficiency'].map(cat => (
-                                        <div key={cat} className="mb-3">
-                                            <div className="text-[10px] font-bold text-gray-500 mb-1">{cat}</div>
-                                            {COMPARISON_METRICS.filter(m => m.category === cat).map(m => (
-                                                <Checkbox
-                                                    key={m.key}
-                                                    checked={selectedMetrics.includes(m.key)}
-                                                    onChange={e => {
-                                                        if (e.target.checked) {
-                                                            setSelectedMetrics([...selectedMetrics, m.key]);
-                                                        } else {
-                                                            setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
-                                                        }
-                                                    }}
-                                                    className="block text-gray-300 text-xs mb-1"
+                                <div className="bg-[#0a0a0a] -m-3 p-3">
+                                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#333]">
+                                        <span className="text-xs font-bold text-[#ff9800]">CHỌN CHỈ TIÊU PHÂN TÍCH</span>
+                                        <Space>
+                                            <Button size="small" type="text" className="text-gray-500 text-[10px]" onClick={() => setSelectedMetrics([])}>
+                                                Bỏ chọn tất cả
+                                            </Button>
+                                            <Button size="small" type="text" className="text-[#ff9800] text-[10px]" onClick={() => setSelectedMetrics(COMPARISON_METRICS.slice(0, 8).map(m => m.key))}>
+                                                Chỉ tiêu phổ biến
+                                            </Button>
+                                        </Space>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+                                        {Object.entries(METRIC_CATEGORIES).map(([key, cat]) => (
+                                            <div key={key} className="bg-[#111] border border-[#222] rounded p-2">
+                                                <div
+                                                    className="text-[10px] font-bold mb-2 pb-1 border-b flex items-center justify-between"
+                                                    style={{ color: cat.color, borderColor: `${cat.color}33` }}
                                                 >
-                                                    {m.label}
-                                                </Checkbox>
-                                            ))}
+                                                    <span>{cat.name}</span>
+                                                    <span className="text-gray-600 text-[9px]">
+                                                        {cat.metrics.filter(m => selectedMetrics.includes(m.key)).length}/{cat.metrics.length}
+                                                    </span>
+                                                </div>
+                                                <div className="space-y-1 max-h-40 overflow-y-auto">
+                                                    {cat.metrics.map(m => (
+                                                        <Checkbox
+                                                            key={m.key}
+                                                            checked={selectedMetrics.includes(m.key)}
+                                                            onChange={e => {
+                                                                if (e.target.checked) {
+                                                                    setSelectedMetrics([...selectedMetrics, m.key]);
+                                                                } else {
+                                                                    setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
+                                                                }
+                                                            }}
+                                                            className="block text-[11px] text-gray-300 hover:text-white transition-colors"
+                                                        >
+                                                            {m.label}
+                                                        </Checkbox>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-3 pt-2 border-t border-[#333] flex justify-between items-center">
+                                        <span className="text-[10px] text-gray-500">
+                                            Đã chọn: <span className="text-[#ff9800] font-bold">{selectedMetrics.length}</span> chỉ tiêu
+                                        </span>
+                                        <div className="flex gap-1 flex-wrap max-w-[300px]">
+                                            {selectedMetrics.slice(0, 5).map(key => {
+                                                const metric = COMPARISON_METRICS.find(m => m.key === key);
+                                                return (
+                                                    <Tag
+                                                        key={key}
+                                                        closable
+                                                        onClose={() => setSelectedMetrics(selectedMetrics.filter(k => k !== key))}
+                                                        style={{
+                                                            fontSize: 9,
+                                                            padding: '0 4px',
+                                                            backgroundColor: `${metric?.color || '#333'}22`,
+                                                            borderColor: metric?.color || '#333',
+                                                            color: metric?.color || '#888'
+                                                        }}
+                                                    >
+                                                        {metric?.label?.slice(0, 15) || key.slice(0, 15)}
+                                                    </Tag>
+                                                );
+                                            })}
+                                            {selectedMetrics.length > 5 && (
+                                                <Tag style={{ fontSize: 9, padding: '0 4px' }}>+{selectedMetrics.length - 5}</Tag>
+                                            )}
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
                             }
                         >
-                            <Button icon={<Settings size={12} />} size="small" className="bg-transparent border-gray-600 text-gray-400">
+                            <Button
+                                icon={<Settings size={12} />}
+                                size="small"
+                                className="bg-gradient-to-r from-[#ff9800]/20 to-[#ff5722]/20 border-[#ff9800] text-[#ff9800] hover:from-[#ff9800]/30 hover:to-[#ff5722]/30"
+                            >
                                 Chọn chỉ tiêu ({selectedMetrics.length})
                             </Button>
                         </Popover>
