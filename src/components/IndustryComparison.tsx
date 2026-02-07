@@ -78,6 +78,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [activeSource, setActiveSource] = useState<'all' | 'ratios' | 'income' | 'balance' | 'cashflow'>('all');
     const [tableFontSize, setTableFontSize] = useState(11);
     const [maximizedPanel, setMaximizedPanel] = useState<'none' | 'left' | 'right'>('none');
+    const [isFullScreen, setIsFullScreen] = useState(false);
 
     // Fetch all symbols
     useEffect(() => {
@@ -257,6 +258,17 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         return isNaN(n) ? undefined : n;
     };
 
+    const formatFinancialValue = (val: number, precision: number = 2) => {
+        if (val === undefined || val === null || isNaN(val)) return '-';
+        const absVal = Math.abs(val);
+
+        if (absVal >= 1e12) return (val / 1e12).toFixed(precision) + ' nghìn tỷ';
+        if (absVal >= 1e9) return (val / 1e9).toFixed(precision) + ' tỷ';
+        if (absVal >= 1e6) return (val / 1e6).toFixed(1) + ' tr';
+        if (absVal >= 1000) return val.toLocaleString(undefined, { maximumFractionDigits: precision });
+        return val.toFixed(precision);
+    };
+
     // Get comparison data for selected year/quarter
     const comparisonData = useMemo(() => {
         if (selectedSymbols.length === 0) return [];
@@ -425,13 +437,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 axisLabel: {
                     color: '#666',
                     fontSize: 10,
-                    formatter: (val: number) => {
-                        const absVal = Math.abs(val);
-                        if (absVal >= 1e12) return (val / 1e12).toFixed(1) + ' nghìn tỷ';
-                        if (absVal >= 1e9) return (val / 1e9).toFixed(1) + ' tỷ';
-                        if (absVal >= 1e6) return (val / 1e6).toFixed(1) + ' tr';
-                        return val.toLocaleString();
-                    }
+                    formatter: (val: number) => formatFinancialValue(val, 1)
                 },
                 splitLine: { lineStyle: { color: '#1a1a1a' } },
                 axisLine: { show: false }
@@ -480,13 +486,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 render: (val: number) => {
                     if (val === undefined || val === null || isNaN(val)) return <span className="text-gray-600 text-xs">-</span>;
 
-                    const absVal = Math.abs(val);
-                    let formatted = val.toFixed(2);
-
-                    if (absVal >= 1e12) formatted = (val / 1e12).toFixed(2) + ' nghìn tỷ';
-                    else if (absVal >= 1e9) formatted = (val / 1e9).toFixed(2) + ' tỷ';
-                    else if (absVal >= 1e6) formatted = (val / 1e6).toFixed(1) + ' tr';
-                    else if (absVal >= 1000) formatted = val.toLocaleString();
+                    const formatted = formatFinancialValue(val, 2);
 
                     return (
                         <span className={`font-mono ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-gray-400'}`} style={{ fontSize: tableFontSize }}>
@@ -526,9 +526,19 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [allSymbols, searchSymbol]);
 
     return (
-        <div className="flex gap-4 h-[calc(100vh-180px)] relative">
+        <div className={`flex gap-4 transition-all duration-300 relative ${isFullScreen ? 'fixed inset-0 z-[1000] bg-black p-4 h-screen' : 'h-[calc(100vh-180px)]'}`}>
+            {isFullScreen && (
+                <div className="absolute top-4 right-4 z-[1001]">
+                    <Button
+                        shape="circle"
+                        icon={<Minimize2 size={20} />}
+                        onClick={() => setIsFullScreen(false)}
+                        className="bg-[#111] border-gray-700 text-gray-400 hover:text-white"
+                    />
+                </div>
+            )}
             {/* LEFT PANEL - DATA */}
-            <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'left' ? 'absolute inset-0 z-50 w-full h-full bg-[#030712]' :
+            <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'left' ? 'absolute inset-0 z-50 w-full h-full bg-[#000]' :
                 maximizedPanel === 'right' ? 'hidden' : 'w-1/2'
                 }`}>
                 <Card
@@ -547,6 +557,13 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     icon={maximizedPanel === 'left' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
                                     onClick={() => setMaximizedPanel(maximizedPanel === 'left' ? 'none' : 'left')}
                                     className="bg-transparent border-gray-700 text-gray-500"
+                                />
+                                <Button
+                                    size="small"
+                                    icon={isFullScreen ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                                    onClick={() => setIsFullScreen(!isFullScreen)}
+                                    className="bg-transparent border-[#ff9800] text-[#ff9800]"
+                                    title="Full Screen View"
                                 />
                             </Space>
                         </div>
@@ -775,7 +792,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     rowKey="symbol"
                                     pagination={false}
                                     size="small"
-                                    scroll={{ x: 'max-content', y: maximizedPanel === 'left' ? 'calc(100vh - 350px)' : 350 }}
+                                    scroll={{ x: 'max-content', y: isFullScreen ? 'calc(100vh - 350px)' : maximizedPanel === 'left' ? 'calc(100vh - 350px)' : 350 }}
                                     className="comparison-table"
                                 />
 
