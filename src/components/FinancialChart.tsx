@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import ReactECharts from 'echarts-for-react';
 import { Card, Radio, Empty, Button, Space, Tooltip, Dropdown, Modal, Input, message, App, Spin, Divider } from 'antd';
 import { useDroppable } from '@dnd-kit/core';
-import { Activity, RefreshCw, BarChart, LineChart, Layers, X, Settings2, Plus, Trash2, Maximize2, Minimize2, Save, FolderOpen, Edit2, Check, FilePlus } from 'lucide-react';
+import { Activity, RefreshCw, BarChart, LineChart, Layers, X, Settings2, Plus, Trash2, Maximize2, Minimize2, Save, FolderOpen, Edit2, Check, FilePlus, Sparkles } from 'lucide-react';
 import { supabase } from '../supabaseClient';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
@@ -836,11 +836,11 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
             const axisIndex = chart.metricAxes[metric] || 0;
 
             // Determine type: specific override > chart global type > default
-            // If chart is 'stack', force series to be 'bar' with stack property
+            // If resolved type is 'stack', convert to 'bar' with stack property
             let displayType = chart.metricTypes[metric] || chart.chartType;
             let stackProp = undefined;
 
-            if (chart.chartType === 'stack') {
+            if (displayType === 'stack' || (displayType === undefined && chart.chartType === 'stack')) {
                 displayType = 'bar';
                 stackProp = 'total';
             }
@@ -872,6 +872,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                     symbol: 'circle',
                     symbolSize: isZoomed ? 6 : 4,
                     lineStyle: { width: isZoomed ? 3 : 2 },
+                    z: 10, // Ensure lines are on top
                 };
             } else {
                 // Bar or Stack (which is a bar)
@@ -880,6 +881,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                     type: 'bar',
                     stack: stackProp,
                     barMaxWidth: isZoomed ? 25 : 15,
+                    z: 2, // Ensure bars are below lines
                 };
             }
         });
@@ -1044,7 +1046,7 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                             {[
                                 { id: 'line', icon: LineChart, label: 'Line' },
                                 { id: 'bar', icon: BarChart, label: 'Bar' },
-                                { id: 'stack', icon: Layers, label: 'Stack' }
+                                { id: 'stack', icon: Layers, label: 'Stacked' }
                             ].map((type) => (
                                 <Tooltip title={type.label} key={type.id}>
                                     <button
@@ -1060,6 +1062,33 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                                     </button>
                                 </Tooltip>
                             ))}
+                            <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
+                            <Tooltip title="Smart Combo (Auto)">
+                                <button
+                                    onClick={() => {
+                                        // Auto-detect types based on metric name
+                                        const newTypes: any = {};
+                                        chart.selectedMetrics.forEach(m => {
+                                            const lower = m.toLowerCase();
+                                            // Line for percentages, margins, growth, ratios
+                                            if (lower.includes('%') || lower.includes('biên') || lower.includes('tăng trưởng') || lower.includes('eps') || lower.includes('p/e') || lower.includes('ro')) {
+                                                newTypes[m] = 'line';
+                                            } else {
+                                                // Bar for absolute values (Revenue, Assets, Equity, Debt...)
+                                                newTypes[m] = 'bar';
+                                            }
+                                        });
+                                        onUpdate({
+                                            chartType: 'line', // Base type
+                                            metricTypes: newTypes
+                                        });
+                                        message.success('Applied Smart Combo Layout');
+                                    }}
+                                    className="w-6 h-6 flex items-center justify-center rounded-sm transition-all text-[#e91e63] hover:bg-[#e91e63]/10"
+                                >
+                                    <Sparkles size={13} strokeWidth={2} />
+                                </button>
+                            </Tooltip>
                         </div>
                         <Divider type="vertical" className="bg-[#333] h-4" />
                         <Tooltip title="Reset">
