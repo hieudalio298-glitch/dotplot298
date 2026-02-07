@@ -9,11 +9,11 @@ import { supabase } from '../supabaseClient';
 export const VAS_BALANCE_STRUCTURE: any[] = [
     {
         code: '100', name: 'A. TÀI SẢN NGẮN HẠN', isBold: true,
-        keys: ['100. TÀI SẢN NGẮN HẠN', 'TÀI SẢN NGẮN HẠN', 'A- TÀI SẢN NGẮN HẠN'],
+        keys: ['CURRENT ASSETS', '100. TÀI SẢN NGẮN HẠN', 'TÀI SẢN NGẮN HẠN', 'A- TÀI SẢN NGẮN HẠN'],
         children: [
             {
                 code: '110', name: 'I. Tiền và các khoản tương đương tiền', isBold: true,
-                keys: ['110. Tiền và các khoản tương đương tiền', 'Tiền và các khoản tương đương tiền'],
+                keys: ['Cash and cash equivalents', '110. Tiền và các khoản tương đương tiền', 'Tiền và các khoản tương đương tiền', 'Tiền và tương đương tiền'],
                 children: [
                     { code: '111', name: '1. Tiền', keys: ['Tiền', '111. Tiền'] },
                     { code: '112', name: '2. Các khoản tương đương tiền', keys: ['Các khoản tương đương tiền', '112. Các khoản tương đương tiền'] }
@@ -21,7 +21,7 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: '120', name: 'II. Đầu tư tài chính ngắn hạn', isBold: true,
-                keys: ['120. Đầu tư tài chính ngắn hạn', 'Đầu tư tài chính ngắn hạn'],
+                keys: ['Short-term investments', '120. Đầu tư tài chính ngắn hạn', 'Đầu tư tài chính ngắn hạn'],
                 children: [
                     { code: '121', name: '1. Chứng khoán kinh doanh', keys: ['Chứng khoán kinh doanh', '121. Chứng khoán kinh doanh'] },
                     { code: '123', name: '3. Đầu tư nắm giữ đến ngày đáo hạn', keys: ['Đầu tư nắm giữ đến ngày đáo hạn', '123. Đầu tư nắm giữ đến ngày đáo hạn'] }
@@ -29,7 +29,7 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: '130', name: 'III. Các khoản phải thu ngắn hạn', isBold: true,
-                keys: ['130. Các khoản phải thu ngắn hạn', 'Các khoản phải thu ngắn hạn'],
+                keys: ['Accounts receivable', 'Short-term receivables', '130. Các khoản phải thu ngắn hạn', 'Các khoản phải thu ngắn hạn'],
                 children: [
                     { code: '131', name: '1. Phải thu ngắn hạn của khách hàng', keys: ['Phải thu ngắn hạn của khách hàng', '131. Phải thu ngắn hạn của khách hàng'] },
                     { code: '135', name: '5. Phải thu về cho vay ngắn hạn', keys: ['Phải thu về cho vay ngắn hạn', '135. Phải thu về cho vay ngắn hạn'] },
@@ -38,7 +38,7 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: '140', name: 'IV. Hàng tồn kho', isBold: true,
-                keys: ['140. Hàng tồn kho', 'Hàng tồn kho', 'Hàng tồn kho, ròng'],
+                keys: ['Inventories', '140. Hàng tồn kho', 'Hàng tồn kho', 'Hàng tồn kho, ròng'],
                 children: [
                     { code: '141', name: '1. Hàng tồn kho', keys: ['Hàng tồn kho', '141. Hàng tồn kho'] }
                 ]
@@ -47,36 +47,36 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
     },
     {
         code: '200', name: 'B. TÀI SẢN DÀI HẠN', isBold: true,
-        keys: ['200. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN', 'B- TÀI SẢN DÀI HẠN'],
+        keys: ['LONG-TERM ASSETS', '200. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN', 'B- TÀI SẢN DÀI HẠN'],
         children: [
             {
                 code: '220', name: 'II. Tài sản cố định', isBold: true,
-                keys: ['220. Tài sản cố định', 'Tài sản cố định'],
+                keys: ['Fixed assets', '220. Tài sản cố định', 'Tài sản cố định'],
                 children: [
                     { code: '221', name: '1. Tài sản cố định hữu hình', keys: ['Tài sản cố định hữu hình', '221. Tài sản cố định hữu hình'] },
                     { code: '227', name: '3. Tài sản cố định vô hình', keys: ['Tài sản cố định vô hình', '227. Tài sản cố định vô hình'] }
                 ]
             },
-            { code: '230', name: 'III. Bất động sản đầu tư', isBold: true, keys: ['230. Bất động sản đầu tư', 'Bất động sản đầu tư'] },
-            { code: '250', name: 'V. Đầu tư tài chính dài hạn', isBold: true, keys: ['250. Đầu tư tài chính dài hạn', 'Đầu tư tài chính dài hạn'] }
+            { code: '230', name: 'III. Bất động sản đầu tư', isBold: true, keys: ['Investment properties', '230. Bất động sản đầu tư', 'Bất động sản đầu tư'] },
+            { code: '250', name: 'V. Đầu tư tài chính dài hạn', isBold: true, keys: ['Long-term investments', '250. Đầu tư tài chính dài hạn', 'Đầu tư tài chính dài hạn'] }
         ]
     },
-    { code: '270', name: 'TỔNG CỘNG TÀI SẢN', isBold: true, keys: ['270. TỔNG CỘNG TÀI SẢN', 'TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'] },
+    { code: '270', name: 'TỔNG CỘNG TÀI SẢN', isBold: true, keys: ['Total Assets', '270. TỔNG CỘNG TÀI SẢN', 'TỔNG CỘNG TÀI SẢN', 'TỔNG TÀI SẢN'] },
     {
         code: '300', name: 'A. NỢ PHẢI TRẢ', isBold: true,
-        keys: ['300. NỢ PHẢI TRẢ', 'NỢ PHẢI TRẢ', 'C- NỢ PHẢI TRẢ'],
+        keys: ['Liabilities', '300. NỢ PHẢI TRẢ', 'NỢ PHẢI TRẢ', 'C- NỢ PHẢI TRẢ'],
         children: [
-            { code: '310', name: 'I. Nợ ngắn hạn', isBold: true, keys: ['310. Nợ ngắn hạn', 'Nợ ngắn hạn'] },
-            { code: '330', name: 'II. Nợ dài hạn', isBold: true, keys: ['330. Nợ dài hạn', 'Nợ dài hạn'] }
+            { code: '310', name: 'I. Nợ ngắn hạn', isBold: true, keys: ['Current liabilities', '310. Nợ ngắn hạn', 'Nợ ngắn hạn'] },
+            { code: '330', name: 'II. Nợ dài hạn', isBold: true, keys: ['Long-term liabilities', 'Non-current liabilities', '330. Nợ dài hạn', 'Nợ dài hạn'] }
         ]
     },
     {
         code: '400', name: 'B. VỐN CHỦ SỞ HỮU', isBold: true,
-        keys: ['400. VỐN CHỦ SỞ HỮU', 'VỐN CHỦ SỞ HỮU', 'D- VỐN CHỦ SỞ HỮU'],
+        keys: ['Owner\'s Equity', '400. VỐN CHỦ SỞ HỮU', 'VỐN CHỦ SỞ HỮU', 'D- VỐN CHỦ SỞ HỮU'],
         children: [
             {
                 code: '410', name: 'I. Vốn chủ sở hữu', isBold: true,
-                keys: ['410. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'Vốn và các quỹ'],
+                keys: ['Capital and reserves', '410. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'Vốn và các quỹ'],
                 children: [
                     { code: '411', name: '1. Vốn góp của chủ sở hữu', keys: ['Vốn đầu tư của chủ sở hữu', 'Vốn góp của chủ sở hữu', 'Vốn cổ phần'] },
                     { code: '421', name: '11. Lợi nhuận sau thuế chưa phân phối', keys: ['Lợi nhuận sau thuế chưa phân phối', 'Lợi nhuận chưa phân phối'] }
@@ -149,7 +149,7 @@ export const BANK_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: 'X', name: 'X. Tài sản cố định', isBold: true,
-                keys: ['X. Tài sản cố định', '10. Tài sản cố định', 'IX. Tài sản cố định'],
+                keys: ['Fixed assets', '10. Tài sản cố định', 'IX. Tài sản cố định'],
                 children: [
                     {
                         code: '1', name: '1. Tài sản cố định hữu hình', keys: ['1. Tài sản cố định hữu hình'],
@@ -164,7 +164,7 @@ export const BANK_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: 'XI', name: 'XI. Bất động sản đầu tư', isBold: true,
-                keys: ['XI. Bất động sản đầu tư', 'X. Bất động sản đầu tư'],
+                keys: ['Investment properties', 'X. Bất động sản đầu tư'],
                 children: [
                     { code: 'a', name: 'a. Nguyên giá BĐSĐT', keys: ['a. Nguyên giá BĐSĐT'] },
                     { code: 'b', name: 'b. Hao mòn BĐSĐT', keys: ['b. Hao mòn BĐSĐT'] }
@@ -172,7 +172,7 @@ export const BANK_BALANCE_STRUCTURE: any[] = [
             },
             {
                 code: 'XII', name: 'XII. Tài sản "Có" khác', isBold: true,
-                keys: ['XII. Tài sản "Có" khác', '12. Tài sản Có khác', 'XI. Tài sản "Có" khác'],
+                keys: ['Other assets', '12. Tài sản Có khác', 'XI. Tài sản "Có" khác'],
                 children: [
                     { code: '1', name: '1. Các khoản phải thu', keys: ['1. Các khoản phải thu'] },
                     { code: '2', name: '2. Các khoản lãi, phí phải thu', keys: ['2. Các khoản lãi, phí phải thu'] },

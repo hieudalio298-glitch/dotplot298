@@ -12,13 +12,13 @@ export const VAS_CASHFLOW_STRUCTURE: any[] = [
         code: '01', name: 'I. Lưu chuyển tiền từ hoạt động kinh doanh', isBold: true,
         keys: ['Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'I. Lưu chuyển tiền từ hoạt động kinh doanh'],
         children: [
-            { code: '01.1', name: '1. Lợi nhuận trước thuế', keys: ['Lợi nhuận trước thuế'] },
+            { code: '01.1', name: '1. Lợi nhuận trước thuế', keys: ['Net profit/(loss) before tax', '01. Lợi nhuận trước thuế', 'Lợi nhuận trước thuế'] },
             {
                 code: '02', name: '2. Điều chỉnh cho các khoản', keys: ['Điều chỉnh cho các khoản'],
                 children: [
                     { code: '03', name: '- Khấu hao TSCĐ và BĐSĐT', keys: ['Khấu hao tài sản cố định'] },
-                    { code: '05', name: '- Lãi/lỗ thuần từ hoạt động đầu tư', keys: ['Lãi, lỗ từ hoạt động đầu tư'] },
-                    { code: '06', name: '- Chi phí lãi vay', keys: ['Chi phí lãi vay'] }
+                    { code: '05', name: '- Lãi/lỗ thuần từ hoạt động đầu tư', keys: ['Profit/loss from investing activities', '05. Lãi/lỗ từ hoạt động đầu tư', 'Lãi, lỗ từ hoạt động đầu tư'] },
+                    { code: '06', name: '- Chi phí lãi vay', keys: ['Interest expense', '06. Chi phí lãi vay', 'Chi phí lãi vay'] }
                 ]
             },
             { code: '20', name: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', keys: ['Lưu chuyển tiền thuần từ hoạt động kinh doanh'], isBold: true }
@@ -37,24 +37,24 @@ export const VAS_CASHFLOW_STRUCTURE: any[] = [
         keys: ['Lưu chuyển tiền thuần từ hoạt động tài chính', 'III. Lưu chuyển tiền từ hoạt động tài chính'],
         children: [
             { code: '31', name: '1. Tiền thu từ phát hành cổ phiếu', keys: ['Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu'] },
-            { code: '33', name: '2. Tiền thu từ đi vay', keys: ['Tiền thu từ đi vay'] },
-            { code: '34', name: '3. Tiền trả nợ gốc vay', keys: ['Tiền trả nợ gốc vay'] }
+            { code: '33', name: '2. Tiền thu từ đi vay', keys: ['Proceeds from loans', '33. Tiền thu từ đi vay', 'Tiền thu từ đi vay'] },
+            { code: '34', name: '3. Tiền trả nợ gốc vay', keys: ['Repayment of loans', '34. Tiền trả nợ gốc vay', 'Tiền trả nợ gốc vay'] }
         ]
     },
     { code: '50', name: 'Lưu chuyển tiền thuần trong kỳ', keys: ['Lưu chuyển tiền thuần trong kỳ'], isBold: true },
-    { code: '60', name: 'Tiền và tương đương tiền đầu kỳ', keys: ['Tiền và tương đương tiền đầu kỳ'], isBold: true },
-    { code: '70', name: 'Tiền và tương đương tiền cuối kỳ', keys: ['Tiền và tương đương tiền cuối kỳ'], isBold: true },
+    { code: '60', name: 'Tiền và tương đương tiền đầu kỳ', keys: ['Cash and cash equivalents at the beginning of period', '60. Tiền và tương đương tiền đầu kỳ', 'Tiền và tương đương tiền đầu kỳ'], isBold: true },
+    { code: '70', name: 'Tiền và tương đương tiền cuối kỳ', keys: ['Cash and cash equivalents at the end of period', '70. Tiền và tương đương tiền cuối kỳ', 'Tiền và tương đương tiền cuối kỳ'], isBold: true },
 ];
 
 export const BANK_CASHFLOW_STRUCTURE: any[] = [
     {
         code: 'I', name: 'I - Lưu chuyển tiền thuần từ hoạt động kinh doanh', isBold: true,
-        keys: ['I - Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'Lưu chuyển tiền từ hoạt động kinh doanh'],
+        keys: ['Net cash inflows/(outflows) from operating activities', '20. Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'I - Lưu chuyển tiền thuần từ hoạt động kinh doanh'],
         children: [
             { code: '1', name: '1. Thu nhập lãi và các khoản tương tự nhận được', keys: ['1. Thu nhập lãi và các khoản thu nhập tương tự nhận được', '1. Thu nhập lãi và các khoản thu nhập tương tự đã thu'] },
             { code: '2', name: '2. Chi phí lãi và các chi phí tương tự đã trả', keys: ['2. Chi phí lãi và các chi phí tương tự đã trả'] },
             { code: '3', name: '3. Thu nhập từ hoạt động dịch vụ nhận được', keys: ['3. Thu nhập từ hoạt động dịch vụ nhận được', '3. Thu nhập từ hoạt động dịch vụ đã thu'] },
-            { code: '4', name: '4. Chênh lệch thực thu/chi từ HĐKD', keys: ['4- Chênh lệch số tiền thực thu/thực chi từ hoạt động kinh doanh (ngoại tệ, vàng bạc, chứng khoán)', '4. Chênh lệch tiền thực tế thu/ thực tế chi từ hoạt động kinh doanh'] },
+            { code: '4', name: '4. Chênh lệch thực thu/chi từ HĐKD', keys: ['Unrealized foreign exchange gain/(loss)', '04. Lãi/lỗ chênh lệch tỷ giá hối đoái do đánh giá lại các khoản mục tiền tệ có gốc ngoại tệ', 'Lãi/lỗ chênh lệch tỷ giá hối đoái', '4- Chênh lệch số tiền thực thu/thực chi từ hoạt động kinh doanh (ngoại tệ, vàng bạc, chứng khoán)', '4. Chênh lệch tiền thực tế thu/ thực tế chi từ hoạt động kinh doanh'] },
             { code: '5', name: '5. Thu nhập khác', keys: ['5. Thu nhập khác'] },
             { code: '6', name: '6. Tiền thu nợ đã xử lý xóa', keys: ['6. Tiền thu các khoản nợ đã được xử lý xóa, bù đắp bằng nguồn rủi ro'] },
             { code: '7', name: '7. Tiền chi trả cho nhân viên và hoạt động quản lý', keys: ['7. Tiền chi trả cho nhân viên và hoạt động quản lý, công vụ'] },
@@ -91,27 +91,27 @@ export const BANK_CASHFLOW_STRUCTURE: any[] = [
     },
     {
         code: 'II', name: 'II- Lưu chuyển tiền thuần từ hoạt động đầu tư', isBold: true,
-        keys: ['II- Lưu chuyển tiền thuần từ hoạt động đầu tư', 'Lưu chuyển tiền từ hoạt động đầu tư'],
+        keys: ['Net cash inflows/(outflows) from investing activities', '30. Lưu chuyển tiền thuần từ hoạt động đầu tư', 'Lưu chuyển tiền thuần từ hoạt động đầu tư', 'II- Lưu chuyển tiền thuần từ hoạt động đầu tư'],
         children: [
             { code: '1', name: '1. Mua sắm tài sản cố định', keys: ['1. Mua sắm tài sản cố định'] },
             { code: '2', name: '2. Tiền thu từ thanh lý TSCĐ', keys: ['2. Tiền thu từ thanh lý, nhượng bán TSCĐ'] },
             { code: '4', name: '4. Mua sắm bất động sản đầu tư', keys: ['4. Mua sắm bất động sản đầu tư'] },
-            { code: '7', name: '7. Chi đầu tư, góp vốn đơn vị khác', keys: ['7. Tiền chi đầu tư, góp vốn vào các đơn vị khác (mua công ty con, góp vốn liên doanh, liên kết, đầu tư dài hạn khác)'] },
+            { code: '7', name: '7. Chi đầu tư, góp vốn đơn vị khác', keys: ['Investments in other entities', '25. Tiền chi đầu tư góp vốn vào đơn vị khác', 'Tiền chi đầu tư góp vốn vào đơn vị khác', '7. Tiền chi đầu tư, góp vốn vào các đơn vị khác (mua công ty con, góp vốn liên doanh, liên kết, đầu tư dài hạn khác)'] },
             { code: '9', name: '9. Tiền thu cổ tức and lợi nhuận được chia', keys: ['9. Tiền thu cổ tức and lợi nhuận được chia từ các khoản đầu tư, góp vốn dài hạn'] }
         ]
     },
     {
         code: 'III', name: 'III- Lưu chuyển tiền thuần từ hoạt động tài chính', isBold: true,
-        keys: ['III- Lưu chuyển tiền thuần từ hoạt động tài chính', 'Lưu chuyển tiền từ hoạt động tài chính'],
+        keys: ['Net cash inflows/(outflows) from financing activities', '40. Lưu chuyển tiền thuần từ hoạt động tài chính', 'Lưu chuyển tiền thuần từ hoạt động tài chính', 'III- Lưu chuyển tiền thuần từ hoạt động tài chính'],
         children: [
             { code: '1', name: '1. Tăng vốn cổ phần', keys: ['1. Tăng v ốn cổ phần từ góp vốn và/hoặc phát hành cổ phiếu'] },
             { code: '2', name: '2. Tiền thu phát hành GTCG dài hạn', keys: ['2. Tiền thu từ phát hành giấy tờ có giá dài hạn có đủ điều kiện tính vào vốn tự có and các khoản vốn vay dài hạn khác'] },
             { code: '4', name: '4. Cổ tức trả cho cổ đông', keys: ['4. Cổ tức trả cho cổ đông, lợi nhuận đã chia'] }
         ]
     },
-    { code: 'IV', name: 'IV- Lưu chuyển tiền thuần trong kỳ', keys: ['IV- Lưu chuyển tiền thuần trong kỳ', 'Lưu chuyển tiền thuần trong kỳ'], isBold: true },
+    { code: 'IV', name: 'IV- Lưu chuyển tiền thuần trong kỳ', keys: ['Net increase in cash and cash equivalents', '50. Lưu chuyển tiền thuần trong kỳ', 'Lưu chuyển tiền thuần trong kỳ', 'IV- Lưu chuyển tiền thuần trong kỳ'], isBold: true },
     { code: 'V', name: 'V- Tiền and các khoản tương đương tiền đầu kỳ', keys: ['V- Tiền and các khoản tương đương tiền tại thời điểm đầu kỳ', 'Tiền and tương đương tiền đầu kỳ'], isBold: true },
-    { code: 'VI', name: 'VI- Điều chỉnh ảnh hưởng của thay đổi tỷ giá', keys: ['VI- Điều chỉnh ảnh hưởng của thay đổi tỷ giá'] },
+    { code: 'VI', name: 'VI- Điều chỉnh ảnh hưởng của thay đổi tỷ giá', keys: ['Effect of foreign exchange differences', '61. Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ', 'Ảnh hưởng của thay đổi tỷ giá hối đoái', 'VI- Điều chỉnh ảnh hưởng của thay đổi tỷ giá'] },
     { code: 'VII', name: 'VII. Tiền and các khoản tương đương tiền cuối kỳ', keys: ['VII. Tiền and các khoản tương đương tiền tại thời điểm cuối kỳ', 'Tiền and tương đương tiền cuối kỳ'], isBold: true }
 ];
 
@@ -122,7 +122,7 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
             { code: '2', name: '2. Điều chỉnh cho các khoản', keys: ['2. Điều chỉnh cho các khoản'] }
         ]
     },
-    { code: 'KH', name: '- Khấu hao tài sản cố định', keys: ['- Khấu hao tài sản cố định'] },
+    { code: 'KH', name: '- Khấu hao tài sản cố định', keys: ['Depreciation and amortization', '02. Khấu hao tài sản cố định và BĐSĐT', 'Khấu hao tài sản cố định và BĐSĐT', '- Khấu hao tài sản cố định'] },
     { code: 'DP', name: '- Các khoản lập dự phòng', keys: ['- Các khoản lập dự phòng'] },
     { code: 'DT_LL', name: '- Lãi, lỗ từ hoạt động đầu tư (đầu tư công ty con, liên doanh, liên kết)', keys: ['- Lãi, lỗ từ hoạt động đầu tư (đầu tư công ty con, liên doanh, liên kết)'] },
     { code: 'CP_LV', name: '- Chi phí lãi vay', keys: ['- Chi phí lãi vay'] },
@@ -151,9 +151,9 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
     { code: 'TG_CHO_VAY', name: '- Tăng, giảm các khoản cho vay khách hàng', keys: ['- Tăng, giảm các khoản cho vay khách hàng'] },
     { code: 'TG_AFS', name: '- Tăng (giảm) tài sản tài chính sẵn sàng để bán', keys: ['- Tăng (giảm) tài sản tài chính sẵn sàng để bán'] },
     {
-        code: 'TG_PT', name: '- Tăng (giảm) các khoản phải thu', keys: ['- Tăng (giảm) các khoản phải thu'],
+        code: 'TG_PT', name: '- Tăng (giảm) các khoản phải thu', keys: ['(Increase)/decrease in receivables', '09. Tăng/giảm các khoản phải thu', 'Tăng/giảm các khoản phải thu', '- Tăng (giảm) các khoản phải thu'],
         children: [
-            { code: '6', name: '6. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', keys: ['6. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động'] }
+            { code: '6', name: '6. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', keys: ['Operating profit/(loss) before changes in Working Capital', '08. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', 'Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', 'Lưu chuyển tiền thuần từ HĐKD trước thay đổi VĐL', '6. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động'] }
         ]
     },
     { code: 'PT_BAN_TSTC', name: '(-) Tăng, (+) giảm phải thu bán các tài sản tài chính', keys: ['(-) Tăng, (+) giảm phải thu bán các tài sản tài chính'] },
@@ -163,10 +163,10 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
         code: 'PT_KHAC', name: '(-) Tăng, (+) giảm các khoản phải thu khác', keys: ['(-) Tăng, (+) giảm các khoản phải thu khác'],
         children: [
             { code: 'TG_TS_KHAC', name: '- Tăng (giảm) các tài sản khác', keys: ['- Tăng (giảm) các tài sản khác'] },
-            { code: 'TG_PHAI_TRA', name: '- Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)', keys: ['- Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)'] },
-            { code: 'TG_CPTT', name: '- Tăng, giảm chi phí trả trước', keys: ['- Tăng, giảm chi phí trả trước'] },
-            { code: 'THUE_TNDN', name: '- Thuế thu nhập doanh nghiệp đã nộp', keys: ['- Thuế thu nhập doanh nghiệp đã nộp'] },
-            { code: 'LAI_VAY_TRA', name: '- Tiền lãi vay đã trả', keys: ['- Tiền lãi vay đã trả'] }
+            { code: 'TG_PHAI_TRA', name: '- Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)', keys: ['Increase/(decrease) in payables', '11. Tăng/giảm các khoản phải trả', 'Tăng/giảm các khoản phải trả (Không kể lãi vay phải trả, thuế TNDN phải nộp)', '- Tăng, giảm các khoản phải trả (Không kể lãi vay phải trả, thuế thu nhập doanh nghiệp phải nộp)'] },
+            { code: 'TG_CPTT', name: '- Tăng, giảm chi phí trả trước', keys: ['(Increase)/decrease in prepaid expenses', '12. Tăng/giảm chi phí trả trước', 'Tăng/giảm chi phí trả trước', '- Tăng, giảm chi phí trả trước'] },
+            { code: 'THUE_TNDN', name: '- Thuế thu nhập doanh nghiệp đã nộp', keys: ['Corporate Income Tax paid', '15. Thuế thu nhập doanh nghiệp đã nộp', 'Thuế thu nhập doanh nghiệp đã nộp', '- Thuế thu nhập doanh nghiệp đã nộp'] },
+            { code: 'LAI_VAY_TRA', name: '- Tiền lãi vay đã trả', keys: ['Interest paid', '14. Tiền lãi vay đã trả', 'Tiền lãi vay đã trả', '- Tiền lãi vay đã trả'] }
         ]
     },
     { code: 'TRA_NB', name: '(+) Tăng, (-) giảm phải trả cho người bán', keys: ['(+) Tăng, (-) giảm phải trả cho người bán'] },
@@ -176,24 +176,24 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
     {
         code: 'PT_KHAC_2', name: '(+) Tăng, (-) giảm phải trả, phải nộp khác', keys: ['(+) Tăng, (-) giảm phải trả, phải nộp khác'],
         children: [
-            { code: 'TG_HTK', name: '- Tăng, giảm hàng tồn kho (Tăng/giảm chứng khoán tự doanh)', keys: ['- Tăng, giảm hàng tồn kho (Tăng/giảm chứng khoán tự doanh)'] },
-            { code: 'TIEN_THU_KHAC', name: '- Tiền thu khác từ hoạt động kinh doanh', keys: ['- Tiền thu khác từ hoạt động kinh doanh'] },
-            { code: 'TIEN_CHI_KHAC', name: '- Tiền chi khác cho hoạt động kinh doanh', keys: ['- Tiền chi khác cho hoạt động kinh doanh'] }
+            { code: 'TG_HTK', name: '- Tăng, giảm hàng tồn kho (Tăng/giảm chứng khoán tự doanh)', keys: ['(Increase)/decrease in inventories', '10. Tăng/giảm hàng tồn kho', 'Tăng/giảm hàng tồn kho', '- Tăng, giảm hàng tồn kho (Tăng/giảm chứng khoán tự doanh)'] },
+            { code: 'TIEN_THU_KHAC', name: '- Tiền thu khác từ hoạt động kinh doanh', keys: ['Other receipts from operating activities', '16. Tiền thu khác từ hoạt động kinh doanh', 'Tiền thu khác từ hoạt động kinh doanh', '- Tiền thu khác từ hoạt động kinh doanh'] },
+            { code: 'TIEN_CHI_KHAC', name: '- Tiền chi khác cho hoạt động kinh doanh', keys: ['Other payments on operating activities', '17. Tiền chi khác cho hoạt động kinh doanh', 'Tiền chi khác cho hoạt động kinh doanh', '- Tiền chi khác cho hoạt động kinh doanh'] }
         ]
     },
     {
         code: 'LCTT_KD', name: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh chứng khoán', isBold: true,
-        keys: ['Lưu chuyển tiền thuần từ hoạt động kinh doanh chứng khoán'],
+        keys: ['Other adjustments', '07. Các khoản điều chỉnh khác', 'Các khoản điều chỉnh khác', 'Lưu chuyển tiền thuần từ hoạt động kinh doanh chứng khoán'],
         children: [
-            { code: '1_DT', name: '1. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác', keys: ['1. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác'] },
-            { code: '2_DT', name: '2. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác', keys: ['2. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác'] },
-            { code: '3_DT', name: '3. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác', keys: ['3. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác'] },
-            { code: '4_DT', name: '4. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác', keys: ['4. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác'] },
+            { code: '1_DT', name: '1. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác', keys: ['Purchases of fixed assets and other long term assets', '21. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác', 'Tiền chi để mua sắm, xây dựng TSCĐ', '1. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác'] },
+            { code: '2_DT', name: '2. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác', keys: ['Proceeds from disposal of fixed assets', '22. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác', 'Tiền thu từ thanh lý, nhượng bán TSCĐ', '2. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác'] },
+            { code: '3_DT', name: '3. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác', keys: ['Loans granted, purchases of debt instruments', '23. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác', 'Tiền chi cho vay, mua các công cụ nợ', '3. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác'] },
+            { code: '4_DT', name: '4. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác', keys: ['Collection of loans, proceeds from sales of debts instruments', '24. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác', 'Tiền thu hồi cho vay, bán lại các công cụ nợ', '4. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác'] },
             { code: '5_DT', name: '5. Tiền chi đầu tư vốn vào công ty con, công ty liên doanh, liên kết và đầu tư khác', keys: ['5. Tiền chi đầu tư vốn vào công ty con, công ty liên doanh, liên kết và đầu tư khác'] },
             {
                 code: '6_DT', name: '6. Tiền thu thanh lý các khoản đầu tư vào công ty con, công ty liên doanh, liên kết và đầu tư khác', keys: ['6. Tiền thu thanh lý các khoản đầu tư vào công ty con, công ty liên doanh, liên kết và đầu tư khác'],
                 children: [
-                    { code: '7_DT', name: '7. Tiền thu về cổ tức và lợi nhuận được chia', keys: ['7. Tiền thu về cổ tức và lợi nhuận được chia'] }
+                    { code: '7_DT', name: '7. Tiền thu về cổ tức và lợi nhuận được chia', keys: ['Dividends and interest received', '27. Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia', 'Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia', '7. Tiền thu về cổ tức và lợi nhuận được chia'] }
                 ]
             }
         ]
@@ -202,8 +202,8 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
         code: 'LCTT_DT', name: 'Lưu chuyển tiền thuần từ hoạt động đầu tư', isBold: true,
         keys: ['Lưu chuyển tiền thuần từ hoạt động đầu tư'],
         children: [
-            { code: '1_TC', name: '1. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu', keys: ['1. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu'] },
-            { code: '2_TC', name: '2. Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu quỹ', keys: ['2. Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu quỹ'] },
+            { code: '1_TC', name: '1. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu', keys: ['Proceeds from share issues', '31. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu', 'Tiền thu từ phát hành cổ phiếu', '1. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu'] },
+            { code: '2_TC', name: '2. Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu quỹ', keys: ['Payments for share returns and repurchases', '32. Tiền trả lại vốn góp cho các chủ sở hữu...', 'Tiền trả lại vốn góp cho các chủ sở hữu', '2. Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu quỹ'] },
             {
                 code: '3_TC', name: '3. Tiền vay gốc', keys: ['3. Tiền vay gốc'],
                 children: [
@@ -216,7 +216,7 @@ export const SECURITIES_CASHFLOW_STRUCTURE: any[] = [
                     { code: '4.3_TC', name: '4.3. Tiền chi trả gốc nợ vay khác', keys: ['4.3. Tiền chi trả gốc nợ vay khác'] }
                 ]
             },
-            { code: '6_TC', name: '6. Cổ tức, lợi nhuận đã trả cho chủ sở hữu', keys: ['6. Cổ tức, lợi nhuận đã trả cho chủ sở hữu'] }
+            { code: '6_TC', name: '6. Cổ tức, lợi nhuận đã trả cho chủ sở hữu', keys: ['Dividends paid', '36. Cổ tức, lợi nhuận đã trả cho chủ sở hữu', 'Cổ tức, lợi nhuận đã trả cho chủ sở hữu', '6. Cổ tức, lợi nhuận đã trả cho chủ sở hữu'] }
         ]
     },
     {
