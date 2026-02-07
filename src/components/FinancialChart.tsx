@@ -624,20 +624,7 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
                     >
                         ADD CHART
                     </Button>
-                    <Tooltip title="Force Update Data">
-                        <Button
-                            size="small"
-                            icon={<RefreshCw size={14} />}
-                            onClick={() => {
-                                // Clear cache to force refetch
-                                dataCache.current = {};
-                                fetchChartData();
-                            }}
-                            className="bg-transparent border-[#e91e63] text-[#e91e63] hover:bg-[#e91e63]/10 rounded-none uppercase font-mono"
-                        >
-                            UPDATE
-                        </Button>
-                    </Tooltip>
+
                 </Space>
             </div>
 
@@ -1063,28 +1050,35 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                                 </Tooltip>
                             ))}
                             <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
-                            <Tooltip title="Smart Combo (Auto)">
+                            <Tooltip title={Object.keys(chart.metricTypes).length > 0 ? "Reset Smart Combo" : "Apply Smart Combo"}>
                                 <button
                                     onClick={() => {
-                                        // Auto-detect types based on metric name
-                                        const newTypes: any = {};
-                                        chart.selectedMetrics.forEach(m => {
-                                            const lower = m.toLowerCase();
-                                            // Line for percentages, margins, growth, ratios
-                                            if (lower.includes('%') || lower.includes('biên') || lower.includes('tăng trưởng') || lower.includes('eps') || lower.includes('p/e') || lower.includes('ro')) {
-                                                newTypes[m] = 'line';
-                                            } else {
-                                                // Bar for absolute values (Revenue, Assets, Equity, Debt...)
-                                                newTypes[m] = 'bar';
-                                            }
-                                        });
-                                        onUpdate({
-                                            chartType: 'line', // Base type
-                                            metricTypes: newTypes
-                                        });
-                                        message.success('Applied Smart Combo Layout');
+                                        if (Object.keys(chart.metricTypes).length > 0) {
+                                            // Toggle OFF: Reset to default (follow global type)
+                                            onUpdate({ metricTypes: {} });
+                                            message.info('Smart Combo Disabled');
+                                        } else {
+                                            // Toggle ON: Apply smart logic
+                                            const newTypes: any = {};
+                                            chart.selectedMetrics.forEach(m => {
+                                                const lower = m.toLowerCase();
+                                                if (lower.includes('%') || lower.includes('biên') || lower.includes('tăng trưởng') || lower.includes('eps') || lower.includes('p/e') || lower.includes('ro')) {
+                                                    newTypes[m] = 'line';
+                                                } else {
+                                                    newTypes[m] = 'bar';
+                                                }
+                                            });
+                                            onUpdate({
+                                                chartType: 'line',
+                                                metricTypes: newTypes
+                                            });
+                                            message.success('Smart Combo Enabled');
+                                        }
                                     }}
-                                    className="w-6 h-6 flex items-center justify-center rounded-sm transition-all text-[#e91e63] hover:bg-[#e91e63]/10"
+                                    className={`
+                                        w-6 h-6 flex items-center justify-center rounded-sm transition-all 
+                                        ${Object.keys(chart.metricTypes).length > 0 ? 'bg-[#e91e63] text-white shadow-sm' : 'text-[#e91e63] hover:bg-[#e91e63]/10'}
+                                    `}
                                 >
                                     <Sparkles size={13} strokeWidth={2} />
                                 </button>
