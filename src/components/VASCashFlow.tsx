@@ -9,41 +9,76 @@ import { supabase } from '../supabaseClient';
 // --- CHUẨN VAS (Thông tư 200/2014/TT-BTC) - LƯU CHUYỂN TIỀN TỆ (PHÂN CẤP) ---
 export const VAS_CASHFLOW_STRUCTURE: any[] = [
     {
-        code: '01', name: 'I. Lưu chuyển tiền từ hoạt động kinh doanh', isBold: true,
-        keys: ['Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'I. Lưu chuyển tiền từ hoạt động kinh doanh'],
+        code: 'I_GRP', name: 'I. Lưu chuyển tiền từ hoạt động kinh doanh', isBold: true,
+        keys: ['Net cash flows from operating activities', 'I. Lưu chuyển tiền từ hoạt động kinh doanh'],
         children: [
-            { code: '01.1', name: '1. Lợi nhuận trước thuế', keys: ['Net profit/(loss) before tax', '01. Lợi nhuận trước thuế', 'Lợi nhuận trước thuế'] },
+            { code: '01', name: '1. Lợi nhuận trước thuế', keys: ['Net profit/(loss) before tax', '01. Lợi nhuận trước thuế', 'Lợi nhuận trước thuế'] },
             {
-                code: '02', name: '2. Điều chỉnh cho các khoản', keys: ['Điều chỉnh cho các khoản'],
+                code: '02_GRP', name: '2. Điều chỉnh cho các khoản', keys: ['Adjustments', '02. Điều chỉnh cho các khoản'],
                 children: [
-                    { code: '03', name: '- Khấu hao TSCĐ và BĐSĐT', keys: ['Khấu hao tài sản cố định'] },
-                    { code: '05', name: '- Lãi/lỗ thuần từ hoạt động đầu tư', keys: ['Profit/loss from investing activities', '05. Lãi/lỗ từ hoạt động đầu tư', 'Lãi, lỗ từ hoạt động đầu tư'] },
-                    { code: '06', name: '- Chi phí lãi vay', keys: ['Interest expense', '06. Chi phí lãi vay', 'Chi phí lãi vay'] }
+                    { code: '02', name: 'Khấu hao TSCĐ và BĐSĐT', keys: ['Depreciation and amortization', '02. Khấu hao TSCĐ và BĐSĐT', 'Khấu hao TSCĐ'] },
+                    { code: '03', name: 'Các khoản dự phòng', keys: ['Provisions', '03. Các khoản dự phòng', 'Dự phòng'] },
+                    { code: '04', name: 'Lãi, lỗ chênh lệch tỷ giá hối đoái do đánh giá lại các khoản mục tiền tệ có gốc ngoại tệ', keys: ['Unrealized foreign exchange gain/(loss)', '04. Lãi/lỗ chênh lệch tỷ giá hối đoái...', 'Lãi, lỗ chênh lệch tỷ giá hối đoái'] },
+                    { code: '05', name: 'Lãi, lỗ từ hoạt động đầu tư', keys: ['Profit/loss from investing activities', '05. Lãi/lỗ từ hoạt động đầu tư', 'Lãi, lỗ từ hoạt động đầu tư'] },
+                    { code: '06', name: 'Chi phí lãi vay', keys: ['Interest expense', '06. Chi phí lãi vay', 'Chi phí lãi vay'] },
+                    { code: '07_EX', name: 'Lãi, lỗ từ thanh lý TSCĐ', keys: ['Gain/loss from disposal of fixed assets', 'Lãi, lỗ từ thanh lý TSCĐ'] },
+                    { code: '07_IN', name: 'Thu nhâp lãi vay và cổ tức', keys: ['Interest and dividend income', 'Thu nhập lãi vay và cổ tức'] },
+                    { code: '07_GW', name: 'Phân bổ lợi thế thương mại', keys: ['Amortization of goodwill', 'Phân bổ lợi thế thương mại'] },
+                    { code: '07', name: 'Điều chỉnh cho các khoản khác', keys: ['Other adjustments', '07. Các khoản điều chỉnh khác', 'Điều chỉnh cho các khoản khác'] }
                 ]
             },
-            { code: '20', name: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', keys: ['Lưu chuyển tiền thuần từ hoạt động kinh doanh'], isBold: true }
+            {
+                code: '08', name: '3. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', isBold: true,
+                keys: ['Operating profit before changes in working capital', '08. Lợi nhuận từ hoạt động kinh doanh trước thay đổi vốn lưu động', 'Lợi nhuận từ HĐKD trước thay đổi vốn lưu động'],
+                children: [
+                    { code: '09', name: 'Tăng, giảm các khoản phải thu', keys: ['(Increase)/decrease in receivables', '09. Tăng, giảm các khoản phải thu', 'Tăng, giảm các khoản phải thu'] },
+                    { code: '10', name: 'Tăng, giảm hàng tồn kho', keys: ['(Increase)/decrease in inventories', '10. Tăng, giảm hàng tồn kho', 'Tăng, giảm hàng tồn kho'] },
+                    { code: '11', name: 'Tăng, giảm các khoản phải trả (không kể lãi vay phải trả, thuế thu nhập phải nộp)', keys: ['Increase/(decrease) in payables', '11. Tăng, giảm các khoản phải trả', 'Tăng, giảm các khoản phải trả'] },
+                    { code: '12', name: 'Tăng, giảm chi phí trả trước', keys: ['(Increase)/decrease in prepaid expenses', '12. Tăng, giảm chi phí trả trước', 'Tăng, giảm chi phí trả trước'] },
+                    { code: '14', name: 'Tiền lãi vay đã trả', keys: ['Interest paid', '14. Tiền lãi vay đã trả', 'Tiền lãi vay đã trả'] },
+                    { code: '15', name: 'Thuế thu nhập doanh nghiệp đã nộp', keys: ['Corporate Income Tax paid', '15. Thuế thu nhập doanh nghiệp đã nộp', 'Thuế thu nhập doanh nghiệp đã nộp'] },
+                    { code: '16', name: 'Tiền thu khác từ hoạt động kinh doanh', keys: ['Other receipts from operating activities', '16. Tiền thu khác từ hoạt động kinh doanh', 'Tiền thu khác từ hoạt động kinh doanh'] },
+                    { code: '17', name: 'Tiền chi khác cho hoạt động kinh doanh', keys: ['Other payments for operating activities', '17. Tiền chi khác cho hoạt động kinh doanh', 'Tiền chi khác cho hoạt động kinh doanh'] }
+                ]
+            },
+            { code: '20', name: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', keys: ['Net cash flows from operating activities', '20. Lưu chuyển tiền thuần từ hoạt động kinh doanh', 'Lưu chuyển tiền thuần từ HĐKD'], isBold: true }
         ]
     },
     {
-        code: '21', name: 'II. Lưu chuyển tiền từ hoạt động đầu tư', isBold: true,
-        keys: ['Lưu chuyển tiền thuần từ hoạt động đầu tư', 'II. Lưu chuyển tiền từ hoạt động đầu tư'],
+        code: 'II_GRP', name: 'II. Lưu chuyển tiền từ hoạt động đầu tư', isBold: true,
+        keys: ['Net cash flows from investing activities', 'II. Lưu chuyển tiền từ hoạt động đầu tư'],
         children: [
-            { code: '21.1', name: '1. Tiền chi mua sắm TSCĐ', keys: ['Tiền chi mua sắm, xây dựng TSCĐ và các TS dài hạn khác'] },
-            { code: '21.2', name: '2. Tiền thu thanh lý TSCĐ', keys: ['Tiền thu từ thanh lý, nhượng bán TSCĐ và các TS dài hạn khác'] }
+            { code: '21', name: '1. Tiền chi để mua sắm, xây dựng TSCĐ và các tài sản dài hạn khác', keys: ['Purchases of fixed assets and other long-term assets', '21. Tiền chi để mua sắm, xây dựng TSCĐ...'] },
+            { code: '22', name: '2. Tiền thu từ thanh lý, nhượng bán TSCĐ và các tài sản dài hạn khác', keys: ['Proceeds from disposal of fixed assets and other long-term assets', '22. Tiền thu từ thanh lý, nhượng bán TSCĐ...'] },
+            { code: '23', name: '3. Tiền chi cho vay, mua các công cụ nợ của đơn vị khác', keys: ['Loans granted, purchases of debt instruments', '23. Tiền chi cho vay, mua các công cụ nợ...'] },
+            { code: '24', name: '4. Tiền thu hồi cho vay, bán lại các công cụ nợ của đơn vị khác', keys: ['Collection of loans, proceeds from sales of debt instruments', '24. Tiền thu hồi cho vay, bán lại các công cụ nợ...'] },
+            { code: '25', name: '5. Tiền chi đầu tư góp vốn vào đơn vị khác', keys: ['Investments in other entities', '25. Tiền chi đầu tư góp vốn vào đơn vị khác'] },
+            { code: '26', name: '6. Tiền thu hồi đầu tư góp vốn vào đơn vị khác', keys: ['Proceeds from divestments', '26. Tiền thu hồi đầu tư góp vốn vào đơn vị khác'] },
+            { code: '27', name: '7. Tiền thu lãi cho vay, cổ tức và lợi nhuận được chia', keys: ['Interest and dividends received', '27. Tiền thu lãi cho vay, cổ tức...'] },
+            { code: '28_EX', name: '8. Tăng giảm tiền gửi ngân hàng có kỳ hạn', keys: ['Increase/decrease in term deposits', 'Tăng giảm tiền gửi ngân hàng có kỳ hạn'] },
+            { code: '30_EX', name: '10. Tiền thu khác từ hoạt động đầu tư', keys: ['Other receipts from investing activities', 'Tiền thu khác từ hoạt động đầu tư'] },
+            { code: '30_EX2', name: '11. Tiền chi khác cho hoạt động đầu tư', keys: ['Other payments for investing activities', 'Tiền chi khác cho hoạt động đầu tư'] },
+            { code: '30', name: 'Lưu chuyển tiền thuần từ hoạt động đầu tư', keys: ['Net cash flows from investing activities', '30. Lưu chuyển tiền thuần từ hoạt động đầu tư'], isBold: true }
         ]
     },
     {
-        code: '30', name: 'III. Lưu chuyển tiền từ hoạt động tài chính', isBold: true,
-        keys: ['Lưu chuyển tiền thuần từ hoạt động tài chính', 'III. Lưu chuyển tiền từ hoạt động tài chính'],
+        code: 'III_GRP', name: 'III. Lưu chuyển tiền từ hoạt động tài chính', isBold: true,
+        keys: ['Net cash flows from financing activities', 'III. Lưu chuyển tiền từ hoạt động tài chính'],
         children: [
-            { code: '31', name: '1. Tiền thu từ phát hành cổ phiếu', keys: ['Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu'] },
-            { code: '33', name: '2. Tiền thu từ đi vay', keys: ['Proceeds from loans', '33. Tiền thu từ đi vay', 'Tiền thu từ đi vay'] },
-            { code: '34', name: '3. Tiền trả nợ gốc vay', keys: ['Repayment of loans', '34. Tiền trả nợ gốc vay', 'Tiền trả nợ gốc vay'] }
+            { code: '31', name: '1. Tiền thu từ phát hành cổ phiếu, nhận vốn góp của chủ sở hữu', keys: ['Proceeds from share issues and owner contributions', '31. Tiền thu từ phát hành cổ phiếu...'] },
+            { code: '32', name: '2. Tiền chi trả vốn góp cho các chủ sở hữu, mua lại cổ phiếu của doanh nghiệp đã phát hành', keys: ['Payments for share repurchases and capital returns', '32. Tiền chi trả vốn góp cho các chủ sở hữu...'] },
+            { code: '33', name: '3. Tiền thu từ đi vay', keys: ['Proceeds from borrowings', '33. Tiền thu từ đi vay'] },
+            { code: '34', name: '4. Tiền trả nợ gốc vay', keys: ['Repayments of borrowings', '34. Tiền trả nợ gốc vay'] },
+            { code: '36', name: '6. Cổ tức, lợi nhuận đã trả cho chủ sở hữu', keys: ['Dividends and profits paid to owners', '36. Cổ tức, lợi nhuận đã trả cho chủ sở hữu'] },
+            { code: '37_EX', name: '7. Tiền thu khác từ hoạt động tài chính', keys: ['Other receipts from financing activities', 'Tiền thu khác từ hoạt động tài chính'] },
+            { code: '38_EX', name: '8. Tiền chi khác cho hoạt động tài chính', keys: ['Other payments for financing activities', 'Tiền chi khác cho hoạt động tài chính'] },
+            { code: '40', name: 'Lưu chuyển tiền thuần từ hoạt động tài chính', keys: ['Net cash flows from financing activities', '40. Lưu chuyển tiền thuần từ hoạt động tài chính'], isBold: true }
         ]
     },
-    { code: '50', name: 'Lưu chuyển tiền thuần trong kỳ', keys: ['Lưu chuyển tiền thuần trong kỳ'], isBold: true },
-    { code: '60', name: 'Tiền và tương đương tiền đầu kỳ', keys: ['Cash and cash equivalents at the beginning of period', '60. Tiền và tương đương tiền đầu kỳ', 'Tiền và tương đương tiền đầu kỳ'], isBold: true },
-    { code: '70', name: 'Tiền và tương đương tiền cuối kỳ', keys: ['Cash and cash equivalents at the end of period', '70. Tiền và tương đương tiền cuối kỳ', 'Tiền và tương đương tiền cuối kỳ'], isBold: true },
+    { code: '50', name: 'Lưu chuyển tiền thuần trong kỳ', keys: ['Net cash flows for the period', '50. Lưu chuyển tiền thuần trong kỳ'], isBold: true },
+    { code: '60', name: 'Tiền và tương đương tiền đầu kỳ', keys: ['Cash and cash equivalents at the beginning of the period', '60. Tiền và tương đương tiền đầu kỳ'], isBold: true },
+    { code: '61', name: 'Ảnh hưởng của thay đổi tỷ giá hối đoái quy đổi ngoại tệ', keys: ['Effect of foreign exchange rate changes', '61. Ảnh hưởng của thay đổi tỷ giá...'] },
+    { code: '70', name: 'Tiền và tương đương tiền cuối kỳ', keys: ['Cash and cash equivalents at the end of the period', '70. Tiền và tương đương tiền cuối kỳ'], isBold: true }
 ];
 
 export const BANK_CASHFLOW_STRUCTURE: any[] = [
@@ -386,7 +421,12 @@ const VASCashFlow: React.FC<VASCashFlowProps> = ({ symbol }) => {
                     if (codeMatch) return record[codeMatch];
                 }
                 // 3. Fuzzy name match (strip numbering)
-                const cleanName = item.name.toLowerCase().replace(/^[ivx]+\.\s*/, '').replace(/^\d+\.\s*/, '').replace(/^[a-d]\.\s*/, '').trim();
+                const cleanName = item.name.toLowerCase()
+                    .replace(/^[ivx]+\.\s*/, '')
+                    .replace(/^\d+[a-z]*\.\s*/, '')
+                    .replace(/^[a-d]\.\s*/, '')
+                    .replace(/^- \s*/, '')
+                    .trim();
                 const fuzzyKey = allKeys.find((k: string) => k.toLowerCase().includes(cleanName));
                 if (fuzzyKey) return record[fuzzyKey];
                 return 0;
@@ -408,6 +448,24 @@ const VASCashFlow: React.FC<VASCashFlowProps> = ({ symbol }) => {
         });
     }, [rawRecords, period]);
 
+    const fullStructure = useMemo(() => {
+        const structure = [...currentStructure];
+
+        const usedKeys = new Set<string>();
+        const extractUsedKeys = (items: any[]) => {
+            items.forEach(item => {
+                if (item.keys) item.keys.forEach((k: string) => usedKeys.add(k.toLowerCase()));
+                if (item.children) extractUsedKeys(item.children);
+            });
+        };
+        extractUsedKeys(structure);
+
+        if (rawRecords.length > 0) {
+            // Unmapped raw keys logic removed to keep the table clean
+        }
+        return structure;
+    }, [currentStructure, rawRecords]);
+
     const allMetrics = useMemo(() => {
         const list: any[] = [];
         const extract = (items: any[]) => {
@@ -416,9 +474,9 @@ const VASCashFlow: React.FC<VASCashFlowProps> = ({ symbol }) => {
                 if (i.children) extract(i.children);
             });
         };
-        extract(currentStructure);
+        extract(fullStructure);
         return list;
-    }, [currentStructure]);
+    }, [fullStructure]);
 
     const displayPeriods = useMemo(() => processedData.map(d => d.periodLabel), [processedData]);
 
@@ -730,7 +788,7 @@ const VASCashFlow: React.FC<VASCashFlowProps> = ({ symbol }) => {
                     </div>
                 }>
                 <Table
-                    dataSource={currentStructure}
+                    dataSource={fullStructure}
                     columns={columns as any}
                     pagination={false}
                     scroll={{ x: 'max-content', y: 500 }}
@@ -778,7 +836,7 @@ const VASCashFlow: React.FC<VASCashFlowProps> = ({ symbol }) => {
                 }
             >
                 <Table
-                    dataSource={currentStructure}
+                    dataSource={fullStructure}
                     columns={columns as any}
                     pagination={false}
                     scroll={{ x: 1600, y: 'calc(90vh - 120px)' }}

@@ -24,6 +24,7 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
                 keys: ['Short-term investments', '120. Đầu tư tài chính ngắn hạn', 'Đầu tư tài chính ngắn hạn'],
                 children: [
                     { code: '121', name: '1. Chứng khoán kinh doanh', keys: ['Chứng khoán kinh doanh', '121. Chứng khoán kinh doanh'] },
+                    { code: '122', name: '2. Dự phòng giảm giá chứng khoán kinh doanh (*)', keys: ['Dự phòng giảm giá chứng khoán kinh doanh', '122. Dự phòng giảm giá chứng khoán kinh doanh'] },
                     { code: '123', name: '3. Đầu tư nắm giữ đến ngày đáo hạn', keys: ['Đầu tư nắm giữ đến ngày đáo hạn', '123. Đầu tư nắm giữ đến ngày đáo hạn'] }
                 ]
             },
@@ -32,15 +33,32 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
                 keys: ['Accounts receivable', 'Short-term receivables', '130. Các khoản phải thu ngắn hạn', 'Các khoản phải thu ngắn hạn'],
                 children: [
                     { code: '131', name: '1. Phải thu ngắn hạn của khách hàng', keys: ['Phải thu ngắn hạn của khách hàng', '131. Phải thu ngắn hạn của khách hàng'] },
+                    { code: '132', name: '2. Trả trước cho người bán ngắn hạn', keys: ['Trả trước cho người bán ngắn hạn', '132. Trả trước cho người bán ngắn hạn'] },
+                    { code: '133', name: '3. Phải thu nội bộ ngắn hạn', keys: ['Phải thu nội bộ ngắn hạn', '133. Phải thu nội bộ ngắn hạn'] },
+                    { code: '134', name: '4. Phải thu theo tiến độ kế hoạch hợp đồng xây dựng', keys: ['Phải thu theo tiến độ kế hoạch hợp đồng xây dựng', '134. Phải thu theo tiến độ kế hoạch hợp đồng xây dựng'] },
                     { code: '135', name: '5. Phải thu về cho vay ngắn hạn', keys: ['Phải thu về cho vay ngắn hạn', '135. Phải thu về cho vay ngắn hạn'] },
-                    { code: '136', name: '6. Phải thu ngắn hạn khác', keys: ['Phải thu ngắn hạn khác', '136. Phải thu ngắn hạn khác'] }
+                    { code: '136', name: '6. Phải thu ngắn hạn khác', keys: ['Phải thu ngắn hạn khác', '136. Phải thu ngắn hạn khác'] },
+                    { code: '137', name: '7. Dự phòng phải thu ngắn hạn khó đòi (*)', keys: ['Dự phòng phải thu ngắn hạn khó đòi', '137. Dự phòng phải thu ngắn hạn khó đòi'] },
+                    { code: '139', name: '8. Tài sản thiếu chờ xử lý', keys: ['Tài sản thiếu chờ xử lý', '139. Tài sản thiếu chờ xử lý'] }
                 ]
             },
             {
                 code: '140', name: 'IV. Hàng tồn kho', isBold: true,
                 keys: ['Inventories', '140. Hàng tồn kho', 'Hàng tồn kho', 'Hàng tồn kho, ròng'],
                 children: [
-                    { code: '141', name: '1. Hàng tồn kho', keys: ['Hàng tồn kho', '141. Hàng tồn kho'] }
+                    { code: '141', name: '1. Hàng tồn kho', keys: ['Hàng tồn kho', '141. Hàng tồn kho'] },
+                    { code: '149', name: '2. Dự phòng giảm giá hàng tồn kho (*)', keys: ['Dự phòng giảm giá hàng tồn kho', '149. Dự phòng giảm giá hàng tồn kho'] }
+                ]
+            },
+            {
+                code: '150', name: 'V. Tài sản ngắn hạn khác', isBold: true,
+                keys: ['Other current assets', '150. Tài sản ngắn hạn khác', 'TÀI SẢN NGẮN HẠN KHÁC'],
+                children: [
+                    { code: '151', name: '1. Chi phí trả trước ngắn hạn', keys: ['Chi phí trả trước ngắn hạn', '151. Chi phí trả trước ngắn hạn'] },
+                    { code: '152', name: '2. Thuế GTGT được khấu trừ', keys: ['Thuế GTGT được khấu trừ', '152. Thuế GTGT được khấu trừ'] },
+                    { code: '153', name: '3. Thuế và các khoản khác phải thu của nhà nước', keys: ['Thuế và các khoản khác phải thu của nhà nước', '153. Thuế và các khoản khác phải thu của nhà nước'] },
+                    { code: '154', name: '4. Giao dịch mua bán lại trái phiếu chính phủ', keys: ['Giao dịch mua bán lại trái phiếu chính phủ', '154. Giao dịch mua bán lại trái phiếu chính phủ'] },
+                    { code: '155', name: '5. Tài sản ngắn hạn khác', keys: ['Tài sản ngắn hạn khác', '155. Tài sản ngắn hạn khác'] }
                 ]
             }
         ]
@@ -50,24 +68,119 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
         keys: ['LONG-TERM ASSETS', '200. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN', 'B- TÀI SẢN DÀI HẠN'],
         children: [
             {
-                code: '220', name: 'II. Tài sản cố định', isBold: true,
-                keys: ['Fixed assets', '220. Tài sản cố định', 'Tài sản cố định'],
+                code: '210', name: 'I. Các khoản phải thu dài hạn', isBold: true,
+                keys: ['Long-term receivables', '210. Các khoản phải thu dài hạn'],
                 children: [
-                    { code: '221', name: '1. Tài sản cố định hữu hình', keys: ['Tài sản cố định hữu hình', '221. Tài sản cố định hữu hình'] },
-                    { code: '227', name: '3. Tài sản cố định vô hình', keys: ['Tài sản cố định vô hình', '227. Tài sản cố định vô hình'] }
+                    { code: '211', name: '1. Phải thu dài hạn của khách hàng', keys: ['Phải thu dài hạn của khách hàng', '211. Phải thu dài hạn của khách hàng'] },
+                    { code: '212', name: '2. Trả trước cho người bán dài hạn', keys: ['Trả trước cho người bán dài hạn', '212. Trả trước cho người bán dài hạn'] },
+                    { code: '213', name: '3. Vốn kinh doanh ở các đơn vị trực thuộc', keys: ['Vốn kinh doanh ở các đơn vị trực thuộc', '213. Vốn kinh doanh ở các đơn vị trực thuộc'] },
+                    { code: '214', name: '4.  Phải thu nội bộ dài hạn', keys: ['Phải thu nội bộ dài hạn', '214. Phải thu nội bộ dài hạn'] },
+                    { code: '215', name: '5. Phải thu về cho vay dài hạn', keys: ['Phải thu về cho vay dài hạn', '215. Phải thu về cho vay dài hạn'] },
+                    { code: '216', name: '6. Phải thu dài hạn khác', keys: ['Phải thu dài hạn khác', '216. Phải thu dài hạn khác'] },
+                    { code: '219', name: '7. Dự phòng phải thu dài hạn khó đòi (*)', keys: ['Dự phòng phải thu dài hạn khó đòi', '219. Dự phòng phải thu dài hạn khó đòi'] }
                 ]
             },
-            { code: '230', name: 'III. Bất động sản đầu tư', isBold: true, keys: ['Investment properties', '230. Bất động sản đầu tư', 'Bất động sản đầu tư'] },
-            { code: '250', name: 'V. Đầu tư tài chính dài hạn', isBold: true, keys: ['Long-term investments', '250. Đầu tư tài chính dài hạn', 'Đầu tư tài chính dài hạn'] }
+            {
+                code: '220', name: 'II. Tài sản cố định', isBold: true,
+                keys: ['Fixed assets', '220. Tài sản cố định', 'TÀI SẢN CỐ ĐỊNH'],
+                children: [
+                    {
+                        code: '221', name: '1. Tài sản cố định hữu hình', keys: ['Tài sản cố định hữu hình', '221. Tài sản cố định hữu hình'],
+                        children: [
+                            { code: '222', name: '- Nguyên giá', keys: ['Nguyên giá', '222. Nguyên giá TSCĐ', '222. Nguyên giá'] },
+                            { code: '223', name: '- Giá trị hao mòn lũy kế (*)', keys: ['Giá trị hao mòn lũy kế', '223. Giá trị hao mòn lũy kế TSCĐ', '223. Giá trị hao mòn lũy kế'] }
+                        ]
+                    },
+                    { code: '224', name: '2. Tài sản cố định thuê tài chính', keys: ['Tài sản cố định thuê tài chính', '224. Tài sản cố định thuê tài chính'] },
+                    {
+                        code: '227', name: '3. Tài sản cố định vô hình', keys: ['Tài sản cố định vô hình', '227. Tài sản cố định vô hình'],
+                        children: [
+                            { code: '228', name: '- Nguyên giá', keys: ['228. Nguyên giá (TSCĐVH)', 'Nguyên giá (Tài sản cố định vô hình)'] },
+                            { code: '229', name: '- Giá trị hao mòn lũy kế (*)', keys: ['229. Giá trị hao mòn lũy kế (TSCĐVH)', 'Giá trị hao mòn lũy kế (Tài sản cố định vô hình)'] }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: '230', name: 'III. Bất động sản đầu tư', isBold: true, keys: ['Investment properties', '230. Bất động sản đầu tư', 'Bất động sản đầu tư'],
+                children: [
+                    { code: '231', name: '- Nguyên giá', keys: ['231. Nguyên giá (BĐSĐT)', 'Nguyên giá (Bất động sản đầu tư)'] },
+                    { code: '232', name: '- Giá trị hao mòn lũy kế (*)', keys: ['232. Giá trị hao mòn lũy kế (BĐSĐT)', 'Giá trị hao mòn lũy kế (Bất động sản đầu tư)'] }
+                ]
+            },
+            {
+                code: '240', name: 'IV. Tài sản dở dang dài hạn', isBold: true, keys: ['Long-term work in progress', '241. Tài sản dở dang dài hạn'],
+                children: [
+                    { code: '241', name: '1. Chi phí sản xuất, kinh doanh dở dang dài hạn', keys: ['Chi phí sản xuất, kinh doanh dở dang dài hạn', '241. Chi phí sản xuất, kinh doanh dở dang dài hạn'] },
+                    { code: '242', name: '2. Chi phí xây dựng cơ bản dở dang', keys: ['Chi phí xây dựng cơ bản dở dang', '242. Chi phí xây dựng cơ bản dở dang'] }
+                ]
+            },
+            {
+                code: '250', name: 'V. Đầu tư tài chính dài hạn', isBold: true, keys: ['Long-term investments', '250. Đầu tư tài chính dài hạn', 'Đầu tư tài chính dài hạn'],
+                children: [
+                    { code: '251', name: '1. Đầu tư vào công ty con', keys: ['Đầu tư vào công ty con', '251. Đầu tư vào công ty con'] },
+                    { code: '252', name: '2. Đầu tư vào công ty liên kết. liên doanh', keys: ['Đầu tư vào công ty liên kết, liên doanh', '252. Đầu tư vào công ty liên kết, liên doanh'] },
+                    { code: '253', name: '3. Đầu tư góp vốn vào đơn vị khác', keys: ['Đầu tư góp vốn vào đơn vị khác', '253. Đầu tư góp vốn vào đơn vị khác'] },
+                    { code: '254', name: '4. Dự phòng đầu tư tài chính dài hạn (*)', keys: ['Dự phòng đầu tư tài chính dài hạn', '254. Dự phòng đầu tư tài chính dài hạn'] },
+                    { code: '255', name: '5. Đầu tư nắm giữ đến ngày đáo hạn', keys: ['Đầu tư nắm giữ đến ngày đáo hạn', '255. Đầu tư nắm giữ đến ngày đáo hạn'] },
+                    { code: '258', name: '6. Đầu tư dài hạn khác', keys: ['Đầu tư dài hạn khác', '258. Đầu tư dài hạn khác'] }
+                ]
+            },
+            {
+                code: '260', name: 'VI. Tài sản dài hạn khác', isBold: true, keys: ['Other long-term assets', '260. Tài sản dài hạn khác'],
+                children: [
+                    { code: '261', name: '1. Chi phí trả trước dài hạn', keys: ['Chi phí trả trước dài hạn', '261. Chi phí trả trước dài hạn'] },
+                    { code: '262', name: '2. Tài sản thuế thu nhập hoãn lại', keys: ['Tài sản thuế thu nhập hoãn lại', '262. Tài sản thuế thu nhập hoãn lại'] },
+                    { code: '263', name: '3. Thiết bị, vật tư, phụ tùng thay thế dài hạn', keys: ['Thiết bị, vật tư, phụ tùng thay thế dài hạn', '263. Thiết bị, vật tư, phụ tùng thay thế dài hạn'] },
+                    { code: '268', name: '4. Tài sản dài hạn khác', keys: ['Tài sản dài hạn khác', '268. Tài sản dài hạn khác'] },
+                    { code: '269', name: '5. Lợi thế thương mại', keys: ['Lợi thế thương mại', '269. Lợi thế thương mại'] }
+                ]
+            }
         ]
     },
-    { code: '270', name: 'TỔNG CỘNG TÀI SẢN', isBold: true, keys: ['Total Assets', '270. TỔNG CỘNG TÀI SẢN', 'TỔNG CỘNG TÀI SẢN', 'TỔNG TÀI SẢN'] },
+    { code: 'total_assets', name: 'TỔNG CỘNG TÀI SẢN', isBold: true, keys: ['Total Assets', '270. TỔNG CỘNG TÀI SẢN', 'TỔNG CỘNG TÀI SẢN', 'TỔNG TÀI SẢN'] },
     {
         code: '300', name: 'A. NỢ PHẢI TRẢ', isBold: true,
         keys: ['Liabilities', '300. NỢ PHẢI TRẢ', 'NỢ PHẢI TRẢ', 'C- NỢ PHẢI TRẢ'],
         children: [
-            { code: '310', name: 'I. Nợ ngắn hạn', isBold: true, keys: ['Current liabilities', '310. Nợ ngắn hạn', 'Nợ ngắn hạn'] },
-            { code: '330', name: 'II. Nợ dài hạn', isBold: true, keys: ['Long-term liabilities', 'Non-current liabilities', '330. Nợ dài hạn', 'Nợ dài hạn'] }
+            {
+                code: '310', name: 'I. Nợ ngắn hạn', isBold: true, keys: ['Current liabilities', '310. Nợ ngắn hạn', 'Nợ ngắn hạn'],
+                children: [
+                    { code: '311', name: '1. Phải trả người bán ngắn hạn', keys: ['Phải trả người bán ngắn hạn', '311. Phải trả người bán ngắn hạn'] },
+                    { code: '312', name: '2. Người mua trả tiền trước ngắn hạn', keys: ['Người mua trả tiền trước ngắn hạn', '312. Người mua trả tiền trước ngắn hạn'] },
+                    { code: '313', name: '3. Thuế và các khoản phải nộp Nhà nước', keys: ['Thuế và các khoản phải nộp Nhà nước', '313. Thuế và các khoản phải nộp Nhà nước'] },
+                    { code: '314', name: '4. Phải trả người lao động', keys: ['Phải trả người lao động', '314. Phải trả người lao động'] },
+                    { code: '315', name: '5. Chi phí phải trả ngắn hạn', keys: ['Chi phí phải trả ngắn hạn', '315. Chi phí phải trả ngắn hạn'] },
+                    { code: '316', name: '6. Phải trả nội bộ ngắn hạn', keys: ['Phải trả nội bộ ngắn hạn', '316. Phải trả nội bộ ngắn hạn'] },
+                    { code: '317', name: '7. Phải trả theo tiến độ kế hoạch hợp đồng xây dựng', keys: ['Phải trả theo tiến độ kế hoạch hợp đồng xây dựng', '317. Phải trả theo tiến độ kế hoạch hợp đồng xây dựng'] },
+                    { code: '318', name: '8. Doanh thu chưa thực hiện ngắn hạn', keys: ['Doanh thu chưa thực hiện ngắn hạn', '318. Doanh thu chưa thực hiện ngắn hạn'] },
+                    { code: '319', name: '9. Phải trả ngắn hạn khác', keys: ['Phải trả ngắn hạn khác', '319. Phải trả ngắn hạn khác'] },
+                    { code: '320', name: '10. Vay và nợ thuê tài chính ngắn hạn', keys: ['Vay và nợ thuê tài chính ngắn hạn', '320. Vay và nợ thuê tài chính ngắn hạn'] },
+                    { code: '321', name: '11. Dự phòng phải trả ngắn hạn', keys: ['Dự phòng phải trả ngắn hạn', '321. Dự phòng phải trả ngắn hạn'] },
+                    { code: '322', name: '12. Quỹ khen thưởng, phúc lợi', keys: ['Quỹ khen thưởng, phúc lợi', '322. Quỹ khen thưởng, phúc lợi'] },
+                    { code: '323', name: '13. Quỹ bình ổn giá', keys: ['Quỹ bình ổn giá', '323. Quỹ bình ổn giá'] },
+                    { code: '324', name: '14. Giao dịch mua bán lại trái phiếu Chính phủ', keys: ['Giao dịch mua bán lại trái phiếu Chính phủ', '324. Giao dịch mua bán lại trái phiếu Chính phủ'] }
+                ]
+            },
+            {
+                code: '330', name: 'II. Nợ dài hạn', isBold: true, keys: ['Long-term liabilities', 'Non-current liabilities', '330. Nợ dài hạn', 'Nợ dài hạn'],
+                children: [
+                    { code: '331', name: '1. Phải trả người bán dài hạn', keys: ['Phải trả người bán dài hạn', '331. Phải trả người bán dài hạn'] },
+                    { code: '332', name: '2. Người mua trả tiền trước dài hạn', keys: ['Người mua trả tiền trước dài hạn', '332. Người mua trả tiền trước dài hạn'] },
+                    { code: '333', name: '3. Chi phí phải trả dài hạn', keys: ['Chi phí phải trả dài hạn', '333. Chi phí phải trả dài hạn'] },
+                    { code: '334', name: '4. Phải trả nội bộ về vốn kinh doanh', keys: ['Phải trả nội bộ về vốn kinh doanh', '334. Phải trả nội bộ về vốn kinh doanh'] },
+                    { code: '335', name: '5. Phải trả nội bộ dài hạn', keys: ['Phải trả nội bộ dài hạn', '335. Phải trả nội bộ dài hạn'] },
+                    { code: '336', name: '6. Doanh thu chưa thực hiện dài hạn', keys: ['Doanh thu chưa thực hiện dài hạn', '336. Doanh thu chưa thực hiện dài hạn'] },
+                    { code: '337', name: '7. Phải trả dài hạn khác', keys: ['Phải trả dài hạn khác', '337. Phải trả dài hạn khác'] },
+                    { code: '338', name: '8. Vay và nợ thuê tài chính dài hạn', keys: ['Vay và nợ thuê tài chính dài hạn', '338. Vay và nợ thuê tài chính dài hạn'] },
+                    { code: '339', name: '9. Trái phiếu chuyển đổi', keys: ['Trái phiếu chuyển đổi', '339. Trái phiếu chuyển đổi'] },
+                    { code: '340', name: '10. Cổ phiếu ưu đãi (Nợ)', keys: ['Cổ phiếu ưu đãi (Nợ)', '340. Cổ phiếu ưu đãi'] },
+                    { code: '341', name: '11. Thuế thu nhập hoãn lại phải trả', keys: ['Thuế thu nhập hoãn lại phải trả', '341. Thuế thu nhập hoãn lại phải trả'] },
+                    { code: '342', name: '12. Dự phòng phải trả dài hạn', keys: ['Dự phòng phải trả dài hạn', '342. Dự phòng phải trả dài hạn'] },
+                    { code: '343', name: '13. Quỹ phát triển khoa học và công nghệ', keys: ['Quỹ phát triển khoa học và công nghệ', '343. Quỹ phát triển khoa học và công nghệ'] },
+                    { code: '344', name: '14. Dự phòng trợ cấp mất việc làm', keys: ['Dự phòng trợ cấp mất việc làm', '344. Dự phòng trợ cấp mất việc làm'] }
+                ]
+            }
         ]
     },
     {
@@ -78,13 +191,47 @@ export const VAS_BALANCE_STRUCTURE: any[] = [
                 code: '410', name: 'I. Vốn chủ sở hữu', isBold: true,
                 keys: ['Capital and reserves', '410. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'Vốn và các quỹ'],
                 children: [
-                    { code: '411', name: '1. Vốn góp của chủ sở hữu', keys: ['Vốn đầu tư của chủ sở hữu', 'Vốn góp của chủ sở hữu', 'Vốn cổ phần'] },
-                    { code: '421', name: '11. Lợi nhuận sau thuế chưa phân phối', keys: ['Lợi nhuận sau thuế chưa phân phối', 'Lợi nhuận chưa phân phối'] }
+                    {
+                        code: '411', name: '1. Vốn góp của chủ sở hữu', keys: ['Vốn đầu tư của chủ sở hữu', 'Vốn góp của chủ sở hữu', 'Vốn cổ phần'],
+                        children: [
+                            { code: '411a', name: '- Cổ phiếu phổ thông có quyền biểu quyết', keys: ['Cổ phiếu phổ thông có quyền biểu quyết', 'Cổ phiếu phổ thông'] },
+                            { code: '411b', name: '- Cổ phiếu ưu đãi', keys: ['Cổ phiếu ưu đãi (Vốn)', 'Cổ phiếu ưu đãi'] }
+                        ]
+                    },
+                    { code: '412', name: '2. Thặng dư vốn cổ phần', keys: ['Thặng dư vốn cổ phần', '412. Thặng dư vốn cổ phần'] },
+                    { code: '413', name: '3. Quyền chọn chuyển đổi trái phiếu', keys: ['Quyền chọn chuyển đổi trái phiếu', '413. Quyền chọn chuyển đổi trái phiếu'] },
+                    { code: '414', name: '4. Vốn khác của chủ sở hữu', keys: ['Vốn khác của chủ sở hữu', '414. Vốn khác của chủ sở hữu'] },
+                    { code: '415', name: '5. Cổ phiếu quỹ (*)', keys: ['Cổ phiếu quỹ', '415. Cổ phiếu quỹ'] },
+                    { code: '416', name: '6. Chênh lệch đánh giá lại tài sản', keys: ['Chênh lệch đánh giá lại tài sản', '416. Chênh lệch đánh giá lại tài sản'] },
+                    { code: '417', name: '7. Chênh lệch tỷ giá hối đoái', keys: ['Chênh lệch tỷ giá hối đoái', '417. Chênh lệch tỷ giá hối đoái'] },
+                    { code: '418', name: '8. Quỹ đầu tư phát triển', keys: ['Quỹ đầu tư phát triển', '418. Quỹ đầu tư phát triển'] },
+                    { code: '419', name: '9. Quỹ hỗ trợ sắp xếp doanh nghiệp', keys: ['Quỹ hỗ trợ sắp xếp doanh nghiệp', '419. Quỹ hỗ trợ sắp xếp doanh nghiệp'] },
+                    { code: '420', name: '10. Quỹ khác thuộc vốn chủ sở hữu', keys: ['Quỹ khác thuộc vốn chủ sở hữu', '420. Quỹ khác thuộc vốn chủ sở hữu'] },
+                    {
+                        code: '421', name: '11. Lợi nhuận sau thuế chưa phân phối', keys: ['Lợi nhuận sau thuế chưa phân phối', 'Lợi nhuận chưa phân phối'],
+                        children: [
+                            { code: '421a', name: '- LNST chưa phân phối lũy kế đến cuối kỳ trước', keys: ['LNST chưa phân phối lũy kế đến cuối kỳ trước', 'Lợi nhuận sau thuế chưa phân phối lũy kế đến cuối kỳ trước'] },
+                            { code: '421b', name: '- LNST chưa phân phối kỳ này', keys: ['LNST chưa phân phối kỳ này', 'Lợi nhuận sau thuế chưa phân phối kỳ này'] }
+                        ]
+                    },
+                    { code: '422', name: '12. Nguồn vốn đầu tư XDCB', keys: ['Nguồn vốn đầu tư XDCB', '422. Nguồn vốn đầu tư XDCB'] },
+                    { code: '429', name: '13. Lợi ích cổ đông không kiểm soát', keys: ['Non-controlling interests', 'Lợi ích cổ đông không kiểm soát'] },
+                    { code: '419_extra', name: '14. Quỹ dự phòng tài chính', keys: ['Quỹ dự phòng tài chính', '419. Quỹ dự phòng tài chính'] }
+                ]
+            },
+            {
+                code: '430', name: 'II. Nguồn kinh phí và quỹ khác', isBold: true,
+                keys: ['Nguồn kinh phí và quỹ khác', '430. Nguồn kinh phí và quỹ khác'],
+                children: [
+                    { code: '431', name: '1. Nguồn kinh phí', keys: ['Nguồn kinh phí', '431. Nguồn kinh phí'] },
+                    { code: '432', name: '2. Nguồn kinh phí đã hình thành TSCĐ', keys: ['Nguồn kinh phí đã hình thành TSCĐ', '432. Nguồn kinh phí đã hình thành TSCĐ'] }
                 ]
             }
         ]
     },
-    { code: '440', name: 'TỔNG CỘNG NGUỒN VỐN', isBold: true, keys: ['440. TỔNG CỘNG NGUỒN VỐN', 'TỔNG CỘNG NGUỒN VỐN', 'Tổng cộng nguồn vốn'] },
+    { code: '429_EXTRA', name: 'C. LỢI ÍCH CỔ ĐÔNG THIỂU SỐ', keys: ['Minority interest', 'Lợi ích của cổ đông thiểu số'] },
+    { code: 'total_capital', name: 'TỔNG CỘNG NGUỒN VỐN', isBold: true, keys: ['440. TỔNG CỘNG NGUỒN VỐN', 'TỔNG CỘNG NGUỒN VỐN', 'Tổng cộng nguồn vốn'] },
+    { code: 'gw_extra', name: 'VII. Lợi thế thương mại', keys: ['Goodwill', 'Lợi thế thương mại'] }
 ];
 
 export const BANK_BALANCE_STRUCTURE: any[] = [
@@ -600,7 +747,12 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
                     if (codeMatch) return record[codeMatch];
                 }
                 // 3. Fuzzy name match (strip numbering)
-                const cleanName = item.name.toLowerCase().replace(/^[ivx]+\.\s*/, '').replace(/^\d+\.\s*/, '').replace(/^[a-d]\.\s*/, '').trim();
+                const cleanName = item.name.toLowerCase()
+                    .replace(/^[ivx]+\.\s*/, '')
+                    .replace(/^\d+[a-z]*\.\s*/, '')
+                    .replace(/^[a-d]\.\s*/, '')
+                    .replace(/^- \s*/, '')
+                    .trim();
                 const fuzzyKey = allKeys.find((k: string) => k.toLowerCase().includes(cleanName));
                 if (fuzzyKey) return record[fuzzyKey];
                 return 0;
@@ -620,7 +772,7 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
                 result['TỔNG CỘNG TÀI SẢN'] = (result['A. TÀI SẢN NGẮN HẠN'] || 0) + (result['B. TÀI SẢN DÀI HẠN'] || 0);
             }
             if (!result['TỔNG CỘNG NGUỒN VỐN'] || result['TỔNG CỘNG NGUỒN VỐN'] === 0) {
-                result['TỔNG CỘNG NGUỒN VỐN'] = (result['C. NỢ PHẢI TRẢ'] || 0) + (result['D. VỐN CHỦ SỞ HỮU'] || 0);
+                result['TỔNG CỘNG NGUỒN VỐN'] = (result['A. NỢ PHẢI TRẢ'] || 0) + (result['B. VỐN CHỦ SỞ HỮU'] || 0);
             }
 
             const y = result['Năm'] || result['year'] || '';
@@ -630,6 +782,24 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
         });
     }, [rawRecords, period]);
 
+    const fullStructure = useMemo(() => {
+        const structure = [...currentStructure];
+
+        const usedKeys = new Set<string>();
+        const extractUsedKeys = (items: any[]) => {
+            items.forEach(item => {
+                if (item.keys) item.keys.forEach((k: string) => usedKeys.add(k.toLowerCase()));
+                if (item.children) extractUsedKeys(item.children);
+            });
+        };
+        extractUsedKeys(structure);
+
+        if (rawRecords.length > 0) {
+            // Unmapped raw keys logic removed as per user request to keep table clean
+        }
+        return structure;
+    }, [currentStructure, rawRecords]);
+
     const allMetrics = useMemo(() => {
         const list: any[] = [];
         const extract = (items: any[]) => {
@@ -638,9 +808,9 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
                 if (i.children) extract(i.children);
             });
         };
-        extract(currentStructure);
+        extract(fullStructure);
         return list;
-    }, [currentStructure]);
+    }, [fullStructure]);
 
     const displayPeriods = useMemo(() => processedData.map(d => d.periodLabel), [processedData]);
 
@@ -950,7 +1120,7 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
                     </div>
                 }>
                 <Table
-                    dataSource={currentStructure}
+                    dataSource={fullStructure}
                     columns={columns as any}
                     pagination={false}
                     scroll={{ x: 1200, y: 500 }}
@@ -998,7 +1168,7 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
                 }
             >
                 <Table
-                    dataSource={currentStructure}
+                    dataSource={fullStructure}
                     columns={columns as any}
                     pagination={false}
                     scroll={{ x: 1600, y: 'calc(90vh - 120px)' }}

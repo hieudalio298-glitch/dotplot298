@@ -30,12 +30,12 @@ export const METRIC_MAP: Record<string, string> = {
     "Doanh thu thuần": "Doanh thu thuần về bán hàng và cung cấp dịch vụ",
     "Lợi nhuận gộp": "Lợi nhuận gộp về bán hàng và cung cấp dịch vụ",
     "Lợi nhuận sau thuế": "Lợi nhuận sau thuế thu nhập doanh nghiệp",
-    "Tổng tài sản": "Tổng cộng tài sản",
-    "Vốn chủ sở hữu": "Vốn chủ sở hữu",
-    "Nợ phải trả": "Nợ phải trả",
-    "Tiền mặt": "Tiền và các khoản tương đương tiền",
-    "Khoản phải thu": "Các khoản phải thu ngắn hạn",
-    "Tồn kho": "Hàng tồn kho"
+    "Tổng tài sản": "TỔNG CỘNG TÀI SẢN",
+    "Vốn chủ sở hữu": "B. VỐN CHỦ SỞ HỮU",
+    "Nợ phải trả": "A. NỢ PHẢI TRẢ",
+    "Tiền mặt": "I. Tiền và các khoản tương đương tiền",
+    "Khoản phải thu": "III. Các khoản phải thu ngắn hạn",
+    "Tồn kho": "IV. Hàng tồn kho"
 };
 
 export const AVAILABLE_METRICS = [

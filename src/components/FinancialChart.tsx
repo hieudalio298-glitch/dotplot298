@@ -93,24 +93,24 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
     }, [user, showLoadModal]);
 
     const ALIAS = {
-        REV: ['Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu hoạt động', 'Thu nhập lãi thuần', 'Thu nhập lãi', 'Doanh thu'],
-        COGS: ['Giá vốn hàng bán', 'Chi phí hoạt động', 'Chi phí lãi và các chi phí tương tự', 'Chi phí lãi'],
-        INV: ['Hàng tồn kho'],
-        REC: ['Các khoản phải thu ngắn hạn', 'Các khoản phải thu', 'Cho vay khách hàng', 'Phải thu của khách hàng'],
-        FA: ['Tài sản cố định hữu hình', 'Tài sản cố định'],
-        EBIT: ['Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận từ hoạt động kinh doanh'],
-        NI: ['Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế TNDN', 'Lợi nhuận sau thuế', 'Lợi nhuận ròng'],
+        REV: ['Doanh thu thuần về bán hàng và cung cấp dịch vụ', '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu hoạt động', 'Thu nhập lãi thuần', 'Thu nhập lãi', 'Doanh thu'],
+        COGS: ['Giá vốn hàng bán', '4. Giá vốn hàng bán', 'Chi phí hoạt động', 'Chi phí lãi và các chi phí tương tự', 'Chi phí lãi'],
+        INV: ['Hàng tồn kho', 'IV. Hàng tồn kho', '1. Hàng tồn kho'],
+        REC: ['Các khoản phải thu ngắn hạn', 'III. Các khoản phải thu ngắn hạn', 'Các khoản phải thu', 'Cho vay khách hàng', 'Phải thu của khách hàng'],
+        FA: ['Tài sản cố định hữu hình', '1. Tài sản cố định hữu hình', 'Tài sản cố định'],
+        EBIT: ['Lợi nhuận thuần từ hoạt động kinh doanh', '11. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận từ hoạt động kinh doanh'],
+        NI: ['Lợi nhuận sau thuế thu nhập doanh nghiệp', '18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế TNDN', 'Lợi nhuận sau thuế', 'Lợi nhuận ròng'],
         NI_PARENT: ['Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông công ty mẹ'],
-        GP: ['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp', 'Thu nhập lãi thuần'], // Banks use Net Interest Income as GP
-        INTEREST: ['Chi phí lãi vay', 'Chi phí lãi và các chi phí tương tự'],
-        SHORT_DEBT: ['Vay ngắn hạn', 'Vay và nợ thuê tài chính ngắn hạn', 'Tiền gửi của các tổ chức tín dụng khác', 'Tiền gửi của khách hàng'], // For banks, deposits are short-term liabilities
-        LONG_DEBT: ['Vay dài hạn', 'Vay và nợ thuê tài chính dài hạn', 'Phát hành giấy tờ có giá'],
-        EQUITY: ['Vốn chủ sở hữu', 'Vốn và các quỹ'],
-        ASSETS: ['Tổng cộng tài sản', 'Tổng tài sản'],
-        PAYABLES: ['Phải trả người bán'],
-        CUR_ASSETS: ['Tài sản ngắn hạn', 'Tiền, vàng gửi tại các TCTD khác và cho vay các TCTD khác'],
-        CUR_LIAB: ['Nợ ngắn hạn', 'Tiền gửi của khách hàng'],
-        CASH: ['Tiền và các khoản tương đương tiền', 'Tiền mặt, vàng, bạc', 'Tiền gửi tại NHNN'],
+        GP: ['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', '5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp', 'Thu nhập lãi thuần'],
+        INTEREST: ['Chi phí lãi vay', 'Trong đó :Chi phí lãi vay', 'Chi phí lãi và các chi phí tương tự'],
+        SHORT_DEBT: ['Vay và nợ thuê tài chính ngắn hạn', '10. Vay và nợ thuê tài chính ngắn hạn', 'Vay ngắn hạn', 'Tiền gửi của các tổ chức tín dụng khác', 'Tiền gửi của khách hàng'],
+        LONG_DEBT: ['Vay và nợ thuê tài chính dài hạn', '8. Vay và nợ thuê tài chính dài hạn', 'Vay dài hạn', 'Phát hành giấy tờ có giá'],
+        EQUITY: ['VỐN CHỦ SỞ HỮU', 'I. Vốn chủ sở hữu', 'CỘNG VỐN CHỦ SỞ HỮU', 'Vốn và các quỹ'],
+        ASSETS: ['TỔNG CỘNG TÀI SẢN', '270. TỔNG CỘNG TÀI SẢN', 'Tổng tài sản', 'Tổng cộng tài sản'],
+        PAYABLES: ['Phải trả người bán ngắn hạn', '1. Phải trả người bán ngắn hạn', 'Phải trả người bán'],
+        CUR_ASSETS: ['A. TÀI SẢN NGẮN HẠN', 'Tài sản ngắn hạn', 'Tiền, vàng gửi tại các TCTD khác và cho vay các TCTD khác'],
+        CUR_LIAB: ['I. Nợ ngắn hạn', 'Nợ ngắn hạn', 'Tiền gửi của khách hàng'],
+        CASH: ['Tiền và các khoản tương đương tiền', 'I. Tiền và các khoản tương đương tiền', 'Tiền mặt, vàng, bạc', 'Tiền gửi tại NHNN'],
     };
 
     const findVal = (data: any, aliases: string[]) => {
@@ -885,10 +885,11 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                     let val = item[metric];
                     if (val === undefined || val === null) {
                         const itemKeys = Object.keys(item);
-                        const fuzzyKey = itemKeys.find(k =>
-                            k.toLowerCase().trim() === metric.toLowerCase().trim() ||
-                            k.toLowerCase().includes(metric.toLowerCase())
-                        );
+                        const cleanMetric = metric.toLowerCase().replace(/^[0-9ivx.-]+\s*/i, '').trim();
+                        const fuzzyKey = itemKeys.find(k => {
+                            const ck = k.toLowerCase().replace(/^[0-9ivx.-]+\s*/i, '').trim();
+                            return ck === cleanMetric || ck.includes(cleanMetric) || cleanMetric.includes(ck);
+                        });
                         if (fuzzyKey) val = item[fuzzyKey];
                     }
                     return parseFinancialValue(val);

@@ -118,7 +118,7 @@ const MetricsSidebar: React.FC = () => {
     }, [dynamicMetrics]);
 
     // Flatten structure to display items
-    const getStructureItems = (structure: any[]) => {
+    const getStructureItems = (structure: any[], usedKeys: Set<string>) => {
         let items: DraggableItemProps[] = [];
         const process = (list: any[]) => {
             list.forEach(item => {
@@ -131,9 +131,14 @@ const MetricsSidebar: React.FC = () => {
                     if (match) {
                         bestKey = dynamicMetrics.find((dk: string) => dk.toLowerCase() === match.toLowerCase()) || match;
                     } else {
-                        // Fallback: Use the first key (usually English or Standard Code)
-                        bestKey = item.keys[0];
+                        // Fallback: Use the Vietnamese name to ensure consistency when dragging to chart
+                        bestKey = item.name;
                     }
+                }
+
+                // Track used key if it exists in dynamicMetrics
+                if (dynamicMetrics.includes(bestKey)) {
+                    usedKeys.add(bestKey);
                 }
 
                 items.push({
@@ -171,7 +176,36 @@ const MetricsSidebar: React.FC = () => {
             else structure = VAS_CASHFLOW_STRUCTURE;
         }
 
-        return getStructureItems(structure);
+        const usedKeys = new Set<string>();
+        const structuredItems = getStructureItems(structure, usedKeys);
+
+        // Find Unmapped Metrics (Dynamic) with strict filtering
+        // We filter out keys that are already used OR are likely metadata/garbage
+        const unmapped = dynamicMetrics.filter(m =>
+            !usedKeys.has(m) &&
+            !['id', 'symbol', 'period_type', 'updated_at', 'created_at', 'report_period'].includes(m) &&
+            !m.startsWith('_') // metrics starting with _ are usually hidden/intermediate
+        );
+
+        const unmappedItems = unmapped.map(m => ({
+            id: m,
+            label: m, // Show raw key name
+            isBold: false,
+            isAvailable: true
+        }));
+
+        if (unmappedItems.length > 0) {
+            // Add a separator
+            structuredItems.push({
+                id: 'SEP_OTHERS',
+                label: '--- OTHER METRICS ---',
+                isBold: true,
+                isAvailable: false
+            });
+            return [...structuredItems, ...unmappedItems];
+        }
+
+        return structuredItems;
     }, [reportType, industryType, dynamicMetrics, ratioMetrics]);
 
     const filteredAndSearched = useMemo(() => {

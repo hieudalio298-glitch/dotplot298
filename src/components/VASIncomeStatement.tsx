@@ -9,35 +9,36 @@ import { supabase } from '../supabaseClient';
 // --- CHUẨN VAS (Thông tư 200/2014/TT-BTC) - KẾT QUẢ KINH DOANH (PHÂN CẤC) ---
 export const VAS_INCOME_STRUCTURE: any[] = [
     {
-        code: '01', name: 'Doanh thu bán hàng và cung cấp dịch vụ', keys: ['Sales', '01. Doanh thu bán hàng và cung cấp dịch vụ', 'Doanh thu bán hàng và cung cấp dịch vụ', 'Tổng doanh thu hoạt động kinh doanh'],
+        code: '01', name: '1. Doanh thu bán hàng và cung cấp dịch vụ', keys: ['Sales', '01. Doanh thu bán hàng và cung cấp dịch vụ', 'Doanh thu bán hàng và cung cấp dịch vụ', 'Tổng doanh thu hoạt động kinh doanh'],
         children: [
-            { code: '02', name: 'Các khoản giảm trừ doanh thu', keys: ['Sales deductions', '02. Các khoản giảm trừ doanh thu', 'Các khoản giảm trừ doanh thu'] }
+            { code: '02', name: '2. Các khoản giảm trừ doanh thu', keys: ['Sales deductions', '02. Các khoản giảm trừ doanh thu', 'Các khoản giảm trừ doanh thu'] }
         ]
     },
-    { code: '10', name: 'Doanh thu thuần về bán hàng và cung cấp dịch vụ', keys: ['Net sales', '10. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu thuần về bán hàng và cung cấp dịch vụ'], isBold: true },
-    { code: '11', name: 'Giá vốn hàng bán', keys: ['Cost of sales', '11. Giá vốn hàng bán', 'Giá vốn hàng bán'] },
-    { code: '20', name: 'Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', keys: ['Gross Profit', '20. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp'], isBold: true },
-    { code: '21', name: 'Doanh thu hoạt động tài chính', keys: ['Financial income', '21. Doanh thu hoạt động tài chính', 'Doanh thu hoạt động tài chính'] },
+    { code: '10', name: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', keys: ['Net sales', '10. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu thuần về bán hàng và cung cấp dịch vụ'], isBold: true },
+    { code: '11', name: '4. Giá vốn hàng bán', keys: ['Cost of sales', '11. Giá vốn hàng bán', 'Giá vốn hàng bán'] },
+    { code: '20', name: '5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', keys: ['Gross Profit', '20. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp'], isBold: true },
+    { code: '21', name: '6. Doanh thu hoạt động tài chính', keys: ['Financial income', '21. Doanh thu hoạt động tài chính', 'Doanh thu hoạt động tài chính'] },
     {
-        code: '22', name: 'Chi phí tài chính', keys: ['Financial expenses', '22. Chi phí tài chính', 'Chi phí tài chính'],
+        code: '22', name: '7. Chi phí tài chính', keys: ['Financial expenses', '22. Chi phí tài chính', 'Chi phí tài chính'],
         children: [
-            { code: '23', name: '- Trong đó: Chi phí lãi vay', isBold: false, keys: ['Interest expenses', 'Trong đó: Chi phí lãi vay', '23. Trong đó: Chi phí lãi vay'] }
+            { code: '23', name: 'Trong đó :Chi phí lãi vay', keys: ['Interest expenses', 'Trong đó: Chi phí lãi vay', '23. Trong đó: Chi phí lãi vay'] }
         ]
     },
-    { code: '25', name: 'Chi phí bán hàng', keys: ['Selling expenses', '25. Chi phí bán hàng', 'Chi phí bán hàng'] },
-    { code: '26', name: 'Chi phí quản lý doanh nghiệp', keys: ['General and admin expenses', '26. Chi phí quản lý doanh nghiệp', 'Chi phí quản lý doanh nghiệp'] },
-    { code: '30', name: 'Lợi nhuận thuần từ hoạt động kinh doanh', keys: ['Operating profit/(loss)', '30. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận thuần từ hoạt động kinh doanh'], isBold: true },
-    {
-        code: '31', name: 'Thu nhập khác', keys: ['Other incomes', '31. Thu nhập khác', 'Thu nhập khác'],
-        children: [
-            { code: '32', name: 'Chi phí khác', keys: ['Other expenses', '32. Chi phí khác', 'Chi phí khác'] }
-        ]
-    },
-    { code: '40', name: 'Lợi nhuận khác', keys: ['Net other income/(expenses)', '40. Lợi nhuận khác', 'Lợi nhuận khác'], isBold: true },
-    { code: '50', name: 'Tổng lợi nhuận kế toán trước thuế', keys: ['Net accounting profit/(loss) before tax', '50. Tổng lợi nhuận kế toán trước thuế', 'Tổng lợi nhuận kế toán trước thuế', 'Lợi nhuận trước thuế'], isBold: true },
-    { code: '60', name: 'Lợi nhuận sau thuế thu nhập doanh nghiệp', keys: ['Net profit/(loss) after tax', '60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'], isBold: true },
-    { code: '70', name: 'LNST của cổ đông công ty mẹ', keys: ['Attributable to parent company', 'Lợi nhuận sau thuế của cổ đông công ty mẹ', 'Lợi nhuận sau thuế của công ty mẹ'], isBold: true },
-    { code: 'EPS', name: 'Lãi cơ bản trên cổ phiếu (EPS)', keys: ['EPS basic (VND)', '70. Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu (VND)'] }
+    { code: '24', name: '8. Phần lãi/lỗ trong công ty liên doanh, liên kết', keys: ['Gain/(loss) from joint ventures', '24. Phần lãi lỗ trong công ty liên doanh, liên kết', 'Phần lãi lỗ trong công ty liên doanh, liên kết', 'Lãi/lỗ từ công ty liên doanh, liên kết'] },
+    { code: '25', name: '9. Chi phí bán hàng', keys: ['Selling expenses', '25. Chi phí bán hàng', 'Chi phí bán hàng'] },
+    { code: '26', name: '10. Chi phí quản lý doanh nghiệp', keys: ['General and admin expenses', '26. Chi phí quản lý doanh nghiệp', 'Chi phí quản lý doanh nghiệp'] },
+    { code: '30', name: '11. Lợi nhuận thuần từ hoạt động kinh doanh', keys: ['Operating profit/(loss)', '30. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận thuần từ hoạt động kinh doanh'], isBold: true },
+    { code: '31', name: '12. Thu nhập khác', keys: ['Other incomes', '31. Thu nhập khác', 'Thu nhập khác'] },
+    { code: '32', name: '13. Chi phí khác', keys: ['Other expenses', '32. Chi phí khác', 'Chi phí khác'] },
+    { code: '40', name: '14. Lợi nhuận khác', keys: ['Net other income/(expenses)', '40. Lợi nhuận khác', 'Lợi nhuận khác'], isBold: true },
+    { code: 'LK_H_SPEC', name: 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', keys: ['Profit from associate', 'Phần lãi lỗ trong công ty liên doanh, liên kết'] },
+    { code: '50', name: '15. Tổng lợi nhuận kế toán trước thuế', keys: ['Net accounting profit/(loss) before tax', '50. Tổng lợi nhuận kế toán trước thuế', 'Tổng lợi nhuận kế toán trước thuế', 'Lợi nhuận trước thuế'], isBold: true },
+    { code: '51', name: '16. Chi phí thuế TNDN hiện hành', keys: ['Business income tax - current', '51. Chi phí thuế TNDN hiện hành', 'Chi phí thuế TNDN hiện hành'] },
+    { code: '52', name: '17. Chi phí thuế TNDN hoãn lại', keys: ['Business income tax - deferred', '52. Chi phí thuế TNDN hoãn lại', 'Chi phí thuế TNDN hoãn lại'] },
+    { code: '60', name: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp', keys: ['Net profit/(loss) after tax', '60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'], isBold: true },
+    { code: '61', name: 'Lợi ích của cổ đông thiểu số', keys: ['Minority interests', 'Lợi ích của cổ đông thiểu số'] },
+    { code: '70', name: 'Lợi nhuận sau thuế của cổ đông của Công ty mẹ', keys: ['Attributable to parent company', 'Lợi nhuận sau thuế của cổ đông công ty mẹ', 'Lợi nhuận sau thuế của công ty mẹ'] },
+    { code: 'EPS', name: '19. Lãi cơ bản trên cổ phiếu (*) (VNÐ)', keys: ['EPS basic (VND)', '70. Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu (VND)'] }
 ];
 
 // --- CẤU TRÚC NGÂN HÀNG (BANKING) ---
@@ -395,7 +396,13 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
                     if (codeMatch) return record[codeMatch];
                 }
                 // 4. Fuzzy name match (strip numbering)
-                const cleanName = item.name.toLowerCase().replace(/^[ivx]+\.\s*/, '').replace(/^\d+\.\s*/, '').replace(/^[a-d]\.\s*/, '').replace('- ', '').trim();
+                const cleanName = item.name.toLowerCase()
+                    .replace(/^[ivx]+\.\s*/, '')
+                    .replace(/^\d+[a-z]*\.\s*/, '')
+                    .replace(/^[a-d]\.\s*/, '')
+                    .replace(/^- \s*/, '')
+                    .replace('- ', '')
+                    .trim();
                 const fuzzyKey = allKeys.find((k: string) => k.toLowerCase().includes(cleanName));
                 if (fuzzyKey) return record[fuzzyKey];
                 return 0;
@@ -411,15 +418,15 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
             mapRecursive(currentStructure);
 
             // Standard VAS Calculations if missing
-            if (!result['Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || result['Doanh thu thuần về bán hàng và cung cấp dịch vụ'] === 0) {
-                const dt = result['Doanh thu bán hàng và cung cấp dịch vụ'] || 0;
-                const gt = result['Các khoản giảm trừ doanh thu'] || 0;
-                result['Doanh thu thuần về bán hàng và cung cấp dịch vụ'] = dt - gt;
+            if (!result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] === 0) {
+                const dt = result['1. Doanh thu bán hàng và cung cấp dịch vụ'] || 0;
+                const gt = result['2. Các khoản giảm trừ doanh thu'] || 0;
+                result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] = dt - gt;
             }
-            if (!result['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] || result['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] === 0) {
-                const dtt = result['Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || 0;
-                const gv = result['Giá vốn hàng bán'] || 0;
-                result['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] = dtt - gv;
+            if (!result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] || result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] === 0) {
+                const dtt = result['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ'] || 0;
+                const gv = result['4. Giá vốn hàng bán'] || 0;
+                result['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ'] = dtt - gv;
             }
 
             const y = result['Năm'] || result['year'] || '';
@@ -429,6 +436,24 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
         });
     }, [rawRecords, period]);
 
+    const fullStructure = useMemo(() => {
+        const structure = [...currentStructure];
+
+        // Find keys used in structure
+        const usedKeys = new Set<string>();
+        const extractUsedKeys = (items: any[]) => {
+            items.forEach(item => {
+                if (item.keys) item.keys.forEach((k: string) => usedKeys.add(k.toLowerCase()));
+                if (item.children) extractUsedKeys(item.children);
+            });
+        };
+        extractUsedKeys(structure);
+
+        // Find keys in raw data that are NOT in usedKeys
+        // Removed as per user request (unmapped metrics)
+        return structure;
+    }, [currentStructure, rawRecords]);
+
     const allMetrics = useMemo(() => {
         const list: any[] = [];
         const extract = (items: any[]) => {
@@ -437,9 +462,9 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
                 if (i.children) extract(i.children);
             });
         };
-        extract(currentStructure);
+        extract(fullStructure);
         return list;
-    }, [currentStructure]);
+    }, [fullStructure]);
 
     const displayPeriods = useMemo(() => processedData.map((d: any) => d.periodLabel), [processedData]);
 
@@ -776,7 +801,7 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
                 }
             >
                 <Table
-                    dataSource={currentStructure}
+                    dataSource={fullStructure}
                     columns={columns as any}
                     pagination={false}
                     scroll={{ x: 1200, y: 500 }}
