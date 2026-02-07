@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Radio, Card, Empty, Spin, Checkbox, Space, Divider, Tooltip, Button, Dropdown, Input, Modal } from 'antd';
-import { Activity, BarChart3, TrendingUp, Info, ChevronRight, ChevronDown, RefreshCw, LineChart, BarChart, Layers, Trash2, Settings2, Maximize2, Minimize2 } from 'lucide-react';
+import { Table, Radio, Card, Empty, Spin, Checkbox, Space, Divider, Tooltip, Button, Dropdown, Input, Modal, Slider, Popover } from 'antd';
+import { Activity, BarChart3, TrendingUp, Info, ChevronRight, ChevronDown, RefreshCw, LineChart, BarChart, Layers, Trash2, Settings2, Maximize2, Minimize2, Settings } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useDroppable } from '@dnd-kit/core';
 import { supabase } from '../supabaseClient';
@@ -395,237 +395,593 @@ export const BANK_BALANCE_STRUCTURE: any[] = [
 
 export const SECURITIES_BALANCE_STRUCTURE: any[] = [
     {
-        code: 'A', name: 'A. TÀI SẢN NGẮN HẠN', isBold: true,
-        keys: ['A. TÀI SẢN NGẮN HẠN', 'TÀI SẢN NGẮN HẠN'],
+        code: '100', name: 'TÀI SẢN', isBold: true,
+        keys: ['TÀI SẢN'],
         children: [
             {
-                code: 'I', name: 'I. Tài sản tài chính ngắn hạn', isBold: true,
-                keys: ['I. Tài sản tài chính ngắn hạn', 'I. TÀI SẢN TÀI CHÍNH'],
+                code: '110', name: 'A. TÀI SẢN NGẮN HẠN', isBold: true,
+                keys: ['A. TÀI SẢN NGẮN HẠN', 'TÀI SẢN NGẮN HẠN'],
                 children: [
                     {
-                        code: '1', name: '1. Tiền và các khoản tương đương tiền', isBold: true,
-                        keys: ['1. Tiền và các khoản tương đương tiền'],
-                        children: [
-                            { code: '1.1', name: '1.1. Tiền', keys: ['1.1. Tiền'] },
-                            { code: '1.2', name: '1.2. Các khoản tương đương tiền', keys: ['1.2. Các khoản tương đương tiền'] }
-                        ]
-                    }
-                ]
-            },
-            {
-                code: 'INVEST', name: 'Các khoản đầu tư tài chính ngắn hạn', isBold: true,
-                keys: ['Các khoản đầu tư tài chính ngắn hạn'],
-                children: [
-                    {
-                        code: 'DT_NH', name: '+Đầu tư ngắn hạn', keys: ['+Đầu tư ngắn hạn'],
-                        children: [
-                            { code: 'DP_NH', name: 'Dự phòng giảm giá đầu tư ngắn hạn', keys: ['Dự phòng giảm giá đầu tư ngắn hạn'] }
-                        ]
-                    },
-                    { code: '2', name: '2. Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)', keys: ['2. Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)'] },
-                    { code: '3', name: '3. Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)', keys: ['3. Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)'] },
-                    { code: '4', name: '4. Các khoản cho vay', keys: ['4. Các khoản cho vay'] },
-                    {
-                        code: '5', name: '5. Các tài sản tài chính sẵn sàn để bán (AFS)', keys: ['5. Các tài sản tài chính sẵn sàn để bán (AFS)'],
-                        children: [
-                            { code: '6', name: '6. Dự phòng suy giảm giá trị tài sản tài chính', keys: ['6. Dự phòng suy giảm giá trị tài sản tài chính và tài sản thế chấp'] }
-                        ]
-                    },
-                    {
-                        code: '7', name: '7. Các khoản phải thu ngắn hạn', isBold: true,
-                        keys: ['7. Các khoản phải thu ngắn hạn'],
-                        children: [
-                            { code: '7.1', name: '7.1. Phải thu bán các tài sản tài chính', keys: ['7.1. Phải thu bán các tài sản tài chính'] },
-                            {
-                                code: '7.2', name: '7.2. Phải thu và dự thu cổ tức, tiền lãi', keys: ['7.2. Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính'],
-                                children: [
-                                    { code: '7.2.2', name: '7.2.2. Dự thu cổ tức, tiền lãi chưa đến ngày nhận', keys: ['7.2.2. Dự thu cổ tức, tiền lãi chưa đến ngày nhận'] }
-                                ]
-                            }
-                        ]
-                    }
-                ]
-            },
-            {
-                code: 'TRA_TRUOC', name: 'Trả trước cho người bán', keys: ['Trả trước cho người bán'],
-                children: [
-                    { code: '9', name: '9. Phải thu các dịch vụ CTCK cung cấp', keys: ['9. Phải thu các dịch vụ CTCK cung cấp'] }
-                ]
-            },
-            {
-                code: 'PT_GDCK', name: 'Phải thu hoạt động giao dịch chứng khoán', keys: ['Phải thu hoạt động giao dịch chứng khoán'],
-                children: [
-                    {
-                        code: '12', name: '12. Các khoản phải thu khác', keys: ['12. Các khoản phải thu khác'],
+                        code: 'I', name: 'I. Tài sản tài chính ngắn hạn', isBold: true,
+                        keys: ['I. Tài sản tài chính ngắn hạn', 'I. TÀI SẢN TÀI CHÍNH'],
                         children: [
                             {
-                                code: '13', name: '13. Dự phòng suy giảm giá trị các khoản phải thu', keys: ['13. Dự phòng suy giảm giá trị các khoản phải thu'],
+                                code: '1', name: '1. Tiền và các khoản tương đương tiền', isBold: true,
+                                keys: ['1. Tiền và các khoản tương đương tiền'],
                                 children: [
-                                    { code: 'DP_PT_KD', name: 'Dự phòng các khoản phải thu ngắn hạn khó đòi', keys: ['Dự phòng các khoản phải thu ngắn hạn khó đòi'] }
+                                    { code: '1.1', name: '1.1. Tiền', keys: ['1.1. Tiền'] },
+                                    { code: '1.2', name: '1.2. Các khoản tương đương tiền', keys: ['1.2. Các khoản tương đương tiền'] }
                                 ]
-                            }
+                            },
+                            {
+                                code: 'DT_TC_NH', name: 'Các khoản đầu tư tài chính ngắn hạn',
+                                keys: ['Các khoản đầu tư tài chính ngắn hạn'],
+                                children: [
+                                    { code: 'DT_NH', name: '+Đầu tư ngắn hạn', keys: ['+Đầu tư ngắn hạn', 'Đầu tư ngắn hạn'] },
+                                    { code: 'DT_NH_UT', name: '+Đầu tư ngắn hạn của người ủy thác Đầu tư', keys: ['+Đầu tư ngắn hạn của người ủy thác Đầu tư', 'Đầu tư ngắn hạn của người ủy thác Đầu tư'] },
+                                    { code: 'DP_DT_NH', name: 'Dự phòng giảm giá đầu tư ngắn hạn', keys: ['Dự phòng giảm giá đầu tư ngắn hạn'] }
+                                ]
+                            },
+                            { code: '2', name: '2. Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)', keys: ['2. Các tài sản tài chính ghi nhận thông qua lãi lỗ (FVTPL)'] },
+                            { code: '3', name: '3. Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)', keys: ['3. Các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)'] },
+                            { code: '4', name: '4. Các khoản cho vay', keys: ['4. Các khoản cho vay'] },
+                            { code: '5', name: '5. Các tài sản tài chính sẵn sàn để bán (AFS)', keys: ['5. Các tài sản tài chính sẵn sàn để bán (AFS)'] },
+                            { code: '6', name: '6. Dự phòng suy giảm giá trị tài sản tài chính và tài sản thế chấp', keys: ['6. Dự phòng suy giảm giá trị tài sản tài chính và tài sản thế chấp'] },
+                            {
+                                code: '7', name: '7. Các khoản phải thu ngắn hạn', isBold: true,
+                                keys: ['7. Các khoản phải thu ngắn hạn'],
+                                children: [
+                                    { code: '7.1', name: '7.1. Phải thu bán các tài sản tài chính', keys: ['7.1. Phải thu bán các tài sản tài chính'] },
+                                    {
+                                        code: '7.2', name: '7.2. Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính',
+                                        keys: ['7.2. Phải thu và dự thu cổ tức, tiền lãi các tài sản tài chính'],
+                                        children: [
+                                            { code: '7.2.1', name: '7.2.1. Phải thu cổ tức, tiền lãi đến ngày nhận', keys: ['7.2.1. Phải thu cổ tức, tiền lãi đến ngày nhận'] },
+                                            { code: '7.2.1.sub', name: 'Trong đó: Phải thu khó đòi về cổ tức, tiền lãi đến ngày nhận nhưng chưa nhận được', keys: ['Trong đó: Phải thu khó đòi về cổ tức, tiền lãi đến ngày nhận nhưng chưa nhận được', 'Trong đó: Phải thu khó đòi về cổ tức, tiền lãi đến ngày nhận  nhưng chưa nhận được'] },
+                                            { code: '7.2.2', name: '7.2.2. Dự thu cổ tức, tiền lãi chưa đến ngày nhận', keys: ['7.2.2. Dự thu cổ tức, tiền lãi chưa đến ngày nhận'] }
+                                        ]
+                                    },
+                                    { code: 'TRA_TRUOC', name: 'Trả trước cho người bán', keys: ['Trả trước cho người bán'] },
+                                    { code: '9', name: '9. Phải thu các dịch vụ CTCK cung cấp', keys: ['9. Phải thu các dịch vụ CTCK cung cấp'] },
+                                    { code: 'PT_GDCK', name: 'Phải thu hoạt động giao dịch chứng khoán', keys: ['Phải thu hoạt động giao dịch chứng khoán'] },
+                                    { code: '10', name: '10. Phải thu nội bộ ngắn hạn', keys: ['10. Phải thu nội bộ ngắn hạn'] },
+                                    { code: '11', name: '11. Phải thu về lỗi giao dịch chứng khoán', keys: ['11. Phải thu về lỗi giao dịch chứng khoán'] },
+                                    { code: '12', name: '12. Các khoản phải thu khác', keys: ['12. Các khoản phải thu khác'] },
+                                    {
+                                        code: '13', name: '13. Dự phòng suy giảm giá trị các khoản phải thu',
+                                        keys: ['13. Dự phòng suy giảm giá trị các khoản phải thu'],
+                                        children: [
+                                            { code: 'DP_PT_KD', name: 'Dự phòng các khoản phải thu ngắn hạn khó đòi', keys: ['Dự phòng các khoản phải thu ngắn hạn khó đòi'] }
+                                        ]
+                                    },
+                                    { code: 'PT_KH', name: 'Phải thu khách hàng', keys: ['Phải thu khách hàng'] }
+                                ]
+                            },
                         ]
-                    }
-                ]
-            },
-            { code: 'PT_KH', name: 'Phải thu khách hàng', keys: ['Phải thu khách hàng'] },
-            { code: 'HTK', name: 'Hàng tồn kho', keys: ['Hàng tồn kho'] },
-            {
-                code: 'HTK_CT', name: 'Hàng tồn kho (chi tiết)', keys: ['Hàng tồn kho (chi tiết)'],
-                children: [
+                    },
+                    {
+                        code: 'HTK_GRP', name: 'Hàng tồn kho',
+                        keys: ['Hàng tồn kho'],
+                        children: [
+                            { code: 'HTK_CT', name: 'Hàng tồn kho (chi tiết)', keys: ['Hàng tồn kho (chi tiết)'] },
+                            { code: 'DP_HTK', name: 'Dự phòng giảm giá hàng tồn kho', keys: ['Dự phòng giảm giá hàng tồn kho'] }
+                        ]
+                    },
                     {
                         code: 'II', name: 'II. Tài sản ngắn hạn khác', isBold: true,
                         keys: ['II. Tài sản ngắn hạn khác'],
                         children: [
                             { code: '1_II', name: '1. Tạm ứng', keys: ['1. Tạm ứng'] },
                             { code: '2_II', name: '2. Vật tư văn phòng, công cụ, dụng cụ', keys: ['2. Vật tư văn phòng, công cụ, dụng cụ'] },
-                            {
-                                code: '3_II', name: '3. Chi phí trả trước ngắn hạn', keys: ['3. Chi phí trả trước ngắn hạn'],
-                                children: [
-                                    { code: '4_II', name: '4. Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn', keys: ['4. Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn'] }
-                                ]
-                            },
-                            { code: '8_II', name: '8. Thuế GTGT còn được khấu trừ', keys: ['8. Thuế GTGT còn được khấu trừ'] }
+                            { code: '3_II', name: '3. Chi phí trả trước ngắn hạn', keys: ['3. Chi phí trả trước ngắn hạn'] },
+                            { code: '4_II', name: '4. Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn', keys: ['4. Cầm cố, thế chấp, ký quỹ, ký cược ngắn hạn'] },
+                            { code: '8_II', name: '8. Thuế GTGT còn được khấu trừ', keys: ['8. Thuế GTGT còn được khấu trừ'] },
+                            { code: 'THUE_NN', name: 'Thuế và các khoản khác phải thu của nhà nước', keys: ['Thuế và các khoản khác phải thu của nhà nước'] },
+                            { code: 'GD_TP', name: 'Giao dịch mua bán lại trái phiếu Chính phủ (TS)', keys: ['Giao dịch mua bán lại trái phiếu Chính phủ (TS)'] },
+                            { code: '5_II', name: '5. Tài sản ngắn hạn khác', keys: ['5. Tài sản ngắn hạn khác'] },
+                            { code: '6_II', name: '6. Dự phòng suy giảm giá trị tài sản ngắn hạn khác', keys: ['6. Dự phòng suy giảm giá trị tài sản ngắn hạn khác'] }
                         ]
                     }
                 ]
             },
             {
-                code: 'THUE_PT', name: 'Thuế và các khoản khác phải thu của nhà nước', keys: ['Thuế và các khoản khác phải thu của nhà nước'],
+                code: '200', name: 'B. TÀI SẢN DÀI HẠN', isBold: true,
+                keys: ['B. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN'],
                 children: [
-                    { code: '5_II', name: '5. Tài sản ngắn hạn khác', keys: ['5. Tài sản ngắn hạn khác'] }
+                    {
+                        code: 'I_B', name: 'I. Tài sản tài chính dài hạn', isBold: true,
+                        keys: ['I. Tài sản tài chính dài hạn'],
+                        children: [
+                            {
+                                code: '1_I_B', name: '1. Các khoản phải thu dài hạn',
+                                keys: ['1. Các khoản phải thu dài hạn'],
+                                children: [
+                                    { code: '1.1_I_B', name: '1.1. Phải thu dài hạn của khách hàng', keys: ['1.1. Phải thu dài hạn của khách hàng'] },
+                                    { code: '1.2_I_B', name: '1.2. Vốn kinh doanh ở các đơn vị trực thuộc', keys: ['1.2. Vốn kinh doanh ở các đơn vị trực thuộc'] },
+                                    { code: '1.3_I_B', name: '1.3.  Phải thu dài hạn nội bộ', keys: ['1.3.  Phải thu dài hạn nội bộ'] },
+                                    { code: '1.4_I_B', name: '1.4. Phải thu dài hạn khác', keys: ['1.4. Phải thu dài hạn khác'] },
+                                    { code: '1.5_I_B', name: '1.5. Dự phòng phải thu dài hạn khó đòi', keys: ['1.5. Dự phòng phải thu dài hạn khó đòi'] }
+                                ]
+                            },
+                            {
+                                code: '2_I_B', name: '2. Các khoản đầu tư', isBold: true,
+                                keys: ['2. Các khoản đầu tư'],
+                                children: [
+                                    { code: '2.1_I_B', name: '2.1. Các khoản đầu tư nắm giữ đến ngày đáo hạn', keys: ['2.1. Các khoản đầu tư nắm giữ đến ngày đáo hạn'] },
+                                    { code: '2.2_I_B', name: '2.2. Đầu tư vào công ty con', keys: ['2.2. Đầu tư vào công ty con'] },
+                                    { code: '2.3_I_B', name: '2.3 Đầu tư vào công ty liên kết, liên doanh', keys: ['2.3 Đầu tư vào công ty liên kết, liên doanh'] },
+                                    {
+                                        code: '2.4_I_B', name: '2.4 Đầu tư chứng khoán dài hạn',
+                                        keys: ['2.4 Đầu tư chứng khoán dài hạn'],
+                                        children: [
+                                            { code: 'sub1_2.4', name: '- Chứng khoán sẵn sàng để bán', keys: ['- Chứng khoán sẵn sàng để bán'] },
+                                            { code: 'sub2_2.4', name: '- Chứng khoán nắm giữ đến ngày đáo hạn', keys: ['- Chứng khoán nắm giữ đến ngày đáo hạn'] }
+                                        ]
+                                    },
+                                    { code: '2.5_I_B', name: '2.5 Đầu tư dài hạn khác', keys: ['2.5 Đầu tư dài hạn khác'] },
+                                    { code: '2.6_I_B', name: '2.6 Dự phòng giảm giá đầu tư dài hạn', keys: ['2.6 Dự phòng giảm giá đầu tư dài hạn'] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        code: 'II_B', name: 'II. Tài sản cố định', isBold: true,
+                        keys: ['II. Tài sản cố định'],
+                        children: [
+                            {
+                                code: '1_II_B', name: '1. Tài sản cố định hữu hình',
+                                keys: ['1. Tài sản cố định hữu hình'],
+                                children: [
+                                    { code: 'NG_HH', name: '- Nguyên giá', keys: ['- Nguyên giá', 'Nguyên giá'] },
+                                    { code: 'HM_HH', name: '- Giá trị hao mòn lũy kế', keys: ['- Giá trị hao mòn lũy kế', 'Giá trị hao mòn lũy kế'] },
+                                    { code: 'DG_HH', name: '- Đánh giá TSCĐHH theo giá trị hợp lý', keys: ['- Đánh giá TSCĐHH theo giá trị hợp lý'] }
+                                ]
+                            },
+                            {
+                                code: '2_II_B', name: '2. Tài sản cố định thuê tài chính',
+                                keys: ['2. Tài sản cố định thuê tài chính'],
+                                children: [
+                                    { code: 'DG_TC', name: '- Đánh giá TSCĐTTC theo giá trị hợp lý', keys: ['- Đánh giá TSCĐTTC theo giá trị hợp lý'] }
+                                ]
+                            },
+                            {
+                                code: '3_II_B', name: '3. Tài sản cố định vô hình',
+                                keys: ['3. Tài sản cố định vô hình'],
+                                children: [
+                                    { code: 'DG_VH', name: '- Đánh giá TSCĐVH theo giá trị hợp lý', keys: ['- Đánh giá TSCĐVH theo giá trị hợp lý'] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        code: 'III_B', name: 'III. Bất động sản đầu tư', isBold: true,
+                        keys: ['III. Bất động sản đầu tư'],
+                        children: [
+                            { code: 'DG_BDS', name: '- Đánh giá BĐSĐT theo giá trị hợp lý', keys: ['- Đánh giá BĐSĐT theo giá trị hợp lý'] }
+                        ]
+                    },
+                    { code: 'IV_B', name: 'IV. Chi phí xây dựng cơ bản dở dang', keys: ['IV. Chi phí xây dựng cơ bản dở dang'] },
+                    {
+                        code: 'V_B', name: 'V. Tài sản dài hạn khác', isBold: true,
+                        keys: ['V. Tài sản dài hạn khác'],
+                        children: [
+                            { code: '1_V_B', name: '1. Cầm cố, thế chấp, ký quỹ, ký cược dài hạn', keys: ['1. Cầm cố, thế chấp, ký quỹ, ký cược dài hạn'] },
+                            { code: '2_V_B', name: '2. Chi phí trả trước dài hạn', keys: ['2. Chi phí trả trước dài hạn'] },
+                            { code: '3_V_B', name: '3. Tài sản thuế thu nhập hoãn lại', keys: ['3. Tài sản thuế thu nhập hoãn lại'] },
+                            { code: '4_V_B', name: '4. Tiền nộp Quỹ hỗ trợ thanh toán', keys: ['4. Tiền nộp Quỹ hỗ trợ thanh toán'] },
+                            { code: '5_V_B', name: '5. Tài sản dài hạn khác', keys: ['5. Tài sản dài hạn khác'] },
+                            { code: '6_V_B', name: '6. Lợi thế thương mại', keys: ['6. Lợi thế thương mại'] }
+                        ]
+                    },
+                    { code: 'VI_B', name: 'VI. Dự phòng suy giảm giá trị tài sản dài hạn', keys: ['VI. Dự phòng suy giảm giá trị tài sản dài hạn'] }
                 ]
             }
         ]
     },
+    { code: '270', name: 'TỔNG CỘNG TÀI SẢN (270=100+200)', isBold: true, keys: ['TỔNG CỘNG TÀI SẢN (270=100+200)', 'TỔNG CỘNG TÀI SẢN'] },
     {
-        code: 'B', name: 'B. TÀI SẢN DÀI HẠN', isBold: true,
-        keys: ['B. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN'],
-        children: [
-            { code: '2_B', name: '2. Các khoản đầu tư', isBold: true, keys: ['2. Các khoản đầu tư'] }
-        ]
-    },
-    {
-        code: '2.5_B', name: '2.5 Đầu tư dài hạn khác', keys: ['2.5 Đầu tư dài hạn khác'],
-        children: [
-            { code: '2.6_B', name: '2.6 Dự phòng giảm giá đầu tư dài hạn', keys: ['2.6 Dự phòng giảm giá đầu tư dài hạn'] }
-        ]
-    },
-    {
-        code: 'II_B', name: 'II. Tài sản cố định', isBold: true,
-        keys: ['II. Tài sản cố định'],
-        children: [
-            { code: '1_B', name: '1. Tài sản cố định hữu hình', keys: ['1. Tài sản cố định hữu hình'] },
-            { code: '3_B', name: '3. Tài sản cố định vô hình', keys: ['3. Tài sản cố định vô hình'] }
-        ]
-    },
-    { code: 'IV_B', name: 'IV. Chi phí xây dựng cơ bản dở dang', keys: ['IV. Chi phí xây dựng cơ bản dở dang'] },
-    {
-        code: 'V_B', name: 'V. Tài sản dài hạn khác', isBold: true,
-        keys: ['V. Tài sản dài hạn khác'],
-        children: [
-            { code: '1_V_B', name: '1. Cầm cố, thế chấp, ký quỹ, ký cược dài hạn', keys: ['1. Cầm cố, thế chấp, ký quỹ, ký cược dài hạn'] },
-            { code: '2_V_B', name: '2. Chi phí trả trước dài hạn', keys: ['2. Chi phí trả trước dài hạn'] },
-            { code: '3_V_B', name: '3. Tài sản thuế thu nhập hoãn lại', keys: ['3. Tài sản thuế thu nhập hoãn lại'] },
-            { code: '4_V_B', name: '4. Tiền nộp Quỹ hỗ trợ thanh toán', keys: ['4. Tiền nộp Quỹ hỗ trợ thanh toán'] },
-            {
-                code: '5_V_B', name: '5. Tài sản dài hạn khác', keys: ['5. Tài sản dài hạn khác'],
-                children: [
-                    { code: '6_V_B', name: '6. Lợi thế thương mại', keys: ['6. Lợi thế thương mại'] }
-                ]
-            }
-        ]
-    },
-    { code: 'TỔNG_CỘNG_TÀI_SẢN', name: 'TỔNG CỘNG TÀI SẢN (270=100+200)', isBold: true, keys: ['TỔNG CỘNG TÀI SẢN (270=100+200)', 'TỔNG CỘNG TÀI SẢN'] },
-    { code: 'NỢ_PHẢI_TRẢ', name: 'A. NỢ PHẢI TRẢ (300=310+340)', isBold: true, keys: ['A. NỢ PHẢI TRẢ (300=310+340)', 'NỢ PHẢI TRẢ'] },
-    {
-        code: 'I_NỢ', name: 'I. Nợ ngắn hạn', isBold: true,
-        keys: ['I. Nợ ngắn hạn'],
+        code: 'NGUON_VON', name: 'NGUỒN VỐN', isBold: true, keys: ['NGUỒN VỐN'],
         children: [
             {
-                code: '1_I_NỢ', name: '1. Vay và nợ thuê tài chính ngắn hạn', isBold: true,
-                keys: ['1. Vay và nợ thuê tài chính ngắn hạn'],
+                code: '300', name: 'A. NỢ PHẢI TRẢ (300=310+340)', isBold: true,
+                keys: ['A. NỢ PHẢI TRẢ (300=310+340)', 'NỢ PHẢI TRẢ'],
                 children: [
-                    { code: '1.1_I_NỢ', name: '1.1. Vay ngắn hạn', keys: ['1.1. Vay ngắn hạn'] }
-                ]
-            },
-            { code: '4_I_NỢ', name: '4. Trái phiếu phát hành ngắn hạn', keys: ['4. Trái phiếu phát hành ngắn hạn'] },
-            { code: '6_I_NỢ', name: '6. Phải trả hoạt động giao dịch chứng khoán', keys: ['6. Phải trả hoạt động giao dịch chứng khoán'] },
-            { code: '7_I_NỢ', name: '7. Phải trả về lỗi giao dịch các tài sản tài chính', keys: ['7. Phải trả về lỗi giao dịch các tài sản tài chính'] },
-            { code: '8_I_NỢ', name: '8. Phải trả người bán ngắn hạn', keys: ['8. Phải trả người bán ngắn hạn'] },
-            { code: '9_I_NỢ', name: '9. Người mua trả tiền trước ngắn hạn', keys: ['9. Người mua trả tiền trước ngắn hạn'] },
-            { code: '10_I_NỢ', name: '10. Thuế và các khoản phải nộp Nhà nước', keys: ['10. Thuế và các khoản phải nộp Nhà nước'] },
-            { code: '11_I_NỢ', name: '11. Phải trả người lao động', keys: ['11. Phải trả người lao động'] },
-            { code: '12_I_NỢ', name: '12. Các khoản trích nộp phúc lợi nhân viên', keys: ['12. Các khoản trích nộp phúc lợi nhân viên'] },
-            { code: '13_I_NỢ', name: '13. Chi phí phải trả ngắn hạn', keys: ['13. Chi phí phải trả ngắn hạn'] },
-            { code: '17_I_NỢ', name: '17. Các khoản phải trả, phải nộp khác ngắn hạn', keys: ['17. Các khoản phải trả, phải nộp khác ngắn hạn'] }
-        ]
-    },
-    {
-        code: 'PT_CO_TUC', name: 'Phải trả hộ cổ tức, gốc và lãi trái phiếu', keys: ['Phải trả hộ cổ tức, gốc và lãi trái phiếu'],
-        children: [
-            { code: '19_I_NỢ', name: '19. Quỹ khen thưởng phúc lợi', keys: ['19. Quỹ khen thưởng phúc lợi'] }
-        ]
-    },
-    {
-        code: 'II_NỢ', name: 'II. Nợ dài hạn', isBold: true,
-        keys: ['II. Nợ dài hạn'],
-        children: [
-            { code: '1_II_NỢ', name: '1. Vay và nợ thuê tài chính dài hạn', keys: ['1. Vay và nợ thuê tài chính dài hạn'] },
-            {
-                code: '11_II_NỢ', name: '11. Phải trả, phải nộp khác dài hạn', keys: ['11. Phải trả, phải nộp khác dài hạn'],
-                children: [
-                    { code: '13_II_NỢ', name: '13. Dự phòng bồi thường thiệt hại cho nhà đầu tư', keys: ['13. Dự phòng bồi thường thiệt hại cho nhà đầu tư'] }
+                    {
+                        code: 'I_N', name: 'I. Nợ ngắn hạn', isBold: true,
+                        keys: ['I. Nợ ngắn hạn'],
+                        children: [
+                            {
+                                code: '1_I_N', name: '1. Vay và nợ thuê tài chính ngắn hạn', isBold: true,
+                                keys: ['1. Vay và nợ thuê tài chính ngắn hạn'],
+                                children: [
+                                    { code: '1.1_I_N', name: '1.1. Vay ngắn hạn', keys: ['1.1. Vay ngắn hạn'] },
+                                    { code: '1.2_I_N', name: '1.2 Nợ thuê tài sản tài chính ngắn hạn', keys: ['1.2 Nợ thuê tài sản tài chính ngắn hạn'] }
+                                ]
+                            },
+                            { code: '2_I_N', name: '2. Vay tài sản tài chính ngắn hạn', keys: ['2. Vay tài sản tài chính ngắn hạn'] },
+                            { code: '3_I_N', name: '3. Trái phiếu chuyển đổi ngắn hạn', keys: ['3. Trái phiếu chuyển đổi ngắn hạn'] },
+                            { code: '4_I_N', name: '4. Trái phiếu phát hành ngắn hạn', keys: ['4. Trái phiếu phát hành ngắn hạn'] },
+                            { code: '5_I_N', name: '5. Vay quỹ hỗ trợ thanh toán', keys: ['5. Vay quỹ hỗ trợ thanh toán'] },
+                            { code: '6_I_N', name: '6. Phải trả hoạt động giao dịch chứng khoán', keys: ['6. Phải trả hoạt động giao dịch chứng khoán'] },
+                            { code: '7_I_N', name: '7. Phải trả về lỗi giao dịch các tài sản tài chính', keys: ['7. Phải trả về lỗi giao dịch các tài sản tài chính'] },
+                            { code: '8_I_N', name: '8. Phải trả người bán ngắn hạn', keys: ['8. Phải trả người bán ngắn hạn'] },
+                            { code: '9_I_N', name: '9. Người mua trả tiền trước ngắn hạn', keys: ['9. Người mua trả tiền trước ngắn hạn'] },
+                            { code: '10_I_N', name: '10. Thuế và các khoản phải nộp Nhà nước', keys: ['10. Thuế và các khoản phải nộp Nhà nước'] },
+                            { code: '11_I_N', name: '11. Phải trả người lao động', keys: ['11. Phải trả người lao động'] },
+                            { code: '12_I_N', name: '12. Các khoản trích nộp phúc lợi nhân viên', keys: ['12. Các khoản trích nộp phúc lợi nhân viên'] },
+                            { code: '13_I_N', name: '13. Chi phí phải trả ngắn hạn', keys: ['13. Chi phí phải trả ngắn hạn'] },
+                            { code: '14_I_N', name: '14. Phải trả nội bộ ngắn hạn', keys: ['14. Phải trả nội bộ ngắn hạn'] },
+                            { code: '15_I_N', name: '15. Doanh thu chưa thực hiện ngắn hạn', keys: ['15. Doanh thu chưa thực hiện ngắn hạn'] },
+                            { code: '16_I_N', name: '16. Nhận ký quỹ, ký cược ngắn hạn', keys: ['16. Nhận ký quỹ, ký cược ngắn hạn'] },
+                            { code: '17_I_N', name: '17. Các khoản phải trả, phải nộp khác ngắn hạn', keys: ['17. Các khoản phải trả, phải nộp khác ngắn hạn'] },
+                            { code: 'PT_HO', name: 'Phải trả hộ cổ tức, gốc và lãi trái phiếu', keys: ['Phải trả hộ cổ tức, gốc và lãi trái phiếu'] },
+                            { code: 'PT_TCPH', name: 'Phải trả tổ chức phát hành chứng khoán', keys: ['Phải trả tổ chức phát hành chứng khoán'] },
+                            { code: '18_I_N', name: '18. Dự phòng phải trả ngắn hạn', keys: ['18. Dự phòng phải trả ngắn hạn'] },
+                            { code: 'GD_TP_CP', name: 'Giao dịch mua bán lại trái phiếu chính phủ', keys: ['Giao dịch mua bán lại trái phiếu chính phủ'] },
+                            { code: '19_I_N', name: '19. Quỹ khen thưởng phúc lợi', keys: ['19. Quỹ khen thưởng phúc lợi'] }
+                        ]
+                    },
+                    {
+                        code: 'II_N', name: 'II. Nợ dài hạn', isBold: true,
+                        keys: ['II. Nợ dài hạn'],
+                        children: [
+                            {
+                                code: '1_II_N', name: '1. Vay và nợ thuê tài chính dài hạn', isBold: true,
+                                keys: ['1. Vay và nợ thuê tài chính dài hạn'],
+                                children: [
+                                    { code: '1.1_II_N', name: '1.1. Vay dài hạn', keys: ['1.1. Vay dài hạn'] },
+                                    { code: '1.2_II_N', name: '1.2 Nợ thuê tài sản tài chính dài hạn', keys: ['1.2 Nợ thuê tài sản tài chính dài hạn'] }
+                                ]
+                            },
+                            { code: '2_II_N', name: '2. Vay tài sản tài chính dài hạn', keys: ['2. Vay tài sản tài chính dài hạn'] },
+                            { code: '3_II_N', name: '3. Trái phiếu chuyển đổi dài hạn', keys: ['3. Trái phiếu chuyển đổi dài hạn'] },
+                            { code: '4_II_N', name: '4. Trái phiếu phát hành dài hạn', keys: ['4. Trái phiếu phát hành dài hạn'] },
+                            { code: '5_II_N', name: '5. Phải trả người bán dài hạn', keys: ['5. Phải trả người bán dài hạn'] },
+                            { code: '6_II_N', name: '6. Người mua trả tiền trước dài hạn', keys: ['6. Người mua trả tiền trước dài hạn'] },
+                            { code: '7_II_N', name: '7. Chi phí phải trả dài hạn', keys: ['7. Chi phí phải trả dài hạn'] },
+                            { code: '8_II_N', name: '8. Phải trả nội bộ dài hạn', keys: ['8. Phải trả nội bộ dài hạn'] },
+                            { code: '9_II_N', name: '9. Doanh thu chưa thực hiện dài hạn', keys: ['9. Doanh thu chưa thực hiện dài hạn'] },
+                            { code: '10_II_N', name: '10. Nhận ký quỹ, ký cược dài hạn', keys: ['10. Nhận ký quỹ, ký cược dài hạn'] },
+                            { code: '11_II_N', name: '11. Phải trả, phải nộp khác dài hạn', keys: ['11. Phải trả, phải nộp khác dài hạn'] },
+                            { code: 'VON_UT', name: 'Vốn nhận ủy thác đầu tư dài hạn', keys: ['Vốn nhận ủy thác đầu tư dài hạn'] },
+                            { code: 'DP_TV', name: 'Dự phòng trợ cấp mất việc làm', keys: ['Dự phòng trợ cấp mất việc làm'] },
+                            { code: '12_II_N', name: '12. Dự phòng phải trả dài hạn', keys: ['12. Dự phòng phải trả dài hạn'] },
+                            { code: '13_II_N', name: '13. Dự phòng bồi thường thiệt hại cho nhà đầu tư', keys: ['13. Dự phòng bồi thường thiệt hại cho nhà đầu tư'] },
+                            { code: '14_II_N', name: '14. Thuế thu nhập hoãn lại phải trả', keys: ['14. Thuế thu nhập hoãn lại phải trả'] },
+                            { code: '15_II_N', name: '15. Quỹ phát triển khoa học và công nghệ', keys: ['15. Quỹ phát triển khoa học và công nghệ'] }
+                        ]
+                    }
                 ]
             },
-            { code: '14_II_NỢ', name: '14. Thuế thu nhập hoãn lại phải trả', keys: ['14. Thuế thu nhập hoãn lại phải trả'] }
-        ]
-    },
-    { code: 'VỐN_CHỦ', name: 'B. VỐN CHỦ SỞ HỮU (400=410+420)', isBold: true, keys: ['B. VỐN CHỦ SỞ HỮU (400=410+420)', 'VỐN CHỦ SỞ HỮU'] },
-    {
-        code: 'I_VỐN', name: 'I. Vốn chủ sở hữu', isBold: true,
-        keys: ['I. Vốn chủ sở hữu'],
-        children: [
             {
-                code: '1_I_VỐN', name: '1. Vốn đầu tư của chủ sở hữu', isBold: true,
-                keys: ['1. Vốn đầu tư của chủ sở hữu'],
+                code: '400', name: 'B. VỐN CHỦ SỞ HỮU (400=410+420)', isBold: true,
+                keys: ['B. VỐN CHỦ SỞ HỮU (400=410+420)', 'VỐN CHỦ SỞ HỮU'],
                 children: [
-                    { code: '1.1_I_VỐN', name: '1.1. Vốn góp của chủ sở hữu', keys: ['1.1. Vốn góp của chủ sở hữu'] }
-                ]
-            }
-        ]
-    },
-    {
-        code: '1.1.a', name: 'a. Cổ phiếu phổ thông', keys: ['a. Cổ phiếu phổ thông'],
-        children: [
-            { code: '1.2_I_VỐN', name: '1.2. Thặng dư vốn cổ phần', keys: ['1.2. Thặng dư vốn cổ phần'] },
-            { code: '1.5_I_VỐN', name: '1.5. Cổ phiếu quỹ', keys: ['1.5. Cổ phiếu quỹ'] }
-        ]
-    },
-    {
-        code: '2_I_VỐN', name: '2. Chênh lệch đánh giá lại tài sản theo giá trị hợp lý', keys: ['2. Chênh lệch đánh giá lại tài sản theo giá trị hợp lý'],
-        children: [
-            { code: '4_I_VỐN', name: '4. Quỹ dự trữ điều lệ', keys: ['4. Quỹ dự trữ điều lệ'] }
-        ]
-    },
-    {
-        code: 'QUY_DT', name: 'Quỹ đầu tư phát triển', keys: ['Quỹ đầu tư phát triển'],
-        children: [
-            { code: '5_I_VỐN', name: '5. Quỹ dự phòng tài chính và rủi ro nghề nghiệp', keys: ['5. Quỹ dự phòng tài chính và rủi ro nghề nghiệp'] },
-            {
-                code: '7_I_VỐN', name: '7. Lợi nhuận sau thuế chưa phân phối', isBold: true,
-                keys: ['7. Lợi nhuận sau thuế chưa phân phối'],
-                children: [
-                    { code: '7.1_I_VỐN', name: '7.1. Lợi nhuận đã thực hiện', keys: ['7.1. Lợi nhuận đã thực hiện'] },
-                    { code: '7.2_I_VỐN', name: '7.2. Lợi nhuận chưa thực hiện', keys: ['7.2. Lợi nhuận chưa thực hiện'] }
+                    {
+                        code: 'I_CSH', name: 'I. Vốn chủ sở hữu', isBold: true,
+                        keys: ['I. Vốn chủ sở hữu'],
+                        children: [
+                            {
+                                code: '1_I_CSH', name: '1. Vốn đầu tư của chủ sở hữu', isBold: true,
+                                keys: ['1. Vốn đầu tư của chủ sở hữu'],
+                                children: [
+                                    {
+                                        code: '1.1_I_CSH', name: '1.1. Vốn góp của chủ sở hữu',
+                                        keys: ['1.1. Vốn góp của chủ sở hữu'],
+                                        children: [
+                                            { code: 'a_CSH', name: 'a. Cổ phiếu phổ thông', keys: ['a. Cổ phiếu phổ thông'] },
+                                            { code: 'b_CSH', name: 'b. Cổ phiếu ưu đãi', keys: ['b. Cổ phiếu ưu đãi'] }
+                                        ]
+                                    },
+                                    { code: '1.2_I_CSH', name: '1.2. Thặng dư vốn cổ phần', keys: ['1.2. Thặng dư vốn cổ phần'] },
+                                    { code: '1.3_I_CSH', name: '1.3. Quyền chọn chuyển đổi trái phiếu', keys: ['1.3. Quyền chọn chuyển đổi trái phiếu'] },
+                                    { code: '1.4_I_CSH', name: '1.4. Vốn khác của chủ sở hữu', keys: ['1.4. Vốn khác của chủ sở hữu'] },
+                                    { code: '1.5_I_CSH', name: '1.5. Cổ phiếu quỹ', keys: ['1.5. Cổ phiếu quỹ'] }
+                                ]
+                            },
+                            { code: '2_I_CSH', name: '2. Chênh lệch đánh giá lại tài sản theo giá trị hợp lý', keys: ['2. Chênh lệch đánh giá lại tài sản theo giá trị hợp lý'] },
+                            { code: '3_I_CSH', name: '3. Chênh lệch tỷ giá hối đoái', keys: ['3. Chênh lệch tỷ giá hối đoái'] },
+                            { code: '4_I_CSH', name: '4. Quỹ dự trữ điều lệ', keys: ['4. Quỹ dự trữ điều lệ'] },
+                            { code: 'QUY_DT', name: 'Quỹ đầu tư phát triển', keys: ['Quỹ đầu tư phát triển'] },
+                            { code: '5_I_CSH', name: '5. Quỹ dự phòng tài chính và rủi ro nghề nghiệp', keys: ['5. Quỹ dự phòng tài chính và rủi ro nghề nghiệp'] },
+                            { code: '6_I_CSH', name: '6. Quỹ khác thuộc vốn chủ sở hữu', keys: ['6. Quỹ khác thuộc vốn chủ sở hữu'] },
+                            {
+                                code: '7_I_CSH', name: '7. Lợi nhuận sau thuế chưa phân phối', isBold: true,
+                                keys: ['7. Lợi nhuận sau thuế chưa phân phối'],
+                                children: [
+                                    { code: '7.1_I_CSH', name: '7.1. Lợi nhuận đã thực hiện', keys: ['7.1. Lợi nhuận đã thực hiện'] },
+                                    { code: '7.2_I_CSH', name: '7.2. Lợi nhuận chưa thực hiện', keys: ['7.2. Lợi nhuận chưa thực hiện'] }
+                                ]
+                            },
+                            { code: 'NV_XDCB', name: 'Nguồn vốn đầu tư XDCB', keys: ['Nguồn vốn đầu tư XDCB'] },
+                            { code: 'QUY_HT', name: 'Quỹ hỗ trợ sắp xếp doanh nghiệp', keys: ['Quỹ hỗ trợ sắp xếp doanh nghiệp'] },
+                            { code: '8_I_CSH', name: '8. Lợi ích cổ đông không nắm quyền kiểm soát', keys: ['8. Lợi ích cổ đông không nắm quyền kiểm soát'] }
+                        ]
+                    },
+                    {
+                        code: 'II_CSH', name: 'II. Nguồn kinh phí và quỹ khác', isBold: true,
+                        keys: ['II. Nguồn kinh phí và quỹ khác'],
+                        children: [
+                            { code: '1_II_CSH', name: '1. Nguồn kinh phí', keys: ['1. Nguồn kinh phí'] },
+                            { code: '2_II_CSH', name: '2. Nguồn kinh phí đã hình thành TSCĐ', keys: ['2. Nguồn kinh phí đã hình thành TSCĐ'] }
+                        ]
+                    }
                 ]
             },
-            { code: '8_I_VỐN', name: '8. Lợi ích cổ đông không nắm quyền kiểm soát', keys: ['8. Lợi ích cổ đông không nắm quyền kiểm soát'] }
+            { code: '440', name: 'TỔNG CỘNG NGUỒN VỐN  (440=300+400)', isBold: true, keys: ['TỔNG CỘNG NGUỒN VỐN  (440=300+400)', 'TỔNG CỘNG NGUỒN VỐN'] }
         ]
     },
-    { code: 'TỔNG_NGUỒN_VỐN', name: 'TỔNG CỘNG NGUỒN VỐN  (440=300+400)', isBold: true, keys: ['TỔNG CỘNG NGUỒN VỐN  (440=300+400)', 'TỔNG CỘNG NGUỒN VỐN'] }
+    { code: 'LN_PP', name: 'LỢI NHUẬN ĐÃ PHÂN PHỐI CHO NHÀ ĐẦU TƯ', isBold: true, keys: ['LỢI NHUẬN ĐÃ PHÂN PHỐI CHO NHÀ ĐẦU TƯ'] },
+    { code: '1_LN', name: '1. Lợi nhuận đã phân phối cho Nhà đầu tư trong năm', keys: ['1. Lợi nhuận đã phân phối cho Nhà đầu tư trong năm'] }
 ];
 
+export const INSURANCE_BALANCE_STRUCTURE: any[] = [
+    {
+        code: '100', name: 'TÀI SẢN', isBold: true,
+        keys: ['TÀI SẢN'],
+        children: [
+            {
+                code: '110', name: 'A. TÀI SẢN NGẮN HẠN', isBold: true,
+                keys: ['A. TÀI SẢN NGẮN HẠN', 'TÀI SẢN NGẮN HẠN'],
+                children: [
+                    {
+                        code: '111', name: 'I. Tiền và các khoản tương đương tiền', isBold: true,
+                        keys: ['I. Tiền và các khoản tương đương tiền', 'Tiền và các khoản tương đương tiền'],
+                        children: [
+                            { code: '111.1', name: '1. Tiền', keys: ['1. Tiền'] },
+                            { code: '111.2', name: '2. Các khoản tương đương tiền', keys: ['2. Các khoản tương đương tiền'] }
+                        ]
+                    },
+                    {
+                        code: '112', name: 'II. Các khoản đầu tư tài chính ngắn hạn', isBold: true,
+                        keys: ['II. Các khoản đầu tư tài chính ngắn hạn', 'Các khoản đầu tư tài chính ngắn hạn'],
+                        children: [
+                            { code: '112.1', name: '1. Chứng khoán kinh doanh', keys: ['1. Chứng khoán kinh doanh'] },
+                            { code: '112.2', name: '2. Dự phòng giảm giá chứng khoán kinh doanh', keys: ['2. Dự phòng giảm giá chứng khoán kinh doanh'] },
+                            { code: '112.3', name: '3. Đầu tư nắm giữ đến ngày đáo hạn', keys: ['3. Đầu tư nắm giữ đến ngày đáo hạn'] }
+                        ]
+                    },
+                    {
+                        code: '113', name: 'III. Các khoản phải thu ngắn hạn', isBold: true,
+                        keys: ['III. Các khoản phải thu ngắn hạn', 'Các khoản phải thu ngắn hạn'],
+                        children: [
+                            { code: '113.1', name: '113.1. Phải thu khách hàng ngắn hạn', keys: ['1. Phải thu khách hàng ngắn hạn'] },
+                            { code: '113.2', name: '113.2. Trả trước cho người bán ngắn hạn', keys: ['2. Trả trước cho người bán ngắn hạn'] },
+                            { code: '113.3', name: '113.3. Phải thu về cho vay ngắn hạn', keys: ['3. Phải thu về cho vay ngắn hạn'] },
+                            { code: '113.4', name: '113.4. Phải thu ngắn hạn khác', keys: ['4. Phải thu ngắn hạn khác'] },
+                            { code: '113.5', name: '113.5. Dự phòng phải thu ngắn hạn khó đòi', keys: ['5. Dự phòng phải thu ngắn hạn khó đòi'] },
+                            {
+                                code: '113.6', name: '113.6. Phải thu hoạt động kinh doanh bảo hiểm', keys: ['Phải thu hoạt động kinh doanh bảo hiểm'],
+                                children: [
+                                    { code: '113.6.1', name: '- Phải thu của khách hàng là các tổ chức KDBH', keys: ['- Phải thu của khách hàng là các tổ chức KDBH', 'Phải thu của khách hàng là các tổ chức KDBH'] },
+                                    { code: '113.6.2', name: '- Phải thu của các đối tượng khác', keys: ['- Phải thu của các đối tượng khác', 'Phải thu của các đối tượng khác'] },
+                                    { code: '113.6.3', name: '- Dự phòng giảm giá phải thu khó đòi', keys: ['- Dự phòng giảm giá phải thu khó đòi', 'Dự phòng giảm giá phải thu khó đòi'] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        code: '114', name: 'IV. Hàng tồn kho', isBold: true,
+                        keys: ['IV. Hàng tồn kho', 'Hàng tồn kho'],
+                        children: [
+                            { code: '114.1', name: '1. Hàng tồn kho', keys: ['1. Hàng tồn kho'] },
+                            { code: '114.2', name: '2. Dự phòng giảm giá hàng tồn kho', keys: ['2. Dự phòng giảm giá hàng tồn kho'] }
+                        ]
+                    },
+                    {
+                        code: '115', name: 'V. Tài sản ngắn hạn khác', isBold: true,
+                        keys: ['V. Tài sản ngắn hạn khác', 'Tài sản ngắn hạn khác'],
+                        children: [
+                            { code: '115.1', name: '1. Chi phí trả trước ngắn hạn', keys: ['1. Chi phí trả trước ngắn hạn'] },
+                            { code: '115.2', name: '2. Thuế GTGT được khấu trừ', keys: ['2. Thuế GTGT được khấu trừ'] },
+                            { code: '115.3', name: '3. Thuế và các khoản khác phải thu Nhà nước', keys: ['3. Thuế và các khoản khác phải thu Nhà nước'] },
+                            { code: '115.4', name: '4. Tài sản ngắn hạn khác', keys: ['4. Tài sản ngắn hạn khác'] },
+                            { code: '115.5', name: '5. Tài sản tái bảo hiểm', keys: ['5. Tài sản tái bảo hiểm', 'Tài sản tái bảo hiểm'] },
+                            {
+                                code: '115.5_sub', name: 'Tài sản tái bảo hiểm - Dự phòng bồi thường nhượng tái bảo hiểm',
+                                keys: ['- Dự phòng bồi thường nhượng tái bảo hiểm', 'Dự phòng bồi thường nhượng tái bảo hiểm']
+                            },
+                            {
+                                code: '115.5_sub2', name: 'Tài sản tái bảo hiểm - Dự phòng phí nhượng tái bảo hiểm',
+                                keys: ['- Dự phòng phí nhượng tái bảo hiểm', 'Dự phòng phí nhượng tái bảo hiểm']
+                            },
+                            { code: '115.6', name: '6. Ký quỹ ký cược ngắn hạn', keys: ['6. Ký quỹ ký cược ngắn hạn'] }
+                        ]
+                    },
+                ]
+            },
+            {
+                code: '200', name: 'B. TÀI SẢN DÀI HẠN', isBold: true,
+                keys: ['B. TÀI SẢN DÀI HẠN', 'TÀI SẢN DÀI HẠN'],
+                children: [
+                    {
+                        code: '210', name: 'I. Các khoản phải thu dài hạn', isBold: true,
+                        keys: ['I. Các khoản phải thu dài hạn', 'Các khoản phải thu dài hạn'],
+                        children: [
+                            { code: '210.1', name: '1. Phải thu khách hàng dài hạn', keys: ['1. Phải thu khách hàng dài hạn'] },
+                            { code: '210.2', name: '2. Trả trước cho người bán dài hạn', keys: ['2. Trả trước cho người bán dài hạn'] },
+                            { code: '210.3', name: '3. Vốn kinh doanh ở đơn vị trực thuộc', keys: ['3. Vốn kinh doanh ở đơn vị trực thuộc'] },
+                            { code: '210.4', name: '4. Phải thu dài hạn khác', keys: ['4. Phải thu dài hạn khác'] },
+                            { code: '210.5', name: '5. Dự phòng phải thu dài hạn khó đòi', keys: ['5. Dự phòng phải thu dài hạn khó đòi'] }
+                        ]
+                    },
+                    {
+                        code: '220', name: 'II. Tài sản cố định', isBold: true,
+                        keys: ['II. Tài sản cố định', 'Tài sản cố định'],
+                        children: [
+                            {
+                                code: '220.1', name: '1. Tài sản cố định hữu hình',
+                                keys: ['1. Tài sản cố định hữu hình'],
+                                children: [
+                                    { code: '220.1.a', name: '- Nguyên giá', keys: ['- Nguyên giá', 'Nguyên giá'] },
+                                    { code: '220.1.b', name: '- Giá trị hao mòn lũy kế', keys: ['- Giá trị hao mòn lũy kế', 'Giá trị hao mòn lũy kế'] }
+                                ]
+                            },
+                            {
+                                code: '220.2', name: '2. Tài sản cố định thuê tài chính',
+                                keys: ['2. Tài sản cố định thuê tài chính'],
+                                children: [
+                                    { code: '220.2.a', name: '- Nguyên giá', keys: ['- Nguyên giá'] }, // Careful with duplicates, maybe context matters in lookup? The lookup logic matches exact key first, then fuzzy.
+                                    { code: '220.2.b', name: '- Giá trị hao mòn lũy kế', keys: ['- Giá trị hao mòn lũy kế'] }
+                                ]
+                            },
+                            {
+                                code: '220.3', name: '3. Tài sản cố định vô hình',
+                                keys: ['3. Tài sản cố định vô hình'],
+                                children: [
+                                    { code: '220.3.a', name: '- Nguyên giá', keys: ['- Nguyên giá'] },
+                                    { code: '220.3.b', name: '- Giá trị hao mòn lũy kế', keys: ['- Giá trị hao mòn lũy kế'] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        code: '230', name: 'III. Bất động sản đầu tư', isBold: true,
+                        keys: ['III. Bất động sản đầu tư', 'Bất động sản đầu tư'],
+                        children: [
+                            { code: '230.1', name: '- Nguyên giá', keys: ['- Nguyên giá'] },
+                            { code: '230.2', name: '- Giá trị hao mòn lũy kế', keys: ['- Giá trị hao mòn lũy kế'] }
+                        ]
+                    },
+                    {
+                        code: '240', name: 'IV. Tài sản dở dang dài hạn', isBold: true,
+                        keys: ['IV. Tài sản dở dang dài hạn', 'Tài sản dở dang dài hạn'],
+                        children: [
+                            { code: '240.1', name: '1. Chi phí sản xuất, kinh doanh dở dang dài hạn', keys: ['1. Chi phí sản xuất, kinh doanh dở dang dài hạn'] },
+                            { code: '240.2', name: '2. Chi phí xây dựng cơ bản dở dang', keys: ['2. Chi phí xây dựng cơ bản dở dang'] }
+                        ]
+                    },
+                    {
+                        code: '250', name: 'V. Các khoản đầu tư tài chính dài hạn', isBold: true,
+                        keys: ['V. Các khoản đầu tư tài chính dài hạn', 'Các khoản đầu tư tài chính dài hạn'],
+                        children: [
+                            { code: '250.1', name: '1. Đầu tư vào công ty con', keys: ['1. Đầu tư vào công ty con'] },
+                            { code: '250.2', name: '2. Đầu tư vào công ty liên doanh, liên kết', keys: ['2. Đầu tư vào công ty liên doanh, liên kết'] },
+                            { code: '250.3', name: '3. Đầu tư góp vốn vào đơn vị khác', keys: ['3. Đầu tư góp vốn vào đơn vị khác'] },
+                            { code: '250.4', name: '4. Dự phòng đầu tư tài chính dài hạn', keys: ['4. Dự phòng đầu tư tài chính dài hạn'] },
+                            { code: '250.5', name: '5. Đầu tư nắm giữ đến ngày đáo hạn', keys: ['5. Đầu tư nắm giữ đến ngày đáo hạn', 'Đầu tư nắm giữ đến ngày đáo hạn'] }
+                        ]
+                    },
+                    {
+                        code: '260', name: 'VI. Tài sản dài hạn khác', isBold: true,
+                        keys: ['VI. Tài sản dài hạn khác', 'Tài sản dài hạn khác'],
+                        children: [
+                            { code: '260.1', name: '1. Chi phí trả trước dài hạn', keys: ['1. Chi phí trả trước dài hạn'] },
+                            { code: '260.2', name: '2. Tài sản thuế thu nhập hoãn lại', keys: ['2. Tài sản thuế thu nhập hoãn lại'] },
+                            { code: '260.3', name: '3. Thiết bị, vật tư, phụ tùng thay thế dài hạn', keys: ['3. Thiết bị, vật tư, phụ tùng thay thế dài hạn'] },
+                            { code: '260.4', name: '4. Tài sản dài hạn khác', keys: ['4. Tài sản dài hạn khác'] },
+                            { code: '260.5', name: '5. Ký quỹ ký cược dài hạn', keys: ['5. Ký quỹ ký cược dài hạn'] }
+                        ]
+                    }
+                ]
+            },
+            { code: 'TOTAL_ASSETS', name: 'TỔNG CỘNG TÀI SẢN', isBold: true, keys: ['TỔNG CỘNG TÀI SẢN'] }
+        ]
+    },
+    {
+        code: '300', name: 'NGUỒN VỐN', isBold: true,
+        keys: ['NGUỒN VỐN'],
+        children: [
+            {
+                code: '310', name: 'A. NỢ PHẢI TRẢ', isBold: true,
+                keys: ['A. NỢ PHẢI TRẢ', 'NỢ PHẢI TRẢ'],
+                children: [
+                    {
+                        code: '311', name: 'I. Nợ ngắn hạn', isBold: true,
+                        keys: ['I. Nợ ngắn hạn', 'Nợ ngắn hạn'],
+                        children: [
+                            { code: '311.1', name: '1. Phải trả người bán ngắn hạn', keys: ['1. Phải trả người bán ngắn hạn'] },
+                            { code: '311.2', name: '2. Người mua trả tiền trước ngắn hạn', keys: ['2. Người mua trả tiền trước ngắn hạn'] },
+                            { code: '311.3', name: '3. Thuế và các khoản phải nộp Nhà nước', keys: ['3. Thuế và các khoản phải nộp Nhà nước'] },
+                            { code: '311.4', name: '4. Phải trả người lao động', keys: ['4. Phải trả người lao động'] },
+                            { code: '311.5', name: '5. Chi phí phải trả ngắn hạn', keys: ['5. Chi phí phải trả ngắn hạn'] },
+                            { code: '311.6', name: '6. Phải trả nội bộ ngắn hạn', keys: ['6. Phải trả nội bộ ngắn hạn'] },
+                            { code: '311.7', name: '7. Phải trả theo tiến độ kế hoạch hợp đồng xây dựng', keys: ['7. Phải trả theo tiến độ kế hoạch hợp đồng xây dựng'] },
+                            { code: '311.8', name: '8. Doanh thu chưa thực hiện ngắn hạn', keys: ['8. Doanh thu chưa thực hiện ngắn hạn'] },
+                            { code: '311.9', name: '9. Phải trả ngắn hạn khác', keys: ['9. Phải trả ngắn hạn khác'] },
+                            { code: '311.10', name: '10. Vay và nợ thuê tài chính ngắn hạn', keys: ['10. Vay và nợ thuê tài chính ngắn hạn'] },
+                            { code: '311.11', name: '11. Dự phòng phải trả ngắn hạn', keys: ['11. Dự phòng phải trả ngắn hạn'] },
+                            { code: '311.12', name: '12. Quỹ khen thưởng, phúc lợi', keys: ['12. Quỹ khen thưởng, phúc lợi'] },
+                            { code: '311.13', name: '13. Quỹ bình ổn giá', keys: ['13. Quỹ bình ổn giá'] },
+                            {
+                                code: '311.14', name: '14. Dự phòng nghiệp vụ', keys: ['14. Dự phòng nghiệp vụ', 'Dự phòng nghiệp vụ'],
+                                children: [
+                                    { code: '311.14.1', name: '- Dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', keys: ['- Dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', 'Dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm'] },
+                                    { code: '311.14.2', name: '- Dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', keys: ['- Dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', 'Dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm'] },
+                                    { code: '311.14.3', name: '- Dự phòng dao động lớn', keys: ['- Dự phòng dao động lớn', 'Dự phòng dao động lớn'] }
+                                ]
+                            },
+                            {
+                                code: '311.15', name: '15. Phải trả hoạt động giao dịch bảo hiểm', keys: ['15. Phải trả hoạt động giao dịch bảo hiểm', 'Phải trả hoạt động giao dịch bảo hiểm'],
+                                children: [
+                                    { code: '311.15.1', name: '- Phải trả về hoạt động bảo hiểm', keys: ['- Phải trả về hoạt động bảo hiểm'] },
+                                    { code: '311.15.2', name: '- Phải trả về hoạt động tái bảo hiểm', keys: ['- Phải trả về hoạt động tái bảo hiểm'] },
+                                    { code: '311.15.3', name: '- Phải trả hoa hồng môi giới bảo hiểm', keys: ['- Phải trả hoa hồng môi giới bảo hiểm'] }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        code: '312', name: 'II. Nợ dài hạn', isBold: true,
+                        keys: ['II. Nợ dài hạn', 'Nợ dài hạn'],
+                        children: [
+                            { code: '312.1', name: '1. Phải trả người bán dài hạn', keys: ['1. Phải trả người bán dài hạn'] },
+                            { code: '312.2', name: '2. Người mua trả tiền trước dài hạn', keys: ['2. Người mua trả tiền trước dài hạn'] },
+                            { code: '312.3', name: '3. Chi phí phải trả dài hạn', keys: ['3. Chi phí phải trả dài hạn'] },
+                            { code: '312.4', name: '4. Phải trả nội bộ về vốn kinh doanh', keys: ['4. Phải trả nội bộ về vốn kinh doanh'] },
+                            { code: '312.5', name: '5. Phải trả nội bộ dài hạn khác', keys: ['5. Phải trả nội bộ dài hạn khác'] },
+                            { code: '312.6', name: '6. Doanh thu chưa thực hiện dài hạn', keys: ['6. Doanh thu chưa thực hiện dài hạn'] },
+                            { code: '312.7', name: '7. Phải trả dài hạn khác', keys: ['7. Phải trả dài hạn khác'] },
+                            { code: '312.8', name: '8. Vay và nợ thuê tài chính dài hạn', keys: ['8. Vay và nợ thuê tài chính dài hạn'] },
+                            { code: '312.9', name: '9. Trái phiếu chuyển đổi', keys: ['9. Trái phiếu chuyển đổi'] },
+                            { code: '312.10', name: '10. Cổ phiếu ưu đãi', keys: ['10. Cổ phiếu ưu đãi'] },
+                            { code: '312.11', name: '11. Thuế thu nhập hoãn lại phải trả', keys: ['11. Thuế thu nhập hoãn lại phải trả', 'Thuế thu nhập hoãn lại phải trả'] },
+                            { code: '312.12', name: '12. Dự phòng phải trả dài hạn', keys: ['12. Dự phòng phải trả dài hạn', 'Dự phòng phải trả dài hạn'] },
+                            { code: '312.13', name: '13. Quỹ phát triển khoa học và công nghệ', keys: ['13. Quỹ phát triển khoa học và công nghệ'] },
+                            { code: '312.14', name: '14. Dự phòng nghiệp vụ dài hạn', keys: ['14. Dự phòng nghiệp vụ dài hạn', 'Dự phòng nghiệp vụ dài hạn'] },
+                            { code: '312.15', name: '15. Dự phòng toán học', keys: ['15. Dự phòng toán học', 'Dự phòng toán học'] }
+                        ]
+                    }
+                ]
+            },
+            {
+                code: '400', name: 'B. VỐN CHỦ SỞ HỮU', isBold: true,
+                keys: ['B. VỐN CHỦ SỞ HỮU', 'VỐN CHỦ SỞ HỮU'],
+                children: [
+                    {
+                        code: '410', name: 'I. Vốn chủ sở hữu', isBold: true,
+                        keys: ['I. Vốn chủ sở hữu', 'Vốn chủ sở hữu'],
+                        children: [
+                            { code: '410.1', name: '1. Vốn đầu tư của chủ sở hữu', keys: ['1. Vốn đầu tư của chủ sở hữu'] },
+                            { code: '410.2', name: '2. Thặng dư vốn cổ phần', keys: ['2. Thặng dư vốn cổ phần'] },
+                            { code: '410.3', name: '3. Quyền chọn chuyển đổi trái phiếu', keys: ['3. Quyền chọn chuyển đổi trái phiếu'] },
+                            { code: '410.4', name: '4. Vốn khác của chủ sở hữu', keys: ['4. Vốn khác của chủ sở hữu'] },
+                            { code: '410.5', name: '5. Cổ phiếu quỹ', keys: ['5. Cổ phiếu quỹ'] },
+                            { code: '410.6', name: '6. Chênh lệch đánh giá lại tài sản', keys: ['6. Chênh lệch đánh giá lại tài sản'] },
+                            { code: '410.7', name: '7. Chênh lệch tỷ giá hối đoái', keys: ['7. Chênh lệch tỷ giá hối đoái'] },
+                            { code: '410.8', name: '8. Quỹ đầu tư phát triển', keys: ['8. Quỹ đầu tư phát triển'] },
+                            { code: '410.9', name: '9. Quỹ hỗ trợ sắp xếp doanh nghiệp', keys: ['9. Quỹ hỗ trợ sắp xếp doanh nghiệp'] },
+                            { code: '410.10', name: '10. Quỹ khác thuộc vốn chủ sở hữu', keys: ['10. Quỹ khác thuộc vốn chủ sở hữu'] },
+                            { code: '410.11', name: '11. Lợi nhuận sau thuế chưa phân phối', keys: ['11. Lợi nhuận sau thuế chưa phân phối'] },
+                            { code: '410.12', name: '12. Nguồn vốn đầu tư xây dựng cơ bản', keys: ['12. Nguồn vốn đầu tư xây dựng cơ bản'] },
+                            { code: '410.13', name: '13. Quỹ dự trữ bắt buộc', keys: ['13. Quỹ dự trữ bắt buộc', 'Quỹ dự trữ bắt buộc'] }
+                        ]
+                    },
+                    {
+                        code: '420', name: 'II. Nguồn kinh phí và quỹ khác', isBold: true,
+                        keys: ['II. Nguồn kinh phí và quỹ khác', 'Nguồn kinh phí và quỹ khác'],
+                        children: [
+                            { code: '420.1', name: '1. Nguồn kinh phí', keys: ['1. Nguồn kinh phí'] },
+                            { code: '420.2', name: '2. Nguồn kinh phí đã hình thành TSCĐ', keys: ['2. Nguồn kinh phí đã hình thành TSCĐ'] }
+                        ]
+                    }
+                ]
+            },
+            { code: '440', name: 'TỔNG CỘNG NGUỒN VỐN', isBold: true, keys: ['TỔNG CỘNG NGUỒN VỐN'] }
+        ]
+    }
+];
 
 interface VASBalanceSheetProps {
     symbol: string | null;
@@ -643,11 +999,13 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [industry, setIndustry] = useState<string>('');
     const [isExpanded, setIsExpanded] = useState(false);
+    const [columnWidth, setColumnWidth] = useState(450);
 
     const currentStructure = useMemo(() => {
         const ind = industry.toLowerCase();
         if (ind.includes('ngân hàng')) return BANK_BALANCE_STRUCTURE;
         if (ind.includes('dịch vụ tài chính')) return SECURITIES_BALANCE_STRUCTURE;
+        if (ind.includes('bảo hiểm')) return INSURANCE_BALANCE_STRUCTURE;
         return VAS_BALANCE_STRUCTURE;
     }, [industry]);
 
@@ -926,15 +1284,38 @@ const VASBalanceSheet: React.FC<VASBalanceSheetProps> = ({ symbol }) => {
 
     const columns = [
         {
-            title: <div className="text-[10px] text-gray-500">CHỈ TIÊU (TỶ VNĐ)</div>,
+            title: (
+                <div className="flex items-center justify-between group">
+                    <span className="text-[10px] text-gray-500">CHỈ TIÊU (TỶ VNĐ)</span>
+                    <Popover
+                        content={
+                            <div className="w-48">
+                                <p className="text-xs mb-2">Độ rộng cột: {columnWidth}px</p>
+                                <Slider
+                                    min={200}
+                                    max={800}
+                                    value={columnWidth}
+                                    onChange={(v: number) => setColumnWidth(v)}
+                                />
+                            </div>
+                        }
+                        title="Cấu hình hiển thị"
+                        trigger="click"
+                    >
+                        <Settings size={12} className="text-gray-400 cursor-pointer hover:text-neon-blue transition-colors" />
+                    </Popover>
+                </div>
+            ),
             dataIndex: 'name',
             key: 'name',
             fixed: 'left',
-            width: 450,
+            width: columnWidth,
             render: (text: string, record: any) => (
-                <span className={`inline-block align-middle ${record.isBold ? 'font-bold' : ''} text-[10px] py-1`}>
-                    {text}
-                </span>
+                <Tooltip title={text} placement="topLeft" mouseEnterDelay={0.5}>
+                    <span className={`inline-block align-middle w-full ${record.isBold ? 'font-bold' : ''} text-[10px] truncate`}>
+                        {text}
+                    </span>
+                </Tooltip>
             )
         },
         ...displayPeriods.map(p => ({

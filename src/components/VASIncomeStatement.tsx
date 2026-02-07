@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { Table, Radio, Card, Empty, Spin, Checkbox, Tag, Space, Divider, Tooltip, Button, Dropdown, Input, Modal } from 'antd';
-import { Activity, BarChart3, TrendingUp, Info, ChevronRight, ChevronDown, RefreshCw, LineChart, BarChart, Layers, Trash2, Settings2, Maximize2, Minimize2 } from 'lucide-react';
+import { Table, Radio, Card, Empty, Spin, Checkbox, Tag, Space, Divider, Tooltip, Button, Dropdown, Input, Modal, Slider, Popover } from 'antd';
+import { Activity, BarChart3, TrendingUp, Info, ChevronRight, ChevronDown, RefreshCw, LineChart, BarChart, Layers, Trash2, Settings2, Maximize2, Minimize2, Settings } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { useDroppable } from '@dnd-kit/core';
 import { supabase } from '../supabaseClient';
@@ -93,32 +93,32 @@ export const BANK_INCOME_STRUCTURE: any[] = [
 export const SECURITIES_INCOME_STRUCTURE: any[] = [
     {
         code: 'I', name: 'I. DOANH THU HOẠT ĐỘNG', isBold: true,
-        keys: ['Cộng doanh thu hoạt động (01->11)', 'I. DOANH THU HOẠT ĐỘNG'],
+        keys: ['I. DOANH THU HOẠT ĐỘNG'],
         children: [
             {
-                code: '1.1', name: '1.1. Lãi từ các tài sản tài chính (FVTPL)', isBold: true,
+                code: '1.1', name: '1.1. Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)', isBold: true,
                 keys: ['1.1. Lãi từ các tài sản tài chính ghi nhận thông qua lãi/lỗ (FVTPL)'],
                 children: [
                     { code: '1.1.a', name: 'a. Lãi bán các tài sản tài chính', keys: ['a. Lãi bán các tài sản tài chính'] },
-                    { code: '1.1.b', name: 'b. Chênh lệch tăng đánh giá lại FVTPL', keys: ['b. Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ'] },
-                    { code: '1.1.c', name: 'c. Cổ tức, tiền lãi phát sinh từ FVTPL', keys: ['c. Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL'] },
-                    { code: '1.1.d', name: 'd. Chênh lệch giảm do đánh giá lại phải trả chứng quyền', keys: ['d. Chênh lệch giảm do đánh giá lại phải trả chứng quyền đang lưu hành'] }
+                    { code: '1.1.b', name: 'b. Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ', keys: ['b. Chênh lệch tăng đánh giá lại các TSTC thông qua lãi/lỗ'] },
+                    { code: '1.1.c', name: 'c. Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL', keys: ['c. Cổ tức, tiền lãi phát sinh từ tài sản tài chính PVTPL'] },
+                    { code: '1.1.d', name: 'd. Chênh lệch giảm do đánh giá lại phải trả chứng quyền đang lưu hành', keys: ['d. Chênh lệch giảm do đánh giá lại phải trả chứng quyền đang lưu hành'] }
                 ]
             },
-            { code: '1.2', name: '1.2. Lãi từ HTM', keys: ['1.2. Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)'] },
+            { code: '1.2', name: '1.2. Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)', keys: ['1.2. Lãi từ các khoản đầu tư nắm giữ đến ngày đáo hạn (HTM)'] },
             { code: '1.3', name: '1.3. Lãi từ các khoản cho vay và phải thu', keys: ['1.3. Lãi từ các khoản cho vay và phải thu'] },
-            { code: '1.4', name: '1.4. Lãi từ AFS', keys: ['1.4. Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)'] },
+            { code: '1.4', name: '1.4. Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)', keys: ['1.4. Lãi từ các tài sản tài chính sẵn sàng để bán (AFS)'] },
             { code: '1.5', name: '1.5. Lãi từ các công cụ phái sinh phòng ngừa rủi ro', keys: ['1.5. Lãi từ các công cụ phái sinh phòng ngừa rủi ro'] },
             {
                 code: '1.6', name: '1.6. Doanh thu môi giới chứng khoán', keys: ['1.6. Doanh thu môi giới chứng khoán'],
                 children: [
-                    { code: 'dt_dau_tu_ck', name: '- Doanh thu hoạt động đầu tư CK, góp vốn', keys: ['- Doanh thu hoạt động đầu tư chứng khoán, góp vốn'] }
+                    { code: '1.6.sub', name: '- Doanh thu hoạt động đầu tư chứng khoán, góp vốn', keys: ['- Doanh thu hoạt động đầu tư chứng khoán, góp vốn'] }
                 ]
             },
             {
-                code: '1.7', name: '1.7. Doanh thu bảo lãnh, đại lý phát hành', keys: ['1.7. Doanh thu bảo lãnh phát hành, đại lý phát hành chứng khoán'],
+                code: '1.7', name: '1.7. Doanh thu bảo lãnh phát hành, đại lý phát hành chứng khoán', keys: ['1.7. Doanh thu bảo lãnh phát hành, đại lý phát hành chứng khoán'],
                 children: [
-                    { code: 'dt_quan_ly', name: '- Doanh thu quản lý danh mục đầu tư cho người ủy thác', keys: ['- Doanh thu quản lý danh mục đầu tư cho  người uỷ thác đầu tư'] }
+                    { code: '1.7.sub', name: '- Doanh thu quản lý danh mục đầu tư cho  người uỷ thác đầu tư', keys: ['- Doanh thu quản lý danh mục đầu tư cho  người uỷ thác đầu tư'] }
                 ]
             },
             { code: '1.8', name: '1.8. Doanh thu hoạt động tư vấn', keys: ['1.8. Doanh thu hoạt động tư vấn'] },
@@ -126,89 +126,89 @@ export const SECURITIES_INCOME_STRUCTURE: any[] = [
             {
                 code: '1.10', name: '1.10. Doanh thu lưu ký chứng khoán', keys: ['1.10. Doanh thu lưu ký chứng khoán'],
                 children: [
-                    { code: 'dt_cho_thue', name: '- Doanh thu cho thuê sử dụng tài sản', keys: ['- Doanh thu cho thuê sử dụng tài sản'] }
+                    { code: '1.10.sub', name: '- Doanh thu cho thuê sử dụng tài sản', keys: ['- Doanh thu cho thuê sử dụng tài sản'] }
                 ]
             },
             { code: '1.11', name: '1.11. Thu nhập hoạt động khác', keys: ['1.11. Thu nhập hoạt động khác'] }
         ]
     },
-    { code: 'GIAM_TRU_DT', name: 'Các khoản giảm trừ doanh thu', keys: ['Các khoản giảm trừ doanh thu'] },
-    { code: 'CONG_DT', name: 'Cộng doanh thu hoạt động (01->11)', isBold: true, keys: ['Cộng doanh thu hoạt động (01->11)'] },
-    { code: 'DTT', name: 'Doanh thu thuần', keys: ['Doanh thu thuần'], isBold: true },
+    { code: '20', name: 'Các khoản giảm trừ doanh thu', keys: ['Các khoản giảm trừ doanh thu'] },
+    { code: '21', name: 'Cộng doanh thu hoạt động (01->11)', isBold: true, keys: ['Cộng doanh thu hoạt động (01->11)'] },
+    { code: '22', name: 'Doanh thu thuần', isBold: true, keys: ['Doanh thu thuần'] },
     {
         code: 'II', name: 'II. CHI PHÍ HOẠT ĐỘNG', isBold: true,
-        keys: ['Cộng chi phí hoạt động (21->33)', 'II. CHI PHÍ HOẠT ĐỘNG'],
+        keys: ['II. CHI PHÍ HOẠT ĐỘNG'],
         children: [
             {
-                code: '2.1', name: '2.1. Lỗ các tài sản tài chính (FVTPL)', isBold: true,
+                code: '2.1', name: '2.1. Lỗ các tài sản tài chính ghi nhận thông qua lỗ (FVTPL)', isBold: true,
                 keys: ['2.1. Lỗ các tài sản tài chính ghi nhận thông qua lỗ (FVTPL)'],
                 children: [
                     { code: '2.1.a', name: 'a. Lỗ bán các tài sản tài chính', keys: ['a. Lỗ bán các tài sản tài chính'] },
-                    { code: '2.1.b', name: 'b. Chênh lệch giảm đánh giá lại FVTPL', keys: ['b. Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ'] },
-                    { code: '2.1.c', name: 'c. Chi phí giao dịch mua FVTPL', keys: ['c. Chi phí giao dịch mua các tài sản tài chính (FVTPL)'] },
-                    { code: '2.1.d', name: 'd. Chênh lệch tăng do đánh giá lại phải trả chứng quyền', keys: ['d. Chênh lệch tăng do đánh giá lại phải trả chứng quyền đang lưu hành'] }
+                    { code: '2.1.b', name: 'b. Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ', keys: ['b. Chênh lệch giảm đánh giá lại các TSTC thông qua lãi/lỗ'] },
+                    { code: '2.1.c', name: 'c. Chi phí giao dịch mua các tài sản tài chính (FVTPL)', keys: ['c. Chi phí giao dịch mua các tài sản tài chính (FVTPL)'] },
+                    { code: '2.1.d', name: 'd. Chênh lệch tăng do đánh giá lại phải trả chứng quyền đang lưu hành', keys: ['d. Chênh lệch tăng do đánh giá lại phải trả chứng quyền đang lưu hành'] }
                 ]
             },
-            { code: '2.2', name: '2.2. Lỗ các khoản đầu tư HTM', keys: ['2.2. Lỗ các khoản đầu tư năm giữ đến ngày đáo hạn (HTM)'] },
-            { code: '2.3', name: '2.3. Chi phí lãi vay, lỗ từ khoản cho vay', keys: ['2.3. Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu'] },
-            { code: '2.4', name: '2.4. Lỗ bán các tài sản tài chính AFS', keys: ['2.4 Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)'] },
-            { code: 'prov_loss', name: 'Chi phí dự phòng TSTC, xử lý tổn thất', keys: ['Chi phí dự phòng TSTC, xử lý tổn thất các khoản phải thu khó đòi và lỗ suy giảm TSTC và chi phí đi vay của các khoản cho vay'] },
-            { code: '2.5', name: '2.5. Lỗ từ các tài sản tài chính phái sinh', keys: ['2.5. Lỗ từ các tài sản tài chính phái sinh phòng ngừa rủi ro'] },
+            { code: '2.2', name: '2.2. Lỗ các khoản đầu tư năm giữ đến ngày đáo hạn (HTM)', keys: ['2.2. Lỗ các khoản đầu tư năm giữ đến ngày đáo hạn (HTM)'] },
+            { code: '2.3', name: '2.3. Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu', keys: ['2.3. Chi phí lãi vay, lỗ từ các khoản cho vay và phải thu'] },
+            { code: '2.4', name: '2.4 Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)', keys: ['2.4 Lỗ bán các tài sản tài chính sẵn sàng để bán (AFS)'] },
+            { code: '32', name: 'Chi phí dự phòng TSTC, xử lý tổn thất các khoản phải thu khó đòi và lỗ suy giảm TSTC và chi phí đi vay của các khoản cho vay', keys: ['Chi phí dự phòng TSTC, xử lý tổn thất các khoản phải thu khó đòi và lỗ suy giảm TSTC và chi phí đi vay của các khoản cho vay'] },
+            { code: '2.5', name: '2.5. Lỗ từ các tài sản tài chính phái sinh phòng ngừa rủi ro', keys: ['2.5. Lỗ từ các tài sản tài chính phái sinh phòng ngừa rủi ro'] },
             { code: '2.6', name: '2.6. Chi phí hoạt động tự doanh', keys: ['2.6. Chi phí hoạt động tự doanh'] },
             { code: '2.7', name: '2.7. Chi phí môi giới chứng khoán', keys: ['2.7. Chi phí môi giới chứng khoán'] },
-            { code: '2.8', name: '2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành', keys: ['2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành chứng  khoán'] },
+            { code: '2.8', name: '2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành chứng  khoán', keys: ['2.8. Chi phí hoạt động bảo lãnh, đại lý phát hành chứng  khoán'] },
             { code: '2.9', name: '2.9. Chi phí tư vấn', keys: ['2.9. Chi phí tư vấn'] },
             { code: '2.10', name: '2.10. Chi phí hoạt động đấu giá, ủy thác', keys: ['2.10. Chi phí hoạt động đấu giá, ủy thác'] },
             { code: '2.11', name: '2.11. Chi phí lưu ký chứng khoán', keys: ['2.11. Chi phí lưu ký chứng khoán'] },
             {
                 code: '2.12', name: '2.12. Chi phí khác', keys: ['2.12. Chi phí khác'],
                 children: [
-                    { code: 'cp_sua_loi', name: 'Trong đó: Chi phí sửa lỗi giao dịch CK', keys: ['Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác'] },
-                    { code: 'cp_truc_tiep', name: '- Chi phí trực tiếp hoạt động kinh doanh CK', keys: ['- Chi phí trực tiếp hoạt động kinh doanh chứng khoán'] },
-                    { code: 'cp_du_phong_ck', name: '- Chi phí dự phòng chứng khoán', keys: ['- Chi phí dự phòng chứng khoán'] }
+                    { code: '41', name: 'Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác', keys: ['Trong đó: Chi phí sửa lỗi giao dịch chứng khoán, lỗi khác'] },
+                    { code: '42', name: '- Chi phí trực tiếp hoạt động kinh doanh chứng khoán', keys: ['- Chi phí trực tiếp hoạt động kinh doanh chứng khoán'] },
+                    { code: '43', name: '- Chi phí dự phòng chứng khoán', keys: ['- Chi phí dự phòng chứng khoán'] }
                 ]
             }
         ]
     },
-    { code: 'CONG_CP', name: 'Cộng chi phí hoạt động (21->33)', isBold: true, keys: ['Cộng chi phí hoạt động (21->33)'] },
-    { code: 'GOP', name: 'Lợi nhuận gộp của hoạt động kinh doanh', keys: ['Lợi nhuận gộp của hoạt động kinh doanh'], isBold: true },
+    { code: '44', name: 'Cộng chi phí hoạt động (21->33)', isBold: true, keys: ['Cộng chi phí hoạt động (21->33)'] },
+    { code: '45', name: 'Lợi nhuận gộp của hoạt động kinh doanh', isBold: true, keys: ['Lợi nhuận gộp của hoạt động kinh doanh'] },
     {
-        code: 'III_GRP', name: 'III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH', isBold: true,
-        keys: ['Cộng doanh thu hoạt động tài chính (41->44)', 'III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH'],
+        code: 'III', name: 'III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH', isBold: true,
+        keys: ['III. DOANH THU HOẠT ĐỘNG TÀI CHÍNH'],
         children: [
-            { code: '3.1', name: '3.1. Chênh lệch lãi tỷ giá hối đoái', keys: ['3.1. Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện'] },
-            { code: '3.2', name: '3.2. Doanh thu cổ tức, lãi tiền gửi', keys: ['3.2. Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ'] },
-            { code: '3.3', name: '3.3. Lãi bán, thanh lý các khoản đầu tư liên kết', keys: ['3.3. Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
+            { code: '3.1', name: '3.1. Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện', keys: ['3.1. Chênh lệch lãi tỷ giá hối đoái đã và chưa thực hiện'] },
+            { code: '3.2', name: '3.2. Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ', keys: ['3.2. Doanh thu, dự thu cổ tức, lãi tiền gửi không cố định phát sinh trong kỳ'] },
+            { code: '3.3', name: '3.3. Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh', keys: ['3.3. Lãi bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
             { code: '3.4', name: '3.4. Doanh thu khác về đầu tư', keys: ['3.4. Doanh thu khác về đầu tư'] }
         ]
     },
-    { code: 'CONG_DT_TC', name: 'Cộng doanh thu hoạt động tài chính (41->44)', isBold: true, keys: ['Cộng doanh thu hoạt động tài chính (41->44)'] },
+    { code: '51', name: 'Cộng doanh thu hoạt động tài chính (41->44)', isBold: true, keys: ['Cộng doanh thu hoạt động tài chính (41->44)'] },
     {
-        code: 'IV_GRP', name: 'IV. CHI PHÍ TÀI CHÍNH', isBold: true,
-        keys: ['Cộng chi phí tài chính (51->54)', 'IV. CHÍ PHÍ TÀI CHÍNH'],
+        code: 'IV', name: 'IV. CHÍ PHÍ TÀI CHÍNH', isBold: true,
+        keys: ['IV. CHÍ PHÍ TÀI CHÍNH'],
         children: [
-            { code: '4.1', name: '4.1. Chênh lệch lỗ tỷ giá hối đoái', keys: ['4.1. Chênh lệch lỗ tỷ giá hối đoái đã và chưa thưc hiện'] },
+            { code: '4.1', name: '4.1. Chênh lệch lỗ tỷ giá hối đoái đã và chưa thưc hiện', keys: ['4.1. Chênh lệch lỗ tỷ giá hối đoái đã và chưa thưc hiện'] },
             { code: '4.2', name: '4.2. Chi phí lãi vay', keys: ['4.2. Chi phí lãi vay'] },
-            { code: '4.3', name: '4.3. Lỗ bán, thanh lý các khoản đầu tư liên kết', keys: ['4.3. Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
+            { code: '4.3', name: '4.3. Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh', keys: ['4.3. Lỗ bán, thanh lý các khoản đầu tư vào công ty con, liên kết, liên doanh'] },
             { code: '4.4', name: '4.4. Chi phí đầu tư khác', keys: ['4.4. Chi phí đầu tư khác'] }
         ]
     },
-    { code: 'CONG_CP_TC', name: 'Cộng chi phí tài chính (51->54)', isBold: true, keys: ['Cộng chi phí tài chính (51->54)'] },
-    { code: 'V', name: 'V. CHI PHÍ BÁN HÀNG', keys: ['V. CHI PHÍ BÁN HÀNG'], isBold: true },
-    { code: 'VI', name: 'VI. CHI PHÍ QUẢN LÝ CÔNG TY CK', keys: ['VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN'], isBold: true },
-    { code: 'VII', name: 'VII. KẾT QUẢ HOẠT ĐỘNG', keys: ['VII. KẾT QUẢ HOẠT ĐỘNG'], isBold: true },
+    { code: '57', name: 'Cộng chi phí tài chính (51->54)', isBold: true, keys: ['Cộng chi phí tài chính (51->54)'] },
+    { code: 'V', name: 'V. CHI PHÍ BÁN HÀNG', isBold: true, keys: ['V. CHI PHÍ BÁN HÀNG'] },
+    { code: 'VI', name: 'VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN', isBold: true, keys: ['VI. CHI PHÍ QUẢN LÝ CÔNG TY CHỨNG KHOÁN'] },
+    { code: 'VII', name: 'VII. KẾT QUẢ HOẠT ĐỘNG', isBold: true, keys: ['VII. KẾT QUẢ HOẠT ĐỘNG'] },
     {
-        code: 'VIII_GRP', name: 'VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC', isBold: true,
+        code: 'VIII', name: 'VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC', isBold: true,
         keys: ['VIII. THU NHẬP KHÁC VÀ CHI PHÍ KHÁC'],
         children: [
             { code: '8.1', name: '8.1. Thu nhập khác', keys: ['8.1. Thu nhập khác'] },
             { code: '8.2', name: '8.2. Chi phí khác', keys: ['8.2. Chi phí khác'] }
         ]
     },
-    { code: 'CONG_KQ_KHAC', name: 'Cộng kết quả hoạt động khác', isBold: true, keys: ['Cộng kết quả hoạt động khác'] },
-    { code: 'LAI_LO_LK', name: 'Lãi/lỗ từ công ty liên doanh, liên kết', keys: ['Gain/(loss) from joint ventures (from 2015)', '24. Phần lãi lỗ trong công ty liên doanh, liên kết', 'Phần lãi lỗ trong công ty liên doanh, liên kết', 'Lãi/lỗ từ công ty liên doanh, liên kết'] },
+    { code: '64', name: 'Cộng kết quả hoạt động khác', isBold: true, keys: ['Cộng kết quả hoạt động khác'] },
+    { code: '65', name: 'Lãi/lỗ từ công ty liên doanh, liên kết', keys: ['Lãi/lỗ từ công ty liên doanh, liên kết'] },
     {
-        code: 'IX_GRP', name: 'IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ', isBold: true,
+        code: 'IX', name: 'IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ', isBold: true,
         keys: ['IX. TỔNG LỢI NHUẬN KẾ TOÁN TRƯỚC THUẾ'],
         children: [
             { code: '9.1', name: '9.1. Lợi nhuận đã thực hiện', keys: ['9.1. Lợi nhuận đã thực hiện'] },
@@ -216,7 +216,7 @@ export const SECURITIES_INCOME_STRUCTURE: any[] = [
         ]
     },
     {
-        code: 'X_GRP', name: 'X. CHI PHÍ THUẾ THU NHẬP DOANH NGHIỆP', isBold: true,
+        code: 'X', name: 'X. CHI PHÍ THUẾ THU NHẬP DOANH NGHIỆP', isBold: true,
         keys: ['X. CHI PHÍ THUẾ THU NHẬP DOANH NGHIỆP'],
         children: [
             { code: '10.1', name: '10.1. Chi phí thuế TNDN hiện hành', keys: ['10.1. Chi phí thuế TNDN hiện hành'] },
@@ -224,43 +224,191 @@ export const SECURITIES_INCOME_STRUCTURE: any[] = [
         ]
     },
     {
-        code: 'XI_GRP', name: 'XI. LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN', isBold: true,
+        code: 'XI', name: 'XI.  LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN', isBold: true,
         keys: ['XI.  LỢI NHUẬN KẾ TOÁN SAU THUẾ TNDN'],
         children: [
-            { code: '11.1', name: '11.1. LNST phân bổ cho chủ sở hữu', keys: ['11.1. Lợi nhuận sau thuế phân bổ cho chủ sở hữu'] },
-            { code: '11.2', name: '11.2. LNST trích các Quỹ', keys: ['11.2. Lợi nhuận sau thuế trích các Quỹ (Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)'] },
-            { code: '11.3', name: '11.3. LN thuần phân bổ cho CĐ không kiểm soát', keys: ['11.3.  Lợi nhuận thuần phân bổ cho  lợi ích cổ đông không kiểm soát'] }
+            { code: '11.1', name: '11.1. Lợi nhuận sau thuế phân bổ cho chủ sở hữu', keys: ['11.1. Lợi nhuận sau thuế phân bổ cho chủ sở hữu'] },
+            { code: '11.2', name: '11.2. Lợi nhuận sau thuế trích các Quỹ (Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)', keys: ['11.2. Lợi nhuận sau thuế trích các Quỹ (Quỹ dự trữ điều lệ, Quỹ Dự phòng tài chính và rủi ro nghề nghiệp theo quy định của Điều lệ Công ty là %)', '11.2. Lợi nhuận sau thuế trích các Quỹ'] },
+            { code: '11.3', name: '11.3.  Lợi nhuận thuần phân bổ cho  lợi ích cổ đông không kiểm soát', keys: ['11.3.  Lợi nhuận thuần phân bổ cho  lợi ích cổ đông không kiểm soát'] }
         ]
     },
     {
-        code: 'XII_GRP', name: 'XII. THU NHẬP (LỖ) TOÀN DIỆN KHÁC', isBold: true,
+        code: 'XII', name: 'XII. THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN', isBold: true,
         keys: ['XII. THU NHẬP (LỖ) TOÀN DIỆN KHÁC SAU THUẾ TNDN'],
         children: [
-            { code: '12.1', name: '12.1. Lãi/(Lỗ) từ đánh giá lại HTM', keys: ['12.1. Lãi/(Lỗ) từ đánh giá lại các khoản đầu tư giữ đến ngày đáo hạn'] },
-            { code: '12.2', name: '12.2. Lãi/(Lỗ) từ đánh giá lại AFS', keys: ['12.2.Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán'] },
-            { code: '12.3', name: '12.3. Lãi (lỗ) toàn diện khác từ đầu tư con, liên kết', keys: ['12.3. Lãi (lỗ) toàn diện khác được chia từ hoạt động đầu tư vào công ty con, đầu tư liên kết, liên doanh'] },
-            { code: '12.4', name: '12.4. Lãi/(Lỗ) từ đánh giá lại phái sinh', keys: ['12.4. Lãi/(Lỗ) từ đánh giá lại các công cụ tài chính phái sinh'] },
-            { code: '12.5', name: '12.5. Lãi/(lỗ) chênh lệch tỷ giá hoạt động nước ngoài', keys: ['12.5. Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài'] },
-            { code: '12.6', name: '12.6. Lãi, lỗ từ đầu tư con liên kết chưa chia', keys: ['12.6. Lãi, lỗ từ các khoản đầu tư vào công ty con. Công ty liên kết, liên doanh chưa chia'] },
+            { code: '12.1', name: '12.1. Lãi/(Lỗ) từ đánh giá lại các khoản đầu tư giữ đến ngày đáo hạn', keys: ['12.1. Lãi/(Lỗ) từ đánh giá lại các khoản đầu tư giữ đến ngày đáo hạn'] },
+            { code: '12.2', name: '12.2.Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán', keys: ['12.2.Lãi/(Lỗ) từ đánh giá lại các tài sản tài chính sẵn sàng để bán'] },
+            { code: '12.3', name: '12.3. Lãi (lỗ) toàn diện khác được chia từ hoạt động đầu tư vào công ty con, đầu tư liên kết, liên doanh', keys: ['12.3. Lãi (lỗ) toàn diện khác được chia từ hoạt động đầu tư vào công ty con, đầu tư liên kết, liên doanh'] },
+            { code: '12.4', name: '12.4. Lãi/(Lỗ) từ đánh giá lại các công cụ tài chính phái sinh', keys: ['12.4. Lãi/(Lỗ) từ đánh giá lại các công cụ tài chính phái sinh'] },
+            { code: '12.5', name: '12.5. Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài', keys: ['12.5. Lãi/(lỗ) chênh lệch tỷ giá của hoạt động tại nước ngoài'] },
+            { code: '12.6', name: '12.6. Lãi, lỗ từ các khoản đầu tư vào công ty con. Công ty liên kết, liên doanh chưa chia', keys: ['12.6. Lãi, lỗ từ các khoản đầu tư vào công ty con. Công ty liên kết, liên doanh chưa chia'] },
             { code: '12.7', name: '12.7. Lãi, lỗ đánh giá công cụ phái sinh', keys: ['12.7. Lãi, lỗ đánh giá công cụ phái sinh'] },
-            { code: '12.8', name: '12.8. Lãi, lỗ đánh giá lại TSCĐ theo giá hợp lý', keys: ['12.8. Lãi, lỗ đánh giá lại tài sản cố định theo mô hình giá trị hợp lý'] }
+            { code: '12.8', name: '12.8. Lãi, lỗ đánh giá lại tài sản cố định theo mô hình giá trị hợp lý', keys: ['12.8. Lãi, lỗ đánh giá lại tài sản cố định theo mô hình giá trị hợp lý'] }
         ]
     },
-    { code: 'TND_ALL', name: 'Tổng thu nhập toàn diện', keys: ['Tổng thu nhập toàn diện'], isBold: true },
-    { code: 'TND_CSH', name: 'Thu nhập toàn diện phân bổ cho chủ sở hữu', keys: ['Thu nhập toàn diện phân bổ cho chủ sở hữu'] },
-    { code: 'TND_NCI', name: 'Thu nhập toàn diện phân bổ cho CĐ không nắm quyền kiểm soát', keys: ['Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát'] },
+    { code: '85', name: 'Tổng thu nhập toàn diện', isBold: true, keys: ['Tổng thu nhập toàn diện'] },
+    { code: '86', name: 'Thu nhập toàn diện phân bổ cho chủ sở hữu', isBold: true, keys: ['Thu nhập toàn diện phân bổ cho chủ sở hữu'] },
+    { code: '87', name: 'Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát', keys: ['Thu nhập toàn diện phân bổ cho cổ đông không nắm quyền kiểm soát'] },
     {
-        code: 'XIII_GRP', name: 'XIII. THU NHẬP THUẦN TRÊN CỔ PHIẾU', isBold: true,
+        code: 'XIII', name: 'XIII. THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG', isBold: true,
         keys: ['XIII. THU NHẬP THUẦN TRÊN CỔ PHIẾU PHỔ THÔNG'],
         children: [
-            { code: '13.1', name: '13.1. Lãi cơ bản trên cổ phiếu', keys: ['13.1.Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu) (VNÐ)'] },
-            { code: '13.2', name: '13.2. Thu nhập pha loãng trên cổ phiếu', keys: ['13.2.Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)'] }
+            { code: '13.1', name: '13.1.Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu) (VNÐ)', keys: ['13.1.Lãi cơ bản trên cổ phiếu (Đồng/1 cổ phiếu) (VNÐ)'] },
+            { code: '13.2', name: '13.2.Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)', keys: ['13.2.Thu nhập pha loãng trên cổ phiếu (Đồng/1 cổ phiếu)'] }
         ]
     }
 ];
 
 
 
+
+export const INSURANCE_INCOME_STRUCTURE: any[] = [
+    {
+        code: '01', name: '1. Doanh thu phí bảo hiểm', isBold: true,
+        keys: ['1. Doanh thu phí bảo hiểm', 'Doanh thu phí bảo hiểm'],
+        children: [
+            { code: '01.1', name: '- Thu phí bảo hiểm gốc', keys: ['- Thu phí bảo hiểm gốc', 'Thu phí bảo hiểm gốc'] },
+            { code: '01.2', name: '- Thu phí nhận tái bảo hiểm', keys: ['- Thu phí nhận tái bảo hiểm', 'Thu phí nhận tái bảo hiểm'] },
+            { code: '01.3', name: '- Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', keys: ['- Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng (giảm) dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng giảm dự phòng phí bảo hiểm gốc và nhận tái bảo hiểm'] }
+        ]
+    },
+    {
+        code: '02', name: '2. Phí nhượng tái bảo hiểm', isBold: true,
+        keys: ['2. Phí nhượng tái bảo hiểm', 'Phí nhượng tái bảo hiểm'],
+        children: [
+            { code: '02.1', name: '- Phí nhượng tái bảo hiểm', keys: ['- Phí nhượng tái bảo hiểm', 'Phí nhượng tái bảo hiểm'] },
+            { code: '02.2', name: '- Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', keys: ['- Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', 'Tăng (giảm) dự phòng phí nhượng tái bảo hiểm', 'Tăng giảm dự phòng phí nhượng tái bảo hiểm'] }
+        ]
+    },
+    {
+        code: '03_GRP', name: 'Các khoản giảm trừ',
+        keys: ['Các khoản giảm trừ'],
+        children: [
+            { code: '03.1', name: '- Giảm phí Bảo hiểm', keys: ['- Giảm phí Bảo hiểm', 'Giảm phí Bảo hiểm'] },
+            { code: '03.2', name: '- Hoàn phí Bảo hiểm', keys: ['- Hoàn phí Bảo hiểm', 'Hoàn phí Bảo hiểm'] },
+            { code: '03.3', name: '- Các khoản giảm trừ khác', keys: ['- Các khoản giảm trừ khác', 'Các khoản giảm trừ khác'] }
+        ]
+    },
+    { code: '03.4', name: 'Tăng (giảm) dự phòng phí, dự phòng toán học', keys: ['Tăng (giảm) dự phòng phí, dự phòng toán học', 'Tăng giảm dự phòng phí, dự phòng toán học'] },
+    { code: '03', name: '3. Doanh thu phí bảo hiểm thuần', isBold: true, keys: ['3. Doanh thu phí bảo hiểm thuần', 'Doanh thu phí bảo hiểm thuần'] },
+    {
+        code: '04', name: '4. Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH', isBold: true,
+        keys: ['4. Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH', 'Hoa hồng nhượng tái bảo hiểm và doanh thu khác HĐKDBH'],
+        children: [
+            { code: '04.1', name: '- Thu hoa hồng nhượng tái Bảo hiểm', keys: ['- Thu hoa hồng nhượng tái Bảo hiểm', 'Thu hoa hồng nhượng tái Bảo hiểm'] },
+            { code: '04.2', name: '- Thu khác hoạt động kinh doanh Bảo hiểm', keys: ['- Thu khác hoạt động kinh doanh Bảo hiểm', 'Thu khác hoạt động kinh doanh Bảo hiểm'] },
+            { code: '04.3', name: '+ Thu khác nhận tái Bảo hiểm', keys: ['+ Thu khác nhận tái Bảo hiểm', 'Thu khác nhận tái Bảo hiểm'] },
+            { code: '04.4', name: '+ Thu khác nhượng tái bảo hiểm', keys: ['+ Thu khác nhượng tái bảo hiểm', 'Thu khác nhượng tái bảo hiểm'] },
+            { code: '04.5', name: '+ Thu khác (giám định, đại lý,…)', keys: ['+ Thu khác (giám định, đại lý,…)', 'Thu khác (giám định, đại lý,…)'] }
+        ]
+    },
+    { code: '10', name: '5. Doanh thu thuần HĐKD BH', isBold: true, keys: ['5. Doanh thu thuần HĐKD BH', 'Doanh thu thuần HĐKD BH', '10. Doanh thu thuần hoạt động kinh doanh bảo hiểm', 'Doanh thu thuần hoạt động kinh doanh bảo hiểm'] },
+    { code: '10.1', name: '5.1. Doanh thuần BH và CCDV', keys: ['5.1. Doanh thuần BH và CCDV', 'Doanh thuần BH và CCDV'] },
+    {
+        code: '11', name: '6. Chi bồi thường', isBold: true,
+        keys: ['6. Chi bồi thường', 'Chi bồi thường'],
+        children: [
+            { code: '11.1', name: '- Tổng chi bồi thường', keys: ['- Tổng chi bồi thường', 'Tổng chi bồi thường'] },
+            { code: '11.2', name: '+ Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm', keys: ['+ Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm', 'Chi bồi thường bảo hiểm gốc, trả tiền bảo hiểm'] },
+            { code: '11.3', name: '+ Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm', keys: ['+ Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm', 'Chi bồi thường nhận tái bảo hiểm, trả tiền bảo hiểm'] },
+            { code: '11.4', name: '- Các khoản giảm trừ', keys: ['- Các khoản giảm trừ', 'Các khoản giảm trừ'] },
+            { code: '11.5', name: '+ Thu đòi người thứ ba bồi hoàn', keys: ['+ Thu đòi người thứ ba bồi hoàn', 'Thu đòi người thứ ba bồi hoàn'] },
+            { code: '11.6', name: '+ Thu hàng đã xử lý bồi thường 100%', keys: ['+ Thu hàng đã xử lý bồi thường 100%', 'Thu hàng đã xử lý bồi thường 100%'] }
+        ]
+    },
+    { code: '12', name: '7. Thu bồi thường nhượng tái bảo hiểm', keys: ['7. Thu bồi thường nhượng tái bảo hiểm', 'Thu bồi thường nhượng tái bảo hiểm'] },
+    { code: '13', name: 'Tăng (giảm) dự phòng toán học (dành riêng BVH)', keys: ['Tăng (giảm) dự phòng toán học (dành riêng BVH)', 'Tăng (giảm) dự phòng toán học', 'Tăng giảm dự phòng toán học'] },
+    { code: '14', name: '8. Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', keys: ['8. Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm', 'Tăng (giảm) dự phòng bồi thường bảo hiểm gốc và nhận tái bảo hiểm'] },
+    {
+        code: '09', name: '9. Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm',
+        keys: ['9. Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm', 'Tăng (giảm) dự phòng bồi thường nhượng tái bảo hiểm'],
+        children: [
+            { code: '09.1', name: '9.1. Tăng (giảm) dự phòng bồi thường', keys: ['9.1. Tăng (giảm) dự phòng bồi thường'] }
+        ]
+    },
+    { code: '15', name: '10. Tổng chi bồi thường bảo hiểm', isBold: true, keys: ['10. Tổng chi bồi thường bảo hiểm', 'Tổng chi bồi thường bảo hiểm'] },
+    {
+        code: '11_GRP', name: '11. Tăng (giảm) dự phòng dao động lớn',
+        keys: ['11. Tăng (giảm) dự phòng dao động lớn', 'Tăng (giảm) dự phòng dao động lớn'],
+        children: [
+            { code: '11_sub', name: 'Chi bồi thường từ dự phòng dao động lớn', keys: ['Chi bồi thường từ dự phòng dao động lớn'] }
+        ]
+    },
+    {
+        code: '12', name: '12. Chi khác hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['12. Chi khác hoạt động kinh doanh bảo hiểm', 'Chi khác hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '12.1', name: '- Chi hoa hồng bảo hiểm', keys: ['- Chi hoa hồng bảo hiểm', 'Chi hoa hồng bảo hiểm'] },
+            { code: '12.2', name: '- Chi phí khác hoạt động kinh doanh bảo hiểm', keys: ['- Chi phí khác hoạt động kinh doanh bảo hiểm', 'Chi phí khác hoạt động kinh doanh bảo hiểm'] },
+            {
+                code: '12.3', name: '+ Chi khác hoạt động kinh doanh bảo hiểm gốc', keys: ['+ Chi khác hoạt động kinh doanh bảo hiểm gốc', 'Chi khác hoạt động kinh doanh bảo hiểm gốc'],
+                children: [
+                    { code: '12.3.1', name: '• Chi giám định tổn thất', keys: ['• Chi giám định tổn thất', 'Chi giám định tổn thất'] },
+                    { code: '12.3.2', name: '• Chi đòi người thứ 3', keys: ['• Chi đòi người thứ 3', 'Chi đòi người thứ 3'] },
+                    { code: '12.3.3', name: '• Chi xử lý hàng bồi thường 100%', keys: ['• Chi xử lý hàng bồi thường 100%', 'Chi xử lý hàng bồi thường 100%'] },
+                    { code: '12.3.4', name: '• Chi đánh giá rủi ro của đối tượng bảo hiểm', keys: ['• Chi đánh giá rủi ro của đối tượng bảo hiểm', 'Chi đánh giá rủi ro của đối tượng bảo hiểm'] },
+                    { code: '12.3.5', name: '• Chi đề phòng hạn chế rủi ro, tổn thất', keys: ['• Chi đề phòng hạn chế rủi ro, tổn thất', 'Chi đề phòng hạn chế rủi ro, tổn thất'] },
+                    { code: '12.3.6', name: '• Chi khác', keys: ['• Chi khác', 'Chi khác'] }
+                ]
+            },
+            {
+                code: '12.4', name: '+ Chi khác hoạt động kinh doanh nhận tái bảo hiểm', keys: ['+ Chi khác hoạt động kinh doanh nhận tái bảo hiểm', 'Chi khác hoạt động kinh doanh nhận tái bảo hiểm'],
+                children: [
+                    { code: '12.4.1', name: '• Chi hoa hồng nhận tái bảo hiểm', keys: ['• Chi hoa hồng nhận tái bảo hiểm', 'Chi hoa hồng nhận tái bảo hiểm'] }
+                ]
+            },
+            { code: '12.5', name: '+ Chi hoạt động nhượng tái bảo hiểm', keys: ['+ Chi hoạt động nhượng tái bảo hiểm', 'Chi hoạt động nhượng tái bảo hiểm'] },
+            { code: '12.6', name: '+ Chi phí trực tiếp kinh doanh hoạt động khác', keys: ['+ Chi phí trực tiếp kinh doanh hoạt động khác', 'Chi phí trực tiếp kinh doanh hoạt động khác'] }
+        ]
+    },
+    {
+        code: '13', name: '13. Tổng chi phí hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['13. Tổng chi phí hoạt động kinh doanh bảo hiểm', 'Tổng chi phí hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '13.1', name: '13.1. Giá vốn cung cấp hàng hóa, dịch vụ khác', keys: ['13.1. Giá vốn cung cấp hàng hóa, dịch vụ khác', 'Giá vốn cung cấp hàng hóa, dịch vụ khác'] }
+        ]
+    },
+    {
+        code: '14', name: '14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', isBold: true,
+        keys: ['14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', 'Lợi nhuận gộp hoạt động kinh doanh bảo hiểm'],
+        children: [
+            { code: '14.1', name: '14.1. Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác', keys: ['14.1. Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác', 'Lợi nhuận gộp cung cấp hàng hóa, dịch vụ khác'] },
+            { code: '14.2', name: '14.2. Lợi nhuận thuần hoạt động kinh doanh bảo hiểm', keys: ['14.2. Lợi nhuận thuần hoạt động kinh doanh bảo hiểm', 'Lợi nhuận thuần hoạt động kinh doanh bảo hiểm'] }
+        ]
+    },
+    { code: '15', name: '15. Doanh thu kinh doanh bất động sản đầu tư', keys: ['15. Doanh thu kinh doanh bất động sản đầu tư', 'Doanh thu kinh doanh bất động sản đầu tư'] },
+    { code: '16', name: '16. Giá vốn bất động sản đầu tư', keys: ['16. Giá vốn bất động sản đầu tư', 'Giá vốn bất động sản đầu tư'] },
+    { code: '17', name: '17. Lợi nhuận từ hoạt động đầu tư bất động sản', isBold: true, keys: ['17. Lợi nhuận từ hoạt động đầu tư bất động sản', 'Lợi nhuận từ hoạt động đầu tư bất động sản', '(22=20-21)'] },
+    { code: '18', name: '18. Doanh thu hoạt động tài chính', isBold: true, keys: ['18. Doanh thu hoạt động tài chính', 'Doanh thu hoạt động tài chính'] },
+    {
+        code: '19', name: '19. Chi hoạt động tài chính', isBold: true,
+        keys: ['19. Chi hoạt động tài chính', 'Chi hoạt động tài chính'],
+        children: [
+            { code: '19.1', name: '- Dự phòng toán học trích lãi từ đầu tư', keys: ['- Dự phòng toán học trích lãi từ đầu tư', 'Dự phòng toán học trích lãi từ đầu tư'] },
+            { code: '19.2', name: '- Dự phòng chia lãi', keys: ['- Dự phòng chia lãi', 'Dự phòng chia lãi'] },
+            { code: '19.3', name: '- Chi khác hoạt động tài chính', keys: ['- Chi khác hoạt động tài chính', 'Chi khác hoạt động tài chính'] }
+        ]
+    },
+    { code: '20', name: '20. Lợi nhuận gộp hoạt động tài chính', isBold: true, keys: ['20. Lợi nhuận gộp hoạt động tài chính', 'Lợi nhuận gộp hoạt động tài chính'] },
+    { code: 'CP_BH', name: 'Chi phí bán hàng', keys: ['Chi phí bán hàng'] },
+    { code: '21', name: '21. Chi phí quản lý doanh nghiệp', isBold: true, keys: ['21. Chi phí quản lý doanh nghiệp', 'Chi phí quản lý doanh nghiệp'] },
+    { code: '22', name: '22. Lợi nhuận thuần từ hoạt động kinh doanh', isBold: true, keys: ['22. Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận thuần từ hoạt động kinh doanh'] },
+    { code: '23', name: '23. Thu nhập khác', keys: ['23. Thu nhập khác', 'Thu nhập khác'] },
+    { code: '24', name: '24. Chi phí khác', keys: ['24. Chi phí khác', 'Chi phí khác'] },
+    { code: '25', name: '25. Lợi nhuận khác', isBold: true, keys: ['25. Lợi nhuận khác', 'Lợi nhuận khác'] },
+    { code: 'LK_LD', name: 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', keys: ['Phần lợi nhuận/lỗ từ công ty liên kết liên doanh', 'Phần lãi lỗ trong công ty liên doanh, liên kết', 'Phần lợi nhuận/lỗ từ công ty liên kết liên doanh'] },
+    { code: '26', name: '26. Tổng lợi nhuận kế toán trước thuế', isBold: true, keys: ['26. Tổng lợi nhuận kế toán trước thuế', 'Tổng lợi nhuận kế toán trước thuế'] },
+    { code: 'ADJ_TAX', name: 'Các khoản điều chỉnh tăng (+) hoặc giảm (-) lợi nhuận để xác định lợi nhuận chịu thuế TNDN', keys: ['Các khoản điều chỉnh tăng (+) hoặc giảm (-) lợi nhuận để xác định lợi nhuận chịu thuế TNDN'] },
+    { code: 'TOTAL_TAX_PROFIT', name: 'Tổng lợi nhuận trước thuế thu nhập doanh nghiệp', keys: ['Tổng lợi nhuận trước thuế thu nhập doanh nghiệp'] },
+    { code: 'DP_CAN_DOI', name: 'Dự phòng đảm bảo cân đối', keys: ['Dự phòng đảm bảo cân đối'] },
+    { code: 'TAX_PROFIT', name: 'Lợi nhuận chịu thuế thu nhập doanh nghiệp', keys: ['Lợi nhuận chịu thuế thu nhập doanh nghiệp'] },
+    { code: '27', name: '27. Chi phí thuế thu nhập hiện hành', keys: ['27. Chi phí thuế thu nhập hiện hành', 'Chi phí thuế thu nhập hiện hành'] },
+    { code: '28', name: '28. Chi phí thuế thu nhập hoãn lại', keys: ['28. Chi phí thuế thu nhập hoãn lại', 'Chi phí thuế thu nhập hoãn lại'] },
+    { code: '29', name: '29. Lợi nhuận sau thuế thu nhập doanh nghiệp', isBold: true, keys: ['29. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'] },
+    { code: '30', name: '30. Lợi ích của cổ đông thiểu số', keys: ['30. Lợi ích của cổ đông thiểu số', 'Lợi ích của cổ đông thiểu số'] },
+    { code: '31', name: '31. Lợi nhuận sau thuế của cổ đông của Công ty mẹ', isBold: true, keys: ['31. Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông của công ty mẹ'] },
+    { code: '32', name: '32. Lãi cơ bản trên cổ phiếu. (VNÐ)', keys: ['32. Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu', 'Lãi cơ bản trên cổ phiếu. (VNÐ)'] }
+];
 
 interface VASIncomeStatementProps {
     symbol: string | null;
@@ -278,11 +426,13 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [industry, setIndustry] = useState<string>('');
     const [isExpanded, setIsExpanded] = useState(false);
+    const [columnWidth, setColumnWidth] = useState(450);
 
     const currentStructure = useMemo(() => {
         const ind = industry.toLowerCase();
         if (ind.includes('ngân hàng')) return BANK_INCOME_STRUCTURE;
         if (ind.includes('dịch vụ tài chính')) return SECURITIES_INCOME_STRUCTURE;
+        if (ind.includes('bảo hiểm')) return INSURANCE_INCOME_STRUCTURE;
         return VAS_INCOME_STRUCTURE;
     }, [industry]);
 
@@ -598,15 +748,38 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
     // --- TABLE COLUMNS ---
     const columns = [
         {
-            title: <div className="text-[10px] text-gray-500">CHỈ TIÊU (TỶ VNĐ)</div>,
+            title: (
+                <div className="flex items-center justify-between group">
+                    <span className="text-[10px] text-gray-500">CHỈ TIÊU (TỶ VNĐ)</span>
+                    <Popover
+                        content={
+                            <div className="w-48">
+                                <p className="text-xs mb-2">Độ rộng cột: {columnWidth}px</p>
+                                <Slider
+                                    min={200}
+                                    max={800}
+                                    value={columnWidth}
+                                    onChange={(v: number) => setColumnWidth(v)}
+                                />
+                            </div>
+                        }
+                        title="Cấu hình hiển thị"
+                        trigger="click"
+                    >
+                        <Settings size={12} className="text-gray-400 cursor-pointer hover:text-neon-blue transition-colors" />
+                    </Popover>
+                </div>
+            ),
             dataIndex: 'name',
             key: 'name',
             fixed: 'left',
-            width: 360,
+            width: columnWidth,
             render: (text: string, record: any) => (
-                <span className={`inline-block align-middle ${record.isBold ? 'font-bold' : ''} text-[10px] whitespace-nowrap overflow-hidden text-ellipsis`}>
-                    {text}
-                </span>
+                <Tooltip title={text} placement="topLeft" mouseEnterDelay={0.5}>
+                    <span className={`inline-block align-middle w-full ${record.isBold ? 'font-bold' : ''} text-[10px] truncate`}>
+                        {text}
+                    </span>
+                </Tooltip>
             )
         },
         ...displayPeriods.map(p => ({
@@ -774,6 +947,46 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
             {/* --- DATA TABLE --- */}
             <Card
                 className="border-none bg-[#0b0e11] shadow-2xl"
+                extra={
+                    <Space>
+                        <Popover
+                            content={
+                                <div className="w-64 p-2">
+                                    <div className="text-xs text-gray-400 mb-2">Độ rộng cột chỉ tiêu: {columnWidth}px</div>
+                                    <Slider
+                                        min={200}
+                                        max={800}
+                                        value={columnWidth}
+                                        onChange={setColumnWidth}
+                                        trackStyle={{ backgroundColor: '#1677ff' }}
+                                        handleStyle={{ borderColor: '#1677ff' }}
+                                    />
+                                </div>
+                            }
+                            trigger="click"
+                            placement="bottomRight"
+                            arrow={false}
+                        >
+                            <Button
+                                type="text"
+                                size="small"
+                                className="text-gray-500 hover:text-white flex items-center gap-1"
+                                icon={<Settings size={14} />}
+                            >
+                                Cấu hình
+                            </Button>
+                        </Popover>
+                        <Tooltip title="Mở rộng bảng">
+                            <Button
+                                type="text"
+                                size="small"
+                                onClick={() => setIsExpanded(true)}
+                                className="text-gray-500 hover:text-neon-blue transition-colors"
+                                icon={<Maximize2 size={16} />}
+                            />
+                        </Tooltip>
+                    </Space>
+                }
                 title={
                     <div className="flex justify-between items-center w-full">
                         <Space split={<Divider type="vertical" className="bg-gray-700" />}>
@@ -783,20 +996,9 @@ const VASIncomeStatement: React.FC<VASIncomeStatementProps> = ({ symbol }) => {
                                 <Radio.Button value="quarter">QUÝ</Radio.Button>
                             </Radio.Group>
                         </Space>
-                        <Space>
-                            <Tooltip title="Mở rộng bảng">
-                                <Button
-                                    type="text"
-                                    size="small"
-                                    onClick={() => setIsExpanded(true)}
-                                    className="text-gray-500 hover:text-neon-blue transition-colors"
-                                    icon={<Maximize2 size={16} />}
-                                />
-                            </Tooltip>
-                            <Tooltip title="Đơn vị: VND. Dữ liệu đã được chuẩn hóa theo Thông tư 200/2014/TT-BTC">
-                                <Info size={16} className="text-gray-500 cursor-help" />
-                            </Tooltip>
-                        </Space>
+                        <Tooltip title="Đơn vị: VND. Dữ liệu đã được chuẩn hóa theo Thông tư 200/2014/TT-BTC">
+                            <Info size={16} className="text-gray-500 cursor-help" />
+                        </Tooltip>
                     </div>
                 }
             >

@@ -4,9 +4,9 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Input, Select, Segmented, Tabs } from 'antd';
 import { Search, GripVertical, Building2, Landmark, Briefcase, PieChart, FileText, Activity, DollarSign } from 'lucide-react';
 import { AVAILABLE_METRICS } from '../types';
-import { VAS_INCOME_STRUCTURE, BANK_INCOME_STRUCTURE, SECURITIES_INCOME_STRUCTURE } from './VASIncomeStatement';
-import { VAS_BALANCE_STRUCTURE, BANK_BALANCE_STRUCTURE, SECURITIES_BALANCE_STRUCTURE } from './VASBalanceSheet';
-import { VAS_CASHFLOW_STRUCTURE, BANK_CASHFLOW_STRUCTURE, SECURITIES_CASHFLOW_STRUCTURE } from './VASCashFlow';
+import { VAS_INCOME_STRUCTURE, BANK_INCOME_STRUCTURE, SECURITIES_INCOME_STRUCTURE, INSURANCE_INCOME_STRUCTURE } from './VASIncomeStatement';
+import { VAS_BALANCE_STRUCTURE, BANK_BALANCE_STRUCTURE, SECURITIES_BALANCE_STRUCTURE, INSURANCE_BALANCE_STRUCTURE } from './VASBalanceSheet';
+import { VAS_CASHFLOW_STRUCTURE, BANK_CASHFLOW_STRUCTURE, SECURITIES_CASHFLOW_STRUCTURE, INSURANCE_CASHFLOW_STRUCTURE } from './VASCashFlow';
 
 interface DraggableItemProps {
     id: string;
@@ -67,7 +67,7 @@ const MetricsSidebar: React.FC = () => {
     const [dynamicMetrics, setDynamicMetrics] = useState<string[]>([]);
 
     // UI State
-    const [industryType, setIndustryType] = useState<'vas' | 'bank' | 'securities'>('vas');
+    const [industryType, setIndustryType] = useState<'vas' | 'bank' | 'securities' | 'insurance'>('vas');
     const [reportType, setReportType] = useState<'income' | 'balance' | 'cash' | 'ratios'>('income');
 
     React.useEffect(() => {
@@ -87,6 +87,8 @@ const MetricsSidebar: React.FC = () => {
                     setIndustryType('bank');
                 } else if (ind.includes('dịch vụ tài chính') || ind.includes('chứng khoán')) {
                     setIndustryType('securities');
+                } else if (ind.includes('bảo hiểm')) {
+                    setIndustryType('insurance');
                 } else {
                     setIndustryType('vas');
                 }
@@ -96,6 +98,7 @@ const MetricsSidebar: React.FC = () => {
                 const dmStr = dm.join(' ').toLowerCase();
                 if (dmStr.includes('thu nhập lãi thuần')) setIndustryType('bank');
                 else if (dmStr.includes('doanh thu môi giới')) setIndustryType('securities');
+                else if (dmStr.includes('phí bảo hiểm') || dmStr.includes('kinh doanh bảo hiểm')) setIndustryType('insurance');
             }
         };
 
@@ -170,6 +173,10 @@ const MetricsSidebar: React.FC = () => {
             if (reportType === 'income') structure = SECURITIES_INCOME_STRUCTURE;
             else if (reportType === 'balance') structure = SECURITIES_BALANCE_STRUCTURE;
             else structure = SECURITIES_CASHFLOW_STRUCTURE;
+        } else if (industryType === 'insurance') {
+            if (reportType === 'income') structure = INSURANCE_INCOME_STRUCTURE;
+            else if (reportType === 'balance') structure = INSURANCE_BALANCE_STRUCTURE;
+            else structure = INSURANCE_CASHFLOW_STRUCTURE;
         } else { // VAS
             if (reportType === 'income') structure = VAS_INCOME_STRUCTURE;
             else if (reportType === 'balance') structure = VAS_BALANCE_STRUCTURE;
@@ -223,6 +230,7 @@ const MetricsSidebar: React.FC = () => {
                     { value: 'vas', label: <span className="flex items-center gap-2"><Building2 size={14} /> SẢN XUẤT - TM</span> },
                     { value: 'bank', label: <span className="flex items-center gap-2"><Landmark size={14} /> NGÂN HÀNG</span> },
                     { value: 'securities', label: <span className="flex items-center gap-2"><Briefcase size={14} /> CHỨNG KHOÁN</span> },
+                    { value: 'insurance', label: <span className="flex items-center gap-2"><Building2 size={14} /> BẢO HIỂM</span> },
                 ]}
                 popupMatchSelectWidth={false}
                 style={{ fontFamily: 'monospace' }}
