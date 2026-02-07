@@ -14,6 +14,7 @@ import VASCashFlow from './components/VASCashFlow';
 import FinancialChart from './components/FinancialChart';
 import MetricsSidebar from './components/MetricsSidebar';
 import FinancialTable from './components/FinancialTable';
+import IndustryComparison from './components/IndustryComparison';
 import { AVAILABLE_METRICS } from './types';
 import logo from './assets/logo.png';
 import 'antd/dist/reset.css';
@@ -323,6 +324,11 @@ const App: React.FC = () => {
                                                                 label: 'KEY RATIOS',
                                                                 key: 'ratio',
                                                                 children: <FinancialTable symbol={selectedSymbol} type="ratio" />
+                                                            },
+                                                            {
+                                                                label: 'NGÀNH',
+                                                                key: 'industry',
+                                                                children: <IndustryComparison user={user} />
                                                             }
                                                         ]}
                                                     />
