@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card, Select, Button, Table, Empty, Spin, Input, Modal, Tooltip, Space, Dropdown, Statistic, Tag, Popover, Checkbox, Divider } from 'antd';
-import { Plus, Trash2, Save, FolderOpen, BarChart3, LineChart, TrendingUp, Search, RefreshCw, Settings, Eye, EyeOff, Download, Layers, Activity } from 'lucide-react';
+import { Plus, Trash2, Save, FolderOpen, BarChart3, LineChart, TrendingUp, Search, RefreshCw, Settings, Eye, EyeOff, Download, Layers, Activity, Maximize2, Minimize2 } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { supabase } from '../supabaseClient';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -77,6 +77,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [showMetricModal, setShowMetricModal] = useState(false);
     const [activeSource, setActiveSource] = useState<'all' | 'ratios' | 'income' | 'balance' | 'cashflow'>('all');
     const [tableFontSize, setTableFontSize] = useState(11);
+    const [maximizedPanel, setMaximizedPanel] = useState<'none' | 'left' | 'right'>('none');
 
     // Fetch all symbols
     useEffect(() => {
@@ -426,9 +427,9 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     fontSize: 10,
                     formatter: (val: number) => {
                         const absVal = Math.abs(val);
-                        if (absVal >= 1e12) return (val / 1e12).toFixed(1) + 'T';
-                        if (absVal >= 1e9) return (val / 1e9).toFixed(1) + 'B';
-                        if (absVal >= 1e6) return (val / 1e6).toFixed(1) + 'M';
+                        if (absVal >= 1e12) return (val / 1e12).toFixed(1) + ' nghìn tỷ';
+                        if (absVal >= 1e9) return (val / 1e9).toFixed(1) + ' tỷ';
+                        if (absVal >= 1e6) return (val / 1e6).toFixed(1) + ' tr';
                         return val.toLocaleString();
                     }
                 },
@@ -482,9 +483,9 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     const absVal = Math.abs(val);
                     let formatted = val.toFixed(2);
 
-                    if (absVal >= 1e12) formatted = (val / 1e12).toFixed(2) + 'T';
-                    else if (absVal >= 1e9) formatted = (val / 1e9).toFixed(2) + 'B';
-                    else if (absVal >= 1e6) formatted = (val / 1e6).toFixed(1) + 'M';
+                    if (absVal >= 1e12) formatted = (val / 1e12).toFixed(2) + ' nghìn tỷ';
+                    else if (absVal >= 1e9) formatted = (val / 1e9).toFixed(2) + ' tỷ';
+                    else if (absVal >= 1e6) formatted = (val / 1e6).toFixed(1) + ' tr';
                     else if (absVal >= 1000) formatted = val.toLocaleString();
 
                     return (
@@ -525,9 +526,11 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [allSymbols, searchSymbol]);
 
     return (
-        <div className="flex gap-4 h-[calc(100vh-180px)]">
+        <div className="flex gap-4 h-[calc(100vh-180px)] relative">
             {/* LEFT PANEL - DATA */}
-            <div className="w-1/2 flex flex-col gap-4">
+            <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'left' ? 'absolute inset-0 z-50 w-full h-full bg-[#030712]' :
+                maximizedPanel === 'right' ? 'hidden' : 'w-1/2'
+                }`}>
                 <Card
                     className="border-none bg-[#0b0e11] shadow-2xl flex-1 overflow-hidden"
                     title={
@@ -539,6 +542,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             <Space>
                                 <Button size="small" icon={<FolderOpen size={12} />} onClick={() => setShowLoadModal(true)} className="bg-transparent border-[#ff9800] text-[#ff9800]">Load</Button>
                                 <Button size="small" icon={<Save size={12} />} onClick={() => setShowSaveModal(true)} className="bg-transparent border-[#1677ff] text-[#1677ff]">Save</Button>
+                                <Button
+                                    size="small"
+                                    icon={maximizedPanel === 'left' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                                    onClick={() => setMaximizedPanel(maximizedPanel === 'left' ? 'none' : 'left')}
+                                    className="bg-transparent border-gray-700 text-gray-500"
+                                />
                             </Space>
                         </div>
                     }
@@ -766,33 +775,50 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     rowKey="symbol"
                                     pagination={false}
                                     size="small"
-                                    scroll={{ x: 'max-content', y: 300 }}
+                                    scroll={{ x: 'max-content', y: maximizedPanel === 'left' ? 'calc(100vh - 350px)' : 350 }}
                                     className="comparison-table"
                                 />
 
-                                {/* Statistics Row */}
+                                {/* Statistics Section */}
                                 <div className="mt-4 p-3 bg-[#111] border border-[#333] rounded">
-                                    <div className="text-[10px] font-bold text-gray-500 mb-2">THỐNG KÊ</div>
-                                    <div className="grid grid-cols-3 gap-4">
-                                        {selectedMetrics.slice(0, 3).map(metric => (
-                                            <div key={metric} className="text-center">
-                                                <div className="text-[10px] text-gray-500 truncate">{metric}</div>
-                                                <div className="grid grid-cols-3 gap-1 mt-1">
-                                                    <div>
-                                                        <div className="text-[9px] text-gray-600">AVG</div>
-                                                        <div className="text-xs text-green-400 font-mono">{statistics[metric]?.avg.toFixed(2)}</div>
+                                    <div className="text-[10px] font-bold text-gray-500 mb-2 border-b border-[#222] pb-1">BẢNG THỐNG KÊ CHI TIẾT</div>
+                                    <div className="max-h-[150px] overflow-y-auto custom-scrollbar pr-2">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                                            {selectedMetrics.map(metric => {
+                                                const stats = statistics[metric];
+                                                if (!stats) return null;
+
+                                                const formatStat = (val: number) => {
+                                                    if (val === undefined || val === null || isNaN(val)) return '-';
+                                                    const absV = Math.abs(val);
+                                                    if (absV >= 1e9) return (val / 1e9).toFixed(2) + ' tỷ';
+                                                    if (absV >= 1e6) return (val / 1e6).toFixed(1) + ' tr';
+                                                    return val.toLocaleString(undefined, { maximumFractionDigits: 2 });
+                                                };
+
+                                                return (
+                                                    <div key={metric} className="bg-[#1a1a1a] p-2 rounded border border-[#222] hover:border-[#ff9800]/30 transition-colors">
+                                                        <div className="text-[10px] text-gray-400 truncate mb-1 border-b border-[#333] pb-0.5" title={metric}>
+                                                            {metric}
+                                                        </div>
+                                                        <div className="flex justify-between items-center gap-2">
+                                                            <div>
+                                                                <div className="text-[8px] text-gray-600 uppercase">Avg</div>
+                                                                <div className="text-[11px] text-green-400 font-mono font-bold">{formatStat(stats.avg)}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[8px] text-gray-600 uppercase">Med</div>
+                                                                <div className="text-[11px] text-blue-400 font-mono font-bold">{formatStat(stats.median)}</div>
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-[8px] text-gray-600 uppercase">Max</div>
+                                                                <div className="text-[11px] text-[#ff9800] font-mono font-bold">{formatStat(stats.max)}</div>
+                                                            </div>
+                                                        </div>
                                                     </div>
-                                                    <div>
-                                                        <div className="text-[9px] text-gray-600">MED</div>
-                                                        <div className="text-xs text-blue-400 font-mono">{statistics[metric]?.median.toFixed(2)}</div>
-                                                    </div>
-                                                    <div>
-                                                        <div className="text-[9px] text-gray-600">MAX</div>
-                                                        <div className="text-xs text-[#ff9800] font-mono">{statistics[metric]?.max.toFixed(2)}</div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        ))}
+                                                );
+                                            })}
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -809,19 +835,21 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             </div>
 
             {/* RIGHT PANEL - CHART */}
-            <div className="w-1/2 flex flex-col gap-4">
+            <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'right' ? 'absolute inset-0 z-50 w-full h-full bg-[#030712]' :
+                maximizedPanel === 'left' ? 'hidden' : 'w-1/2'
+                }`}>
                 <Card
                     className="border-none bg-[#0b0e11] shadow-2xl flex-1"
                     title={
                         <div className="flex justify-between items-center gap-4">
                             <div className="flex items-center gap-2 min-w-fit">
                                 <Activity size={16} className="text-[#1677ff]" />
-                                <span className="text-[#e0e0e0] font-mono font-bold text-xs">PHÂN TÍCH TREND</span>
+                                <span className="text-[#e0e0e0] font-mono font-bold text-xs uppercase">Phân tích Trend</span>
                             </div>
 
                             <Select
                                 showSearch
-                                placeholder="Tìm chỉ tiêu phân tích (Trend)..."
+                                placeholder="Tìm chỉ tiêu..."
                                 className="flex-1 max-w-[500px]"
                                 size="small"
                                 value={chartMetric}
@@ -843,29 +871,38 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 ))}
                             </Select>
 
-                            <Button.Group size="small" className="min-w-fit">
-                                <Tooltip title="Biểu đồ cột">
-                                    <Button
-                                        icon={<BarChart3 size={12} />}
-                                        onClick={() => setChartType('bar')}
-                                        type={chartType === 'bar' ? 'primary' : 'default'}
-                                    />
-                                </Tooltip>
-                                <Tooltip title="Biểu đồ cột chồng">
-                                    <Button
-                                        icon={<Layers size={12} />}
-                                        onClick={() => setChartType('stacked')}
-                                        type={chartType === 'stacked' ? 'primary' : 'default'}
-                                    />
-                                </Tooltip>
-                                <Tooltip title="Biểu đồ đường">
-                                    <Button
-                                        icon={<LineChart size={12} />}
-                                        onClick={() => setChartType('line')}
-                                        type={chartType === 'line' ? 'primary' : 'default'}
-                                    />
-                                </Tooltip>
-                            </Button.Group>
+                            <div className="flex items-center gap-2">
+                                <Button.Group size="small" className="min-w-fit">
+                                    <Tooltip title="Biểu đồ cột">
+                                        <Button
+                                            icon={<BarChart3 size={12} />}
+                                            onClick={() => setChartType('bar')}
+                                            type={chartType === 'bar' ? 'primary' : 'default'}
+                                        />
+                                    </Tooltip>
+                                    <Tooltip title="Biểu đồ cột chồng">
+                                        <Button
+                                            icon={<Layers size={12} />}
+                                            onClick={() => setChartType('stacked')}
+                                            type={chartType === 'stacked' ? 'primary' : 'default'}
+                                        />
+                                    </Tooltip>
+                                    <Tooltip title="Biểu đồ đường">
+                                        <Button
+                                            icon={<LineChart size={12} />}
+                                            onClick={() => setChartType('line')}
+                                            type={chartType === 'line' ? 'primary' : 'default'}
+                                        />
+                                    </Tooltip>
+                                </Button.Group>
+
+                                <Button
+                                    size="small"
+                                    icon={maximizedPanel === 'right' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                                    onClick={() => setMaximizedPanel(maximizedPanel === 'right' ? 'none' : 'right')}
+                                    className="bg-transparent border-gray-700 text-gray-500"
+                                />
+                            </div>
                         </div>
                     }
                 >
