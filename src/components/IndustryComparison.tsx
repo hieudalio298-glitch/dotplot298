@@ -23,128 +23,20 @@ interface FinancialData {
     [key: string]: any;
 }
 
-// ==================== COMPREHENSIVE FINANCIAL METRICS ====================
-const METRIC_CATEGORIES = {
-    // Key Ratios
-    RATIOS: {
-        name: '📊 CHỈ SỐ TÀI CHÍNH',
-        color: '#ff9800',
-        metrics: [
-            { key: 'ROE (%)', label: 'ROE (%)' },
-            { key: 'ROA (%)', label: 'ROA (%)' },
-            { key: 'ROIC (%)', label: 'ROIC (%)' },
-            { key: 'P/E', label: 'P/E' },
-            { key: 'P/B', label: 'P/B' },
-            { key: 'P/S', label: 'P/S' },
-            { key: 'EV/EBITDA', label: 'EV/EBITDA' },
-            { key: 'EPS', label: 'EPS' },
-            { key: 'BVPS', label: 'BVPS' },
-            { key: 'Biên lợi nhuận gộp (%)', label: 'Gross Margin (%)' },
-            { key: 'Biên lợi nhuận ròng (%)', label: 'Net Margin (%)' },
-            { key: 'Biên EBITDA (%)', label: 'EBITDA Margin (%)' },
-        ]
-    },
-    // Income Statement
-    INCOME: {
-        name: '📈 BÁO CÁO THU NHẬP',
-        color: '#00e676',
-        metrics: [
-            { key: 'Doanh thu thuần', label: 'Doanh thu thuần' },
-            { key: 'Giá vốn hàng bán', label: 'Giá vốn hàng bán' },
-            { key: 'Lợi nhuận gộp', label: 'Lợi nhuận gộp' },
-            { key: 'Chi phí bán hàng', label: 'Chi phí bán hàng' },
-            { key: 'Chi phí quản lý doanh nghiệp', label: 'Chi phí QLDN' },
-            { key: 'Chi phí tài chính', label: 'Chi phí tài chính' },
-            { key: 'Lợi nhuận thuần từ hoạt động kinh doanh', label: 'LNTT từ HĐKD' },
-            { key: 'Lợi nhuận trước thuế', label: 'Lợi nhuận trước thuế' },
-            { key: 'Lợi nhuận sau thuế', label: 'Lợi nhuận sau thuế' },
-            { key: 'EBITDA', label: 'EBITDA' },
-        ]
-    },
-    // Balance Sheet - Assets
-    BALANCE_ASSETS: {
-        name: '💰 TÀI SẢN',
-        color: '#2196f3',
-        metrics: [
-            { key: 'Tổng tài sản', label: 'Tổng tài sản' },
-            { key: 'Tài sản ngắn hạn', label: 'Tài sản ngắn hạn' },
-            { key: 'Tiền và tương đương tiền', label: 'Tiền mặt' },
-            { key: 'Đầu tư tài chính ngắn hạn', label: 'ĐTTC ngắn hạn' },
-            { key: 'Các khoản phải thu ngắn hạn', label: 'Phải thu ngắn hạn' },
-            { key: 'Hàng tồn kho', label: 'Hàng tồn kho' },
-            { key: 'Tài sản dài hạn', label: 'Tài sản dài hạn' },
-            { key: 'Tài sản cố định', label: 'Tài sản cố định' },
-            { key: 'Bất động sản đầu tư', label: 'BĐS đầu tư' },
-            { key: 'Lợi thế thương mại', label: 'Goodwill' },
-        ]
-    },
-    // Balance Sheet - Liabilities & Equity
-    BALANCE_LIAB: {
-        name: '📋 NỢ & VỐN CSH',
-        color: '#e91e63',
-        metrics: [
-            { key: 'Tổng nợ phải trả', label: 'Tổng nợ phải trả' },
-            { key: 'Nợ ngắn hạn', label: 'Nợ ngắn hạn' },
-            { key: 'Nợ dài hạn', label: 'Nợ dài hạn' },
-            { key: 'Vay ngắn hạn', label: 'Vay ngắn hạn' },
-            { key: 'Vay dài hạn', label: 'Vay dài hạn' },
-            { key: 'Vốn chủ sở hữu', label: 'Vốn CSH' },
-            { key: 'Vốn điều lệ', label: 'Vốn điều lệ' },
-            { key: 'Lợi nhuận chưa phân phối', label: 'LNCPP' },
-            { key: 'Tỷ lệ nợ/vốn CSH', label: 'D/E Ratio' },
-        ]
-    },
-    // Cash Flow
-    CASHFLOW: {
-        name: '💵 LƯU CHUYỂN TIỀN',
-        color: '#9c27b0',
-        metrics: [
-            { key: 'Lưu chuyển tiền thuần từ hoạt động kinh doanh', label: 'CF từ HĐKD' },
-            { key: 'Lưu chuyển tiền thuần từ hoạt động đầu tư', label: 'CF từ HĐĐT' },
-            { key: 'Lưu chuyển tiền thuần từ hoạt động tài chính', label: 'CF từ HĐTC' },
-            { key: 'Lưu chuyển tiền thuần trong kỳ', label: 'CF thuần trong kỳ' },
-            { key: 'Tiền và tương đương tiền đầu kỳ', label: 'Tiền đầu kỳ' },
-            { key: 'Tiền và tương đương tiền cuối kỳ', label: 'Tiền cuối kỳ' },
-            { key: 'Khấu hao tài sản cố định', label: 'Khấu hao TSCĐ' },
-            { key: 'Chi đầu tư TSCĐ', label: 'CAPEX' },
-            { key: 'Free Cash Flow', label: 'Free Cash Flow' },
-        ]
-    },
-    // Efficiency & Liquidity
-    EFFICIENCY: {
-        name: '⚡ HIỆU QUẢ & THANH KHOẢN',
-        color: '#00bcd4',
-        metrics: [
-            { key: 'Thanh toán hiện hành (Current Ratio)', label: 'Current Ratio' },
-            { key: 'Thanh toán nhanh (Quick Ratio)', label: 'Quick Ratio' },
-            { key: 'Vòng quay hàng tồn kho (lần)', label: 'Vòng quay HTK' },
-            { key: 'Số ngày tồn kho (DSI)', label: 'Số ngày tồn kho' },
-            { key: 'Vòng quay khoản phải thu (lần)', label: 'Vòng quay phải thu' },
-            { key: 'Số ngày thu tiền (DSO)', label: 'Số ngày thu tiền' },
-            { key: 'Vòng quay tổng tài sản', label: 'Vòng quay tài sản' },
-            { key: 'Vòng quay vốn CSH', label: 'Vòng quay vốn CSH' },
-        ]
-    },
-    // Growth
-    GROWTH: {
-        name: '📈 TĂNG TRƯỞNG',
-        color: '#8bc34a',
-        metrics: [
-            { key: 'Tăng trưởng doanh thu (%)', label: 'Tăng trưởng DT (%)' },
-            { key: 'Tăng trưởng LNST (%)', label: 'Tăng trưởng LNST (%)' },
-            { key: 'Tăng trưởng EPS (%)', label: 'Tăng trưởng EPS (%)' },
-            { key: 'Tăng trưởng tổng tài sản (%)', label: 'Tăng trưởng TS (%)' },
-            { key: 'Tăng trưởng vốn CSH (%)', label: 'Tăng trưởng vốn (%)' },
-        ]
-    }
-};
-
-// Flatten for backward compatibility
-const COMPARISON_METRICS = Object.values(METRIC_CATEGORIES).flatMap(cat =>
-    cat.metrics.map(m => ({ ...m, category: cat.name, color: cat.color }))
-);
-
-const CHART_COLORS = ['#ff9800', '#00e676', '#2196f3', '#e91e63', '#9c27b0', '#00bcd4', '#ff5722', '#8bc34a'];
+const CHART_COLORS = [
+    '#ff9800', // Orange
+    '#00e676', // Green
+    '#2196f3', // Blue
+    '#e91e63', // Pink
+    '#9c27b0', // Purple
+    '#00bcd4', // Cyan
+    '#ff5722', // Deep Orange
+    '#8bc34a', // Light Green
+    '#f44336', // Red
+    '#ffeb3b', // Yellow
+    '#795548', // Brown
+    '#607d8b'  // Blue Grey
+];
 
 interface Props {
     user: SupabaseUser | null;
@@ -162,14 +54,28 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [showLoadModal, setShowLoadModal] = useState(false);
 
     const [financialData, setFinancialData] = useState<Record<string, FinancialData[]>>({});
-    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['ROE (%)', 'P/E', 'Biên lợi nhuận ròng (%)']);
+    const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Chỉ số giá thị trường trên thu nhập (P/E)', 'Giá trị sổ sách của cổ phiếu (BVPS)', 'Thu nhập trên mỗi cổ phần của 4 quý gần nhất (EPS)']);
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
+    const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
+    const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)');
 
-    const [availableKeys, setAvailableKeys] = useState<string[]>([]);
+    const [availableKeys, setAvailableKeys] = useState<{
+        ratios: Set<string>;
+        income: Set<string>;
+        balance: Set<string>;
+        cashflow: Set<string>;
+    }>({
+        ratios: new Set(),
+        income: new Set(),
+        balance: new Set(),
+        cashflow: new Set()
+    });
     const [chartType, setChartType] = useState<'bar' | 'line'>('bar');
     const [searchSymbol, setSearchSymbol] = useState('');
     const [metricSearch, setMetricSearch] = useState('');
+    const [showMetricModal, setShowMetricModal] = useState(false);
+    const [activeSource, setActiveSource] = useState<'all' | 'ratios' | 'income' | 'balance' | 'cashflow'>('all');
 
     // Fetch all symbols
     useEffect(() => {
@@ -211,57 +117,80 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
         try {
             const results: Record<string, FinancialData[]> = {};
+            const newKeys = {
+                ratios: new Set<string>(),
+                income: new Set<string>(),
+                balance: new Set<string>(),
+                cashflow: new Set<string>()
+            };
 
-            for (const symbol of selectedSymbols) {
-                const [stmRes, ratioRes] = await Promise.all([
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('period_type', period),
-                    supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period)
+            await Promise.all(selectedSymbols.map(async (symbol) => {
+                const [ratioRes, incomeRes, balanceRes, cashflowRes] = await Promise.all([
+                    supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period),
+                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'income_statement').eq('period_type', period),
+                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'balance_sheet').eq('period_type', period),
+                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'cash_flow').eq('period_type', period)
                 ]);
 
-                let merged: any[] = [];
-                const addToMerged = (response: any) => {
-                    if (response.data) {
-                        response.data.forEach((row: any) => {
+                const dataMap = new Map();
+
+                const processSource = (res: any, category: keyof typeof newKeys) => {
+                    if (res.data) {
+                        res.data.forEach((row: any) => {
                             const innerData = Array.isArray(row.data) ? row.data : [row.data];
-                            merged = [...merged, ...innerData];
+                            innerData.forEach((d: any) => {
+                                const year = d.Năm || d.year || d.Year || d.report_year;
+                                const quarter = d.Quý || d.quarter || d.Quarter || d.report_quarter || 0;
+                                if (!year) return;
+
+                                const key = `${year}-${quarter}`;
+                                const existing = dataMap.get(key) || {};
+
+                                const cleanD: any = {};
+                                Object.keys(d).forEach(k => {
+                                    // Trim key and remove leading underscores
+                                    const ck = k.trim().replace(/^_+/, '');
+                                    cleanD[ck] = d[k];
+
+                                    if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter'].includes(ck)) {
+                                        newKeys[category].add(ck);
+                                    }
+                                });
+
+                                dataMap.set(key, { ...existing, ...cleanD });
+                            });
                         });
                     }
                 };
 
-                addToMerged(stmRes);
-                addToMerged(ratioRes);
-
-                // Dedupe by year/quarter
-                const dataMap = new Map();
-                merged.forEach(record => {
-                    const key = `${record.Năm || record.year}-${record.Quý || record.quarter || 0}`;
-                    const existing = dataMap.get(key) || {};
-                    dataMap.set(key, { ...existing, ...record });
-                });
+                processSource(ratioRes, 'ratios');
+                processSource(incomeRes, 'income');
+                processSource(balanceRes, 'balance');
+                processSource(cashflowRes, 'cashflow');
 
                 results[symbol] = Array.from(dataMap.values()).map(d => ({
+                    ...d,
                     symbol,
-                    period: period === 'year' ? `${d.Năm || d.year}` : `Q${d.Quý || d.quarter}/${d.Năm || d.year}`,
-                    year: parseInt(d.Năm || d.year || 0),
-                    quarter: parseInt(d.Quý || d.quarter || 0),
-                    ...d
-                })).sort((a, b) => b.year - a.year || b.quarter - a.quarter);
-            }
+                    period: period === 'year' ? `${d.Năm || d.year || d.Year}` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
+                    year: parseInt(d.Năm || d.year || d.Year || 0),
+                    quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
+                })).sort((a, b) => {
+                    if (b.year !== a.year) return b.year - a.year;
+                    return b.quarter - a.quarter;
+                });
+            }));
+
+            console.log(`Fetched financial data for ${selectedSymbols.length} symbols. Found keys:`,
+                { ratios: newKeys.ratios.size, income: newKeys.income.size, balance: newKeys.balance.size, cashflow: newKeys.cashflow.size });
 
             setFinancialData(results);
+            setAvailableKeys(newKeys);
 
-            // Extract all available keys for metric selection
-            const allKeys = new Set<string>();
-            Object.values(results).forEach(symbolData => {
-                symbolData.forEach(d => {
-                    Object.keys(d).forEach(k => {
-                        if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year'].includes(k)) {
-                            allKeys.add(k);
-                        }
-                    });
-                });
-            });
-            setAvailableKeys(Array.from(allKeys).sort());
+            // Set default chart metric if not set or not in new keys
+            const allKeys = [...newKeys.ratios, ...newKeys.income, ...newKeys.balance, ...newKeys.cashflow];
+            if (allKeys.length > 0 && (!chartMetric || !allKeys.includes(chartMetric))) {
+                setChartMetric(allKeys[0]);
+            }
         } catch (e) {
             console.error(e);
         } finally {
@@ -316,22 +245,40 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         loadWatchlists();
     };
 
-    // Get comparison data for selected year
+    // Helper to parse numeric values from strings
+    const parseValue = (v: any) => {
+        if (v === undefined || v === null) return undefined;
+        if (typeof v === 'number') return v;
+        const s = String(v).trim().replace(/,/g, '');
+        if (s === '' || s === 'None' || s === 'nan' || s === 'null') return undefined;
+        const n = parseFloat(s);
+        return isNaN(n) ? undefined : n;
+    };
+
+    // Get comparison data for selected year/quarter
     const comparisonData = useMemo(() => {
-        if (Object.keys(financialData).length === 0) return [];
+        if (selectedSymbols.length === 0) return [];
 
         return selectedSymbols.map(symbol => {
             const data = financialData[symbol] || [];
-            const yearData = data.find(d => d.year === selectedYear) || {};
+            // Find data for selected year and quarter
+            const yearDataMatch = data.find(d => {
+                const yMatch = d.year === selectedYear;
+                if (period === 'year') return yMatch;
+                return yMatch && d.quarter === selectedQuarter;
+            });
 
-            const row: any = { symbol };
+            const hasData = !!yearDataMatch;
+            const targetData = (yearDataMatch || {}) as Record<string, any>;
+
+            const row: any = { symbol, _hasData: hasData };
             selectedMetrics.forEach(metric => {
-                const val = (yearData as Record<string, any>)[metric];
-                row[metric] = typeof val === 'number' ? val : parseFloat(val) || 0;
+                const val = targetData[metric];
+                row[metric] = parseValue(val);
             });
             return row;
         });
-    }, [financialData, selectedSymbols, selectedMetrics, selectedYear]);
+    }, [financialData, selectedSymbols, selectedMetrics, selectedYear, selectedQuarter, period]);
 
     // Statistics
     const statistics = useMemo(() => {
@@ -363,36 +310,59 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         return stats;
     }, [comparisonData, selectedMetrics]);
 
-    // Unmapped metrics (Dynamic metrics from data not in predefined list)
-    const unmappedMetrics = useMemo(() => {
-        const mappedKeys = new Set(COMPARISON_METRICS.map(m => m.key));
-        return availableKeys.filter(k => !mappedKeys.has(k));
-    }, [availableKeys]);
+    // Grouping metrics for the specialized selector
+    const metricGroups = useMemo(() => {
+        const groups = [
+            { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
+            { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
+            { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
+            { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
+        ];
 
-    // Filtered metrics based on search
-    const getFilteredMetrics = (metricsList: { key: string; label: string }[]) => {
-        if (!metricSearch) return metricsList;
-        return metricsList.filter(m =>
-            m.label.toLowerCase().includes(metricSearch.toLowerCase()) ||
-            m.key.toLowerCase().includes(metricSearch.toLowerCase())
-        );
-    };
+        return groups.map(g => ({
+            ...g,
+            filteredKeys: g.keys.filter(k =>
+                !metricSearch || k.toLowerCase().includes(metricSearch.toLowerCase())
+            ).sort()
+        }));
+    }, [availableKeys, metricSearch]);
 
-    // Chart options - Support multiple series
+    // Chart options - Independent Time Series
     const chartOptions = useMemo(() => {
-        if (selectedSymbols.length === 0 || selectedMetrics.length === 0) return {};
+        if (selectedSymbols.length === 0 || !chartMetric) return {};
 
-        const series = selectedMetrics.map((metric, mIdx) => {
+        // 1. Collect all unique time periods across all selected symbols
+        const periodsSet = new Set<string>();
+        selectedSymbols.forEach(symbol => {
+            const data = financialData[symbol] || [];
+            data.forEach(d => periodsSet.add(d.period));
+        });
+
+        // 2. Sort periods chronologically (Year -> Quarter)
+        const sortedPeriods = Array.from(periodsSet).sort((a, b) => {
+            const parsePeriod = (p: string) => {
+                if (p.startsWith('Q')) {
+                    const [qPart, yPart] = p.split('/');
+                    return parseInt(yPart) * 10 + parseInt(qPart.slice(1));
+                }
+                return parseInt(p) * 10;
+            };
+            return parsePeriod(a) - parsePeriod(b);
+        });
+
+        // 3. Create series for each symbol
+        const series = selectedSymbols.map((symbol, idx) => {
+            const symbolData = financialData[symbol] || [];
             return {
-                name: metric,
+                name: symbol,
                 type: chartType,
-                data: selectedSymbols.map(symbol => {
-                    const row = comparisonData.find(d => d.symbol === symbol);
-                    return row ? row[metric] : 0;
+                data: sortedPeriods.map(p => {
+                    const match = symbolData.find(d => d.period === p);
+                    return match ? parseValue(match[chartMetric]) : null;
                 }),
-                barMaxWidth: 40,
-                emphasis: { focus: 'series' },
+                connectNulls: true,
                 smooth: true,
+                emphasis: { focus: 'series' },
                 itemStyle: {
                     borderRadius: chartType === 'bar' ? [4, 4, 0, 0] : 0
                 }
@@ -406,36 +376,45 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 backgroundColor: 'rgba(20, 20, 20, 0.9)',
                 borderColor: '#333',
                 textStyle: { color: '#e0e0e0', fontSize: 12 },
-                axisPointer: { type: 'shadow' }
+                axisPointer: { type: 'cross' }
             },
             legend: {
-                data: selectedMetrics,
                 textStyle: { color: '#888', fontSize: 10 },
                 top: 0
             },
             grid: {
                 left: '2%',
                 right: '4%',
-                bottom: '8%',
+                bottom: '12%',
                 top: '15%',
                 containLabel: true
             },
             xAxis: {
                 type: 'category',
-                data: selectedSymbols,
+                data: sortedPeriods,
                 axisLabel: { color: '#888', rotate: 30, fontSize: 10 },
                 axisLine: { lineStyle: { color: '#222' } }
             },
             yAxis: {
                 type: 'value',
-                axisLabel: { color: '#666', fontSize: 10 },
+                axisLabel: {
+                    color: '#666',
+                    fontSize: 10,
+                    formatter: (val: number) => {
+                        const absVal = Math.abs(val);
+                        if (absVal >= 1e12) return (val / 1e12).toFixed(1) + 'T';
+                        if (absVal >= 1e9) return (val / 1e9).toFixed(1) + 'B';
+                        if (absVal >= 1e6) return (val / 1e6).toFixed(1) + 'M';
+                        return val.toLocaleString();
+                    }
+                },
                 splitLine: { lineStyle: { color: '#1a1a1a' } },
                 axisLine: { show: false }
             },
             color: CHART_COLORS,
             series
         };
-    }, [comparisonData, selectedSymbols, selectedMetrics, chartType]);
+    }, [financialData, selectedSymbols, chartMetric, chartType, period]);
 
     // Table columns
     const tableColumns = useMemo(() => {
@@ -446,9 +425,16 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 key: 'symbol',
                 fixed: 'left',
                 width: 80,
-                render: (text: string) => (
+                render: (text: string, record: any) => (
                     <div className="flex items-center justify-between">
-                        <span className="font-bold text-[#ff9800]">{text}</span>
+                        <div className="flex items-center gap-2">
+                            <span className="font-bold text-[#ff9800]">{text}</span>
+                            {!record._hasData && (
+                                <Tooltip title={`Không tìm thấy dữ liệu cho ${period === 'quarter' ? `Q${selectedQuarter} ` : ''}${selectedYear}`}>
+                                    <Activity size={10} className="text-gray-600" />
+                                </Tooltip>
+                            )}
+                        </div>
                         <Trash2
                             size={12}
                             className="cursor-pointer text-gray-600 hover:text-red-500 transition-colors"
@@ -461,21 +447,33 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
         selectedMetrics.forEach(metric => {
             cols.push({
-                title: <span className="text-[10px] text-gray-500">{metric}</span>,
+                title: <div className="text-[10px] text-gray-500 max-w-[120px] whitespace-normal leading-tight">{metric}</div>,
                 dataIndex: metric,
                 key: metric,
-                width: 120,
-                align: 'right',
-                render: (val: number) => (
-                    <span className={`font-mono text-xs ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-gray-400'}`}>
-                        {val?.toFixed(2) || '-'}
-                    </span>
-                )
+                align: 'right' as const,
+                sorter: (a: any, b: any) => (a[metric] || 0) - (b[metric] || 0),
+                render: (val: number) => {
+                    if (val === undefined || val === null || isNaN(val)) return <span className="text-gray-600 text-xs">-</span>;
+
+                    const absVal = Math.abs(val);
+                    let formatted = val.toFixed(2);
+
+                    if (absVal >= 1e12) formatted = (val / 1e12).toFixed(2) + 'T';
+                    else if (absVal >= 1e9) formatted = (val / 1e9).toFixed(2) + 'B';
+                    else if (absVal >= 1e6) formatted = (val / 1e6).toFixed(1) + 'M';
+                    else if (absVal >= 1000) formatted = val.toLocaleString();
+
+                    return (
+                        <span className={`font-mono text-xs ${val > 0 ? 'text-green-400' : val < 0 ? 'text-red-400' : 'text-gray-400'}`}>
+                            {formatted}
+                        </span>
+                    );
+                }
             });
         });
 
         return cols;
-    }, [selectedMetrics, selectedSymbols]);
+    }, [selectedMetrics, selectedSymbols, selectedYear]);
 
     // Available years
     const availableYears = useMemo(() => {
@@ -485,6 +483,13 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         });
         return Array.from(years).sort((a, b) => b - a);
     }, [financialData]);
+
+    // Auto-select latest year when availableYears changes
+    useEffect(() => {
+        if (availableYears.length > 0 && (!selectedYear || !availableYears.includes(selectedYear))) {
+            setSelectedYear(availableYears[0]);
+        }
+    }, [availableYears]);
 
     const filteredSymbols = allSymbols.filter(s =>
         s.symbol.toLowerCase().includes(searchSymbol.toLowerCase()) ||
@@ -527,12 +532,23 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không tìm thấy" />}
                         />
 
-                        <Select value={period} onChange={setPeriod} style={{ width: 100 }}>
+                        <Select value={period} onChange={setPeriod} style={{ width: 80 }}>
                             <Select.Option value="year">Năm</Select.Option>
                             <Select.Option value="quarter">Quý</Select.Option>
                         </Select>
 
-                        <Select value={selectedYear} onChange={setSelectedYear} style={{ width: 80 }}>
+                        {period === 'quarter' && (
+                            <Select value={selectedQuarter} onChange={setSelectedQuarter} style={{ width: 70 }}>
+                                {[1, 2, 3, 4].map(q => <Select.Option key={q} value={q}>Q{q}</Select.Option>)}
+                            </Select>
+                        )}
+
+                        <Select
+                            value={selectedYear}
+                            onChange={setSelectedYear}
+                            style={{ width: 90 }}
+                            placeholder="Chọn năm"
+                        >
                             {availableYears.map(y => <Select.Option key={y} value={y}>{y}</Select.Option>)}
                         </Select>
                     </div>
@@ -555,176 +571,178 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         ))}
                     </div>
 
-                    {/* Metric Selector - Professional Finance UI */}
+                    {/* Metric Selector Button */}
                     <div className="mb-4">
-                        <Popover
-                            trigger="click"
-                            placement="bottomLeft"
-                            overlayStyle={{ width: 480 }}
-                            content={
-                                <div className="bg-[#0a0a0a] -m-3 p-3">
-                                    <div className="flex items-center justify-between mb-3 pb-2 border-b border-[#333]">
-                                        <span className="text-xs font-bold text-[#ff9800]">CHỌN CHỈ TIÊU PHÂN TÍCH</span>
-                                        <Input
-                                            size="small"
-                                            placeholder="Tìm chỉ tiêu..."
-                                            prefix={<Search size={10} />}
-                                            className="w-32 bg-[#1a1a1a] border-[#333] text-[10px]"
-                                            value={metricSearch}
-                                            onChange={e => setMetricSearch(e.target.value)}
-                                        />
-                                        <Space>
-                                            <Button size="small" type="text" className="text-gray-500 text-[10px]" onClick={() => setSelectedMetrics([])}>
-                                                Xóa
-                                            </Button>
-                                            <Button size="small" type="text" className="text-[#ff9800] text-[10px]" onClick={() => setSelectedMetrics(COMPARISON_METRICS.slice(0, 8).map(m => m.key))}>
-                                                Mặc định
-                                            </Button>
-                                        </Space>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-3 max-h-[50vh] overflow-y-auto pr-1">
-                                        {Object.entries(METRIC_CATEGORIES).map(([key, cat]) => {
-                                            const filtered = getFilteredMetrics(cat.metrics);
-                                            if (metricSearch && filtered.length === 0) return null;
-                                            return (
-                                                <div key={key} className="bg-[#111] border border-[#222] rounded p-2">
-                                                    <div
-                                                        className="text-[10px] font-bold mb-2 pb-1 border-b flex items-center justify-between"
-                                                        style={{ color: cat.color, borderColor: `${cat.color}33` }}
-                                                    >
-                                                        <span>{cat.name}</span>
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        {filtered.map(m => (
-                                                            <Checkbox
-                                                                key={m.key}
-                                                                checked={selectedMetrics.includes(m.key)}
-                                                                onChange={e => {
-                                                                    if (e.target.checked) setSelectedMetrics([...selectedMetrics, m.key]);
-                                                                    else setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
-                                                                }}
-                                                                className="block text-[11px] text-gray-400 hover:text-white"
-                                                            >
-                                                                {m.label}
-                                                            </Checkbox>
-                                                        ))}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                        <Button
+                            icon={<Settings size={14} />}
+                            onClick={() => setShowMetricModal(true)}
+                            className="bg-transparent border-[#ff9800] text-[#ff9800] hover:bg-[#ff9800]/10 uppercase font-mono font-bold h-9"
+                        >
+                            CHỌN CHỈ TIÊU ({selectedMetrics.length})
+                        </Button>
 
-                                        {/* UNMAPPED / DYNAMIC METRICS */}
-                                        {(unmappedMetrics.length > 0) && (
-                                            <div className="bg-[#111] border border-[#222] rounded p-2 col-span-2">
-                                                <div className="text-[10px] font-bold mb-2 pb-1 border-b border-gray-800 text-gray-500">
-                                                    🎯 CHỈ TIÊU TỪ DỮ LIỆU GỐC (DYNAMIC)
-                                                </div>
-                                                <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                                                    {getFilteredMetrics(unmappedMetrics.map(k => ({ key: k, label: k }))).map(m => (
-                                                        <Checkbox
-                                                            key={m.key}
-                                                            checked={selectedMetrics.includes(m.key)}
-                                                            onChange={e => {
-                                                                if (e.target.checked) setSelectedMetrics([...selectedMetrics, m.key]);
-                                                                else setSelectedMetrics(selectedMetrics.filter(k => k !== m.key));
-                                                            }}
-                                                            className="block text-[11px] text-gray-500 hover:text-white"
-                                                        >
-                                                            {m.label}
-                                                        </Checkbox>
-                                                    ))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <div className="mt-3 pt-2 border-t border-[#333] flex justify-between items-center">
-                                        <span className="text-[10px] text-gray-500">
-                                            Đã chọn: <span className="text-[#ff9800] font-bold">{selectedMetrics.length}</span> chỉ tiêu
-                                        </span>
-                                        <div className="flex gap-1 flex-wrap max-w-[300px]">
-                                            {selectedMetrics.slice(0, 5).map(key => {
-                                                const metric = COMPARISON_METRICS.find(m => m.key === key);
-                                                return (
-                                                    <Tag
-                                                        key={key}
-                                                        closable
-                                                        onClose={() => setSelectedMetrics(selectedMetrics.filter(k => k !== key))}
-                                                        style={{
-                                                            fontSize: 9,
-                                                            padding: '0 4px',
-                                                            backgroundColor: `${metric?.color || '#333'}22`,
-                                                            borderColor: metric?.color || '#333',
-                                                            color: metric?.color || '#888'
-                                                        }}
-                                                    >
-                                                        {metric?.label?.slice(0, 15) || key.slice(0, 15)}
-                                                    </Tag>
-                                                );
-                                            })}
-                                            {selectedMetrics.length > 5 && (
-                                                <Tag style={{ fontSize: 9, padding: '0 4px' }}>+{selectedMetrics.length - 5}</Tag>
-                                            )}
+                        <Modal
+                            title={
+                                <div className="flex items-center justify-between pr-8">
+                                    <span className="text-[#ff9800] font-mono flex items-center gap-2">
+                                        <Layers size={18} /> 🎯 CHỈ TIÊU TỪ DỮ LIỆU GỐC (DYNAMIC)
+                                    </span>
+                                    <Space split={<Divider type="vertical" className="bg-gray-800" />}>
+                                        <div className="flex gap-2">
+                                            {(['all', 'ratios', 'income', 'balance', 'cashflow'] as const).map(s => (
+                                                <Button
+                                                    key={s}
+                                                    size="small"
+                                                    type={activeSource === s ? 'primary' : 'text'}
+                                                    className={activeSource === s ? 'bg-[#ff9800]' : 'text-gray-500'}
+                                                    onClick={() => setActiveSource(s)}
+                                                >
+                                                    {s === 'all' ? 'TẤT CẢ' : s.toUpperCase()}
+                                                </Button>
+                                            ))}
                                         </div>
-                                    </div>
+                                    </Space>
                                 </div>
                             }
+                            open={showMetricModal}
+                            onCancel={() => setShowMetricModal(false)}
+                            footer={null}
+                            width={1100}
+                            centered
+                            className="finance-modal"
+                            styles={{ body: { backgroundColor: '#0a0a0a', padding: 20 } }}
                         >
-                            <Button
-                                icon={<Settings size={12} />}
-                                size="small"
-                                className="bg-gradient-to-r from-[#ff9800]/20 to-[#ff5722]/20 border-[#ff9800] text-[#ff9800] hover:from-[#ff9800]/30 hover:to-[#ff5722]/30"
-                            >
-                                Chọn chỉ tiêu ({selectedMetrics.length})
-                            </Button>
-                        </Popover>
-                    </div>
+                            <div className="space-y-4">
+                                <div className="bg-[#111] p-2 rounded flex gap-4">
+                                    <Input
+                                        placeholder="Tìm nhanh chỉ tiêu (ROE, Doanh thu, Nợ...)"
+                                        size="large"
+                                        prefix={<Search className="text-gray-500" />}
+                                        className="metric-search-input bg-transparent border-none text-white flex-1"
+                                        value={metricSearch}
+                                        onChange={e => setMetricSearch(e.target.value)}
+                                        allowClear
+                                        autoFocus
+                                    />
+                                    <div className="flex items-center gap-2 border-l border-[#333] pl-4">
+                                        <Button ghost danger size="small" onClick={() => setSelectedMetrics([])}>XÓA TẤT CẢ</Button>
+                                        <Button type="primary" size="small" onClick={() => setShowMetricModal(false)} className="bg-[#ff9800] border-[#ff9800]">XÁC NHẬN ({selectedMetrics.length})</Button>
+                                    </div>
+                                </div>
 
-                    {/* Data Table */}
-                    {loading ? (
-                        <div className="flex items-center justify-center h-40">
-                            <Spin />
-                        </div>
-                    ) : comparisonData.length > 0 ? (
-                        <>
-                            <Table
-                                dataSource={comparisonData}
-                                columns={tableColumns}
-                                rowKey="symbol"
-                                pagination={false}
-                                size="small"
-                                scroll={{ x: 'max-content', y: 300 }}
-                                className="comparison-table"
-                            />
-
-                            {/* Statistics Row */}
-                            <div className="mt-4 p-3 bg-[#111] border border-[#333] rounded">
-                                <div className="text-[10px] font-bold text-gray-500 mb-2">THỐNG KÊ</div>
-                                <div className="grid grid-cols-3 gap-4">
-                                    {selectedMetrics.slice(0, 3).map(metric => (
-                                        <div key={metric} className="text-center">
-                                            <div className="text-[10px] text-gray-500">{metric}</div>
-                                            <div className="grid grid-cols-3 gap-1 mt-1">
-                                                <div>
-                                                    <div className="text-[9px] text-gray-600">AVG</div>
-                                                    <div className="text-xs text-green-400 font-mono">{statistics[metric]?.avg.toFixed(2)}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-[9px] text-gray-600">MED</div>
-                                                    <div className="text-xs text-blue-400 font-mono">{statistics[metric]?.median.toFixed(2)}</div>
-                                                </div>
-                                                <div>
-                                                    <div className="text-[9px] text-gray-600">MAX</div>
-                                                    <div className="text-xs text-[#ff9800] font-mono">{statistics[metric]?.max.toFixed(2)}</div>
-                                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
+                                    {metricGroups.filter(g => activeSource === 'all' || g.key === activeSource).map(group => (
+                                        <div key={group.key} className="bg-[#111] border border-[#222] rounded p-0 flex flex-col group">
+                                            <div
+                                                className="p-3 font-mono font-bold text-[10px] flex items-center justify-between sticky top-0 bg-[#161616] z-10 border-b border-[#222]"
+                                                style={{ color: group.color }}
+                                            >
+                                                <span>{group.name}</span>
+                                                <span className="bg-black/50 px-2 rounded-full text-[9px]">{group.filteredKeys.length}</span>
+                                            </div>
+                                            <div className="p-2 space-y-0.5 overflow-y-auto max-h-[100%]">
+                                                {group.filteredKeys.map(key => {
+                                                    const isChecked = selectedMetrics.includes(key);
+                                                    return (
+                                                        <div
+                                                            key={key}
+                                                            onClick={() => {
+                                                                if (isChecked) setSelectedMetrics(selectedMetrics.filter(k => k !== key));
+                                                                else setSelectedMetrics([...selectedMetrics, key]);
+                                                            }}
+                                                            className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-all ${isChecked ? 'bg-[#ff9800]/10 border border-[#ff9800]/30' : 'hover:bg-white/5 border border-transparent'}`}
+                                                        >
+                                                            <Checkbox
+                                                                checked={isChecked}
+                                                                className="metric-checkbox pointer-events-none"
+                                                            />
+                                                            <span className={`text-[11px] truncate ${isChecked ? 'text-[#ff9800] font-bold' : 'text-gray-400'}`}>
+                                                                {key}
+                                                            </span>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {group.filteredKeys.length === 0 && (
+                                                    <div className="p-4 text-center text-gray-700 text-[10px] italic">Không có dữ liệu...</div>
+                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
+
+                                {/* Selection Summary Bar */}
+                                <div className="bg-[#0f0f0f] border border-[#222] rounded-lg p-3 flex items-center gap-4">
+                                    <div className="text-[10px] text-gray-500 font-mono uppercase">ĐÃ CHỌN ({selectedMetrics.length}):</div>
+                                    <div className="flex-1 overflow-x-auto whitespace-nowrap scroll-thin flex gap-1.5 px-1 py-1">
+                                        {selectedMetrics.map(key => (
+                                            <Tag
+                                                key={key}
+                                                closable
+                                                onClose={() => setSelectedMetrics(selectedMetrics.filter(k => k !== key))}
+                                                className="bg-black/40 border-gray-800 text-gray-400 hover:text-white transition-colors text-[10px] rounded-sm m-0"
+                                            >
+                                                {key}
+                                            </Tag>
+                                        ))}
+                                    </div>
+                                </div>
                             </div>
-                        </>
-                    ) : (
-                        <Empty description="Chọn mã để so sánh" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                    )}
+                        </Modal>
+                    </div>
+
+                    {/* Data Table Container */}
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                        {loading ? (
+                            <div className="flex-1 flex items-center justify-center">
+                                <Spin tip="Đang truy vấn dữ liệu..." />
+                            </div>
+                        ) : selectedSymbols.length > 0 ? (
+                            <div className="flex-1 flex flex-col overflow-hidden">
+                                <Table
+                                    dataSource={comparisonData}
+                                    columns={tableColumns}
+                                    rowKey="symbol"
+                                    pagination={false}
+                                    size="small"
+                                    scroll={{ x: 'max-content', y: 300 }}
+                                    className="comparison-table"
+                                />
+
+                                {/* Statistics Row */}
+                                <div className="mt-4 p-3 bg-[#111] border border-[#333] rounded">
+                                    <div className="text-[10px] font-bold text-gray-500 mb-2">THỐNG KÊ</div>
+                                    <div className="grid grid-cols-3 gap-4">
+                                        {selectedMetrics.slice(0, 3).map(metric => (
+                                            <div key={metric} className="text-center">
+                                                <div className="text-[10px] text-gray-500 truncate">{metric}</div>
+                                                <div className="grid grid-cols-3 gap-1 mt-1">
+                                                    <div>
+                                                        <div className="text-[9px] text-gray-600">AVG</div>
+                                                        <div className="text-xs text-green-400 font-mono">{statistics[metric]?.avg.toFixed(2)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] text-gray-600">MED</div>
+                                                        <div className="text-xs text-blue-400 font-mono">{statistics[metric]?.median.toFixed(2)}</div>
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-[9px] text-gray-600">MAX</div>
+                                                        <div className="text-xs text-[#ff9800] font-mono">{statistics[metric]?.max.toFixed(2)}</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex-1 flex flex-col items-center justify-center text-gray-500 gap-4">
+                                <Empty description="Chưa chọn mã chứng khoán" image={Empty.PRESENTED_IMAGE_SIMPLE} />
+                                <div className="text-[10px] uppercase font-mono tracking-widest bg-gray-900 px-4 py-2 rounded-full border border-gray-800">
+                                    Vui lòng nhập mã để bắt đầu so sánh
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </Card>
             </div>
 
@@ -733,29 +751,52 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 <Card
                     className="border-none bg-[#0b0e11] shadow-2xl flex-1"
                     title={
-                        <div className="flex justify-between items-center">
-                            <Space>
-                                <BarChart3 size={16} className="text-[#1677ff]" />
-                                <span className="text-[#e0e0e0] font-mono font-bold">BIỂU ĐỒ SO SÁNH</span>
-                            </Space>
-                            <Space>
-                                <Button.Group size="small">
-                                    <Button
-                                        icon={<BarChart3 size={12} />}
-                                        onClick={() => setChartType('bar')}
-                                        type={chartType === 'bar' ? 'primary' : 'default'}
-                                    />
-                                    <Button
-                                        icon={<LineChart size={12} />}
-                                        onClick={() => setChartType('line')}
-                                        type={chartType === 'line' ? 'primary' : 'default'}
-                                    />
-                                </Button.Group>
-                            </Space>
+                        <div className="flex justify-between items-center gap-4">
+                            <div className="flex items-center gap-2 min-w-fit">
+                                <Activity size={16} className="text-[#1677ff]" />
+                                <span className="text-[#e0e0e0] font-mono font-bold text-xs">PHÂN TÍCH TREND</span>
+                            </div>
+
+                            <Select
+                                showSearch
+                                placeholder="Tìm chỉ tiêu phân tích (Trend)..."
+                                className="flex-1 max-w-[500px]"
+                                size="small"
+                                value={chartMetric}
+                                onChange={setChartMetric}
+                                dropdownStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
+                                optionFilterProp="children"
+                                filterOption={(input, option) =>
+                                    String(option?.value ?? "").toLowerCase().includes(input.toLowerCase())
+                                }
+                            >
+                                {metricGroups.map(group => (
+                                    <Select.OptGroup key={group.key} label={<span className="text-[10px] uppercase tracking-widest" style={{ color: group.color }}>{group.name}</span>}>
+                                        {group.filteredKeys.map(k => (
+                                            <Select.Option key={k} value={k}>
+                                                <span className="text-gray-300 text-[11px]">{k}</span>
+                                            </Select.Option>
+                                        ))}
+                                    </Select.OptGroup>
+                                ))}
+                            </Select>
+
+                            <Button.Group size="small" className="min-w-fit">
+                                <Button
+                                    icon={<BarChart3 size={12} />}
+                                    onClick={() => setChartType('bar')}
+                                    type={chartType === 'bar' ? 'primary' : 'default'}
+                                />
+                                <Button
+                                    icon={<LineChart size={12} />}
+                                    onClick={() => setChartType('line')}
+                                    type={chartType === 'line' ? 'primary' : 'default'}
+                                />
+                            </Button.Group>
                         </div>
                     }
                 >
-                    {comparisonData.length > 0 ? (
+                    {selectedSymbols.length > 0 ? (
                         <ReactECharts
                             option={chartOptions}
                             style={{ height: '100%', minHeight: 400 }}
