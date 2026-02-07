@@ -11,9 +11,11 @@ import { VAS_CASHFLOW_STRUCTURE, BANK_CASHFLOW_STRUCTURE, SECURITIES_CASHFLOW_ST
 interface DraggableItemProps {
     id: string;
     label: string;
+    isBold?: boolean;
+    isAvailable?: boolean;
 }
 
-const DraggableItem: React.FC<DraggableItemProps> = ({ id, label }) => {
+const DraggableItem: React.FC<DraggableItemProps> = ({ id, label, isBold, isAvailable }) => {
     const { attributes, listeners, setNodeRef, transform } = useDraggable({
         id: id,
         data: { label }
@@ -33,10 +35,18 @@ const DraggableItem: React.FC<DraggableItemProps> = ({ id, label }) => {
             {...listeners}
             {...attributes}
             whileHover={{ x: 2 }}
-            className={`flex items-center space-x-2 p-2 mb-1 bg-[#111] border border-[#333] cursor-grab active:cursor-grabbing hover:border-[#ff9800] group transition-all rounded-none ${transform ? 'shadow-[0_0_15px_rgba(255,152,0,0.5)] border-[#ff9800] bg-black' : ''} ${isSubMetric ? 'ml-4 bg-[#0a0a0a]' : ''}`}
+            className={`flex items-center space-x-2 p-2 mb-1 border border-[#333] transition-all rounded-none 
+                ${transform ? 'shadow-[0_0_15px_rgba(255,152,0,0.5)] border-[#ff9800] bg-black' : 'bg-[#111]'} 
+                ${isSubMetric ? 'ml-4 bg-[#0a0a0a]' : ''}
+                ${isAvailable ? 'cursor-grab active:cursor-grabbing hover:border-[#ff9800]' : 'opacity-50 cursor-not-allowed border-dashed'}
+            `}
         >
-            <GripVertical size={10} className="text-[#444] group-hover:text-[#ff9800] transition-colors" />
-            <span className={`text-[11px] font-mono text-[#aaa] group-hover:text-[#fff] truncate uppercase tracking-tight ${isSubMetric ? 'text-[10px]' : ''}`}>
+            <GripVertical size={10} className={`text-[#444] transition-colors ${isAvailable ? 'group-hover:text-[#ff9800]' : ''}`} />
+            <span className={`text-[11px] font-mono truncate uppercase tracking-tight 
+                ${isSubMetric ? 'text-[10px]' : ''}
+                ${isAvailable ? 'text-[#aaa] group-hover:text-[#fff]' : 'text-[#555]'}
+                ${isBold ? 'font-bold text-[#e0e0e0]' : ''}
+            `}>
                 {label.length > 35 ? label.substring(0, 33) + '...' : label}
             </span>
         </motion.div>
@@ -66,18 +76,26 @@ const MetricsSidebar: React.FC = () => {
             if (wind.dynamicMetrics && wind.dynamicMetrics.length > 0) {
                 const dm = wind.dynamicMetrics;
                 setDynamicMetrics(dm);
+            } else {
+                setDynamicMetrics([]);
+            }
 
-                // Auto-detect Industry
-                const dmStr = dm.join(' ').toLowerCase();
-                if (dmStr.includes('thu nhập lãi thuần') || dmStr.includes('tiền gửi của khách hàng') || dmStr.includes('cho vay khách hàng')) {
+            // Explicit Industry Detection from Metadata
+            if (wind.currentIndustry) {
+                const ind = wind.currentIndustry.toLowerCase();
+                if (ind.includes('ngân hàng')) {
                     setIndustryType('bank');
-                } else if (dmStr.includes('doanh thu môi giới') || dmStr.includes('tự doanh') || dmStr.includes('fvtpl')) {
+                } else if (ind.includes('dịch vụ tài chính') || ind.includes('chứng khoán')) {
                     setIndustryType('securities');
                 } else {
                     setIndustryType('vas');
                 }
             } else {
-                setDynamicMetrics([]);
+                // Fallback detection if metadata not yet available
+                const dm = wind.dynamicMetrics || [];
+                const dmStr = dm.join(' ').toLowerCase();
+                if (dmStr.includes('thu nhập lãi thuần')) setIndustryType('bank');
+                else if (dmStr.includes('doanh thu môi giới')) setIndustryType('securities');
             }
         };
 
@@ -88,7 +106,7 @@ const MetricsSidebar: React.FC = () => {
         return () => window.removeEventListener('metricsUpdated', updateMetrics);
     }, []);
 
-    // Helper to get Ratio metrics (regex logic)
+    // Helper to get Ratio metrics (regex logic) remains same
     const ratioMetrics = useMemo(() => {
         const fullList = dynamicMetrics.length > 0
             ? Array.from(new Set([...AVAILABLE_METRICS, ...dynamicMetrics]))
@@ -99,10 +117,44 @@ const MetricsSidebar: React.FC = () => {
         );
     }, [dynamicMetrics]);
 
+    // Flatten structure to display items
+    const getStructureItems = (structure: any[]) => {
+        let items: DraggableItemProps[] = [];
+        const process = (list: any[]) => {
+            list.forEach(item => {
+                // Determine the best key to use
+                let bestKey = item.name; // Default to name
+                let isAvailable = false;
+
+                if (item.keys && item.keys.length > 0) {
+                    // Find if any key exists in dynamicMetrics
+                    const match = item.keys.find((k: string) => dynamicMetrics.includes(k) || dynamicMetrics.some(dk => dk.toLowerCase() === k.toLowerCase()));
+                    if (match) {
+                        bestKey = dynamicMetrics.find((dk: string) => dk.toLowerCase() === match.toLowerCase()) || match;
+                        isAvailable = true;
+                    } else {
+                        bestKey = item.keys[0]; // Fallback
+                    }
+                }
+
+                items.push({
+                    id: bestKey, // This ID is dragged to chart
+                    label: item.name, // Display Name from Structure
+                    isBold: item.isBold,
+                    isAvailable
+                });
+
+                if (item.children) process(item.children);
+            });
+        };
+        process(structure);
+        return items;
+    };
+
     // Calculate display metrics based on selection
     const displayMetrics = useMemo(() => {
         if (reportType === 'ratios') {
-            return ratioMetrics;
+            return ratioMetrics.map(m => ({ id: m, label: m, isAvailable: true, isBold: false }));
         }
 
         let structure: any[] = [];
@@ -120,28 +172,11 @@ const MetricsSidebar: React.FC = () => {
             else structure = VAS_CASHFLOW_STRUCTURE;
         }
 
-        const validKeys = getAllKeys(structure);
-
-        // Filter dynamic metrics that match the structure keys
-        // We use loose matching because DB keys might be slightly different or structure keys might be aliases
-        // Priority: exact match in dynamicMetrics
-        const matched = dynamicMetrics.filter(dm =>
-            validKeys.includes(dm) || validKeys.some(vk => dm.toLowerCase() === vk.toLowerCase())
-        );
-
-        // If no dynamic metrics found (e.g. initial load or no data), use structure keys directly as fallback suggestions?
-        // No, only show what's available.
-        // However, if matched is empty but dynamicMetrics has specific items not in structure, maybe show them in 'Others'?
-        // For now, adhere to structure.
-
-        // Also combine with ratioMetrics removal if any slipped in?
-        // ratioMetrics are separate.
-
-        return matched;
+        return getStructureItems(structure);
     }, [reportType, industryType, dynamicMetrics, ratioMetrics]);
 
     const filteredAndSearched = useMemo(() => {
-        return displayMetrics.filter(m => m.toLowerCase().includes(search.toLowerCase()));
+        return displayMetrics.filter(m => m.label.toLowerCase().includes(search.toLowerCase()));
     }, [displayMetrics, search]);
 
     return (
@@ -167,9 +202,7 @@ const MetricsSidebar: React.FC = () => {
                 options={[
                     { value: 'income', icon: <FileText size={14} />, label: 'KQKD' },
                     { value: 'balance', icon: <PieChart size={14} />, label: 'CĐKT' },
-                    { value: 'cash', icon: <DollarSign size={14} />, label: 'LCTT' }, // DollarSign not imported, use PieChart or something else? I imported DollarSign above? No I imported Building2... wait.
-                    // Correcting imports in my head: I imported Building2, Landmark, Briefcase, PieChart, FileText, Activity.
-                    // Let's use available icons.
+                    { value: 'cash', icon: <DollarSign size={14} />, label: 'LCTT' },
                     { value: 'ratios', icon: <Activity size={14} />, label: 'CHỈ SỐ' },
                 ]}
                 block
@@ -204,7 +237,7 @@ const MetricsSidebar: React.FC = () => {
                             </div>
 
                             {filteredAndSearched.map(m => (
-                                <DraggableItem key={m} id={m} label={m} />
+                                <DraggableItem key={m.id} id={m.id} label={m.label} isBold={m.isBold} isAvailable={m.isAvailable} />
                             ))}
                         </motion.div>
                     ) : (

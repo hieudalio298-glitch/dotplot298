@@ -155,6 +155,7 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
             ]);
 
             const industry = metaRes.data?.icb_name2 || '';
+            (window as any).currentIndustry = industry;
             const isBank = industry.toLowerCase().includes('ngân hàng');
             const isSecurities = industry.toLowerCase().includes('dịch vụ tài chính');
             const isInsurance = industry.toLowerCase().includes('bảo hiểm');
