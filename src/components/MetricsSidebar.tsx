@@ -124,24 +124,23 @@ const MetricsSidebar: React.FC = () => {
             list.forEach(item => {
                 // Determine the best key to use
                 let bestKey = item.name; // Default to name
-                let isAvailable = false;
 
                 if (item.keys && item.keys.length > 0) {
-                    // Find if any key exists in dynamicMetrics
+                    // Try to find exact match in dynamic data
                     const match = item.keys.find((k: string) => dynamicMetrics.includes(k) || dynamicMetrics.some(dk => dk.toLowerCase() === k.toLowerCase()));
                     if (match) {
                         bestKey = dynamicMetrics.find((dk: string) => dk.toLowerCase() === match.toLowerCase()) || match;
-                        isAvailable = true;
                     } else {
-                        bestKey = item.keys[0]; // Fallback
+                        // Fallback: Use the first key (usually English or Standard Code)
+                        bestKey = item.keys[0];
                     }
                 }
 
                 items.push({
-                    id: bestKey, // This ID is dragged to chart
-                    label: item.name, // Display Name from Structure
+                    id: bestKey,
+                    label: item.name,
                     isBold: item.isBold,
-                    isAvailable
+                    isAvailable: true // Always available
                 });
 
                 if (item.children) process(item.children);
