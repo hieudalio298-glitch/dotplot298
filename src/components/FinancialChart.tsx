@@ -93,24 +93,24 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
     }, [user, showLoadModal]);
 
     const ALIAS = {
-        REV: ['Doanh thu thuần', 'Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu bán hàng và cung cấp dịch vụ', 'Thu nhập lãi', 'Doanh thu'],
-        COGS: ['Giá vốn hàng bán', 'Chi phí hoạt động', 'Chi phí lãi'],
+        REV: ['Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'Doanh thu hoạt động', 'Thu nhập lãi thuần', 'Thu nhập lãi', 'Doanh thu'],
+        COGS: ['Giá vốn hàng bán', 'Chi phí hoạt động', 'Chi phí lãi và các chi phí tương tự', 'Chi phí lãi'],
         INV: ['Hàng tồn kho'],
-        REC: ['Phải thu của khách hàng', 'Phải thu ngắn hạn', 'Các khoản cho vay', 'Các khoản phải thu'],
+        REC: ['Các khoản phải thu ngắn hạn', 'Các khoản phải thu', 'Cho vay khách hàng', 'Phải thu của khách hàng'],
         FA: ['Tài sản cố định hữu hình', 'Tài sản cố định'],
         EBIT: ['Lợi nhuận thuần từ hoạt động kinh doanh', 'Lợi nhuận từ hoạt động kinh doanh'],
         NI: ['Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế TNDN', 'Lợi nhuận sau thuế', 'Lợi nhuận ròng'],
         NI_PARENT: ['Lợi nhuận sau thuế của cổ đông của Công ty mẹ', 'Lợi nhuận sau thuế của cổ đông công ty mẹ'],
-        GP: ['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp'],
-        INTEREST: ['Chi phí lãi vay'],
-        SHORT_DEBT: ['Vay ngắn hạn', 'Vay và nợ thuê tài chính ngắn hạn'],
-        LONG_DEBT: ['Vay dài hạn', 'Vay và nợ thuê tài chính dài hạn'],
+        GP: ['Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Lợi nhuận gộp', 'Thu nhập lãi thuần'], // Banks use Net Interest Income as GP
+        INTEREST: ['Chi phí lãi vay', 'Chi phí lãi và các chi phí tương tự'],
+        SHORT_DEBT: ['Vay ngắn hạn', 'Vay và nợ thuê tài chính ngắn hạn', 'Tiền gửi của các tổ chức tín dụng khác', 'Tiền gửi của khách hàng'], // For banks, deposits are short-term liabilities
+        LONG_DEBT: ['Vay dài hạn', 'Vay và nợ thuê tài chính dài hạn', 'Phát hành giấy tờ có giá'],
         EQUITY: ['Vốn chủ sở hữu', 'Vốn và các quỹ'],
         ASSETS: ['Tổng cộng tài sản', 'Tổng tài sản'],
         PAYABLES: ['Phải trả người bán'],
-        CUR_ASSETS: ['Tài sản ngắn hạn'],
-        CUR_LIAB: ['Nợ ngắn hạn'],
-        CASH: ['Tiền và các khoản tương đương tiền', 'Tiền'],
+        CUR_ASSETS: ['Tài sản ngắn hạn', 'Tiền, vàng gửi tại các TCTD khác và cho vay các TCTD khác'],
+        CUR_LIAB: ['Nợ ngắn hạn', 'Tiền gửi của khách hàng'],
+        CASH: ['Tiền và các khoản tương đương tiền', 'Tiền mặt, vàng, bạc', 'Tiền gửi tại NHNN'],
     };
 
     const findVal = (data: any, aliases: string[]) => {
@@ -148,10 +148,16 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
 
         setLoading(true);
         try {
-            const [stmRes, ratioRes] = await Promise.all([
+            const [stmRes, ratioRes, metaRes] = await Promise.all([
                 supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('period_type', period),
-                supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period)
+                supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period),
+                supabase.from('stock_symbols').select('icb_name2').eq('symbol', symbol).single()
             ]);
+
+            const industry = metaRes.data?.icb_name2 || '';
+            const isBank = industry.toLowerCase().includes('ngân hàng');
+            const isSecurities = industry.toLowerCase().includes('dịch vụ tài chính');
+            const isInsurance = industry.toLowerCase().includes('bảo hiểm');
 
             let merged: any[] = [];
             const addToMerged = (response: any) => {
@@ -177,6 +183,20 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
                 });
                 dataMap.set(key, { ...existing, ...normalizedRecord });
             });
+
+            // --- Dynamic Metric Extraction ---
+            const allPossibleMetrics = new Set<string>();
+            merged.forEach(record => {
+                Object.keys(record).forEach(k => {
+                    const cleanK = k.replace(/^_+/, '');
+                    if (!['Năm', 'Quý', 'year', 'quarter', 'period', 'index', 'symbol', 'id', 'Kỳ báo cáo'].includes(cleanK)) {
+                        allPossibleMetrics.add(cleanK);
+                    }
+                });
+            });
+            const dynamicMetrics = Array.from(allPossibleMetrics).sort();
+            (window as any).dynamicMetrics = dynamicMetrics;
+            window.dispatchEvent(new Event('metricsUpdated'));
 
             const uniqueData = Array.from(dataMap.values());
             uniqueData.sort((a, b) => {
@@ -373,8 +393,33 @@ const FinancialChart: React.FC<Props> = ({ symbol, user, refreshTrigger = 0 }) =
                     enriched[r.metric] = r.compute(d, prevD);
                 });
 
-                return enriched;
+                const finalData = { ...enriched };
+
+                // Apply Industry-Specific Key Mappings
+                if (isBank) {
+                    finalData['Lợi nhuận gộp'] = finalData['Thu nhập lãi thuần'] || finalData['3. Thu nhập lãi thuần'];
+                    finalData['Doanh thu thuần'] = finalData['Thu nhập lãi thuần'] || finalData['3. Thu nhập lãi thuần'];
+                } else if (isSecurities) {
+                    finalData['Lợi nhuận gộp'] = (parseFinancialValue(finalData['Doanh thu hoạt động']) || 0) - (parseFinancialValue(finalData['Chi phí hoạt động']) || 0);
+                    finalData['Doanh thu thuần'] = finalData['Doanh thu hoạt động'] || finalData['1. Doanh thu hoạt động'];
+                }
+
+                return finalData;
             });
+
+            // Auto-select best metrics for local charts if they've changed symbol
+            setChartInstances(prev => prev.map(c => {
+                if (c.selectedMetrics.length === 0 || (c.selectedMetrics.includes('Doanh thu thuần') && isBank)) {
+                    let newMetrics = c.selectedMetrics;
+                    if (isBank) {
+                        newMetrics = ['Thu nhập lãi thuần', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Tổng cộng tài sản'];
+                    } else if (isSecurities) {
+                        newMetrics = ['Doanh thu hoạt động', 'Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Tổng cộng tài sản'];
+                    }
+                    return { ...c, selectedMetrics: newMetrics };
+                }
+                return c;
+            }));
 
             setChartData(enrichedData);
             dataCache.current[cacheKey] = enrichedData;

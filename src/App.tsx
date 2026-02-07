@@ -24,6 +24,7 @@ const App: React.FC = () => {
     const [selectedSymbol, setSelectedSymbol] = useState<string | null>(null);
     const [user, setUser] = useState<SupabaseUser | null>(null);
     const [refreshTrigger, setRefreshTrigger] = useState(0);
+    const [isUpdating, setIsUpdating] = useState(false);
     const [showAuthModal, setShowAuthModal] = useState(false);
     const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
     const [loading, setLoading] = useState(false);
@@ -96,6 +97,40 @@ const App: React.FC = () => {
         // Gửi sự kiện reset cho các component con nếu cần
         const resetEvent = new CustomEvent('resetFinancialMetrics');
         document.dispatchEvent(resetEvent);
+    };
+
+    const handleUpdate = async () => {
+        if (!selectedSymbol) return;
+        setIsUpdating(true);
+        message.loading({ content: `Updating data for ${selectedSymbol}... (Please wait 10-30s)`, key: 'updateData' });
+
+        try {
+            // Call local python server
+            const response = await fetch(`http://localhost:8000/update/${selectedSymbol}`, {
+                method: 'POST',
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to update data via local server');
+            }
+
+            const result = await response.json();
+            message.success({ content: `Updated ${selectedSymbol} successfully!`, key: 'updateData' });
+
+            // Trigger UI refresh
+            setRefreshTrigger(prev => prev + 1);
+        } catch (error) {
+            console.error(error);
+            // Fallback: Just refresh UI if server is not running or blocked, hoping database was updated manually
+            setRefreshTrigger(prev => prev + 1);
+            message.warning({
+                content: 'Could not connect to update server. Refreshing view only. (Ensure api_server.py is running for full update)',
+                key: 'updateData',
+                duration: 5
+            });
+        } finally {
+            setIsUpdating(false);
+        }
     };
 
     return (
@@ -190,11 +225,12 @@ const App: React.FC = () => {
                                                 {selectedSymbol && (
                                                     <Tooltip title="Force Update Data">
                                                         <Button
-                                                            icon={<RefreshCw size={14} />}
-                                                            onClick={() => setRefreshTrigger(prev => prev + 1)}
-                                                            className="bg-transparent border-[#e91e63] text-[#e91e63] hover:bg-[#e91e63]/10 h-10 px-4 rounded-sm uppercase font-mono font-bold"
+                                                            icon={<RefreshCw size={14} className={isUpdating ? 'animate-spin' : ''} />}
+                                                            onClick={handleUpdate}
+                                                            disabled={isUpdating}
+                                                            className="bg-transparent border-[#e91e63] text-[#e91e63] hover:bg-[#e91e63]/10 h-10 px-4 rounded-sm uppercase font-mono font-bold disabled:opacity-50"
                                                         >
-                                                            UPDATE
+                                                            {isUpdating ? 'UPDATING...' : 'UPDATE'}
                                                         </Button>
                                                     </Tooltip>
                                                 )}
