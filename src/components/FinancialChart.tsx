@@ -1050,13 +1050,13 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                                 </Tooltip>
                             ))}
                             <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
-                            <Tooltip title={Object.keys(chart.metricTypes).length > 0 ? "Reset Smart Combo" : "Apply Smart Combo"}>
+                            <Tooltip title={Object.keys(chart.metricTypes).length > 0 ? "Reset to Default (Turn Off Smart)" : "Apply Smart Combo Layout"}>
                                 <button
                                     onClick={() => {
                                         if (Object.keys(chart.metricTypes).length > 0) {
                                             // Toggle OFF: Reset to default (follow global type)
                                             onUpdate({ metricTypes: {} });
-                                            message.info('Smart Combo Disabled');
+                                            message.info('Custom Metric Layout Reset');
                                         } else {
                                             // Toggle ON: Apply smart logic
                                             const newTypes: any = {};
@@ -1072,12 +1072,12 @@ const ChartCard: React.FC<ChartCardProps> = ({ chart, chartData, period, onUpdat
                                                 chartType: 'line',
                                                 metricTypes: newTypes
                                             });
-                                            message.success('Smart Combo Enabled');
+                                            message.success('Smart Combo Layout Applied');
                                         }
                                     }}
                                     className={`
-                                        w-6 h-6 flex items-center justify-center rounded-sm transition-all 
-                                        ${Object.keys(chart.metricTypes).length > 0 ? 'bg-[#e91e63] text-white shadow-sm' : 'text-[#e91e63] hover:bg-[#e91e63]/10'}
+                                        w-6 h-6 flex items-center justify-center rounded-sm transition-all duration-300
+                                        ${Object.keys(chart.metricTypes).length > 0 ? 'bg-[#e91e63] text-white shadow-lg ring-1 ring-[#e91e63]' : 'text-[#e91e63] hover:bg-[#e91e63]/10'}
                                     `}
                                 >
                                     <Sparkles size={13} strokeWidth={2} />
