@@ -773,9 +773,29 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             grid: {
                 left: '3%',
                 right: '4%',
-                bottom: '3%',
+                bottom: 40,
                 containLabel: true
             },
+            dataZoom: [
+                {
+                    type: 'slider',
+                    show: true,
+                    xAxisIndex: [0],
+                    start: 0,
+                    end: 100,
+                    bottom: 5,
+                    height: 15,
+                    borderColor: '#333',
+                    fillerColor: 'rgba(255, 152, 0, 0.1)',
+                    handleStyle: { color: '#ff9800' },
+                    textStyle: { color: '#666' },
+                    moveHandleStyle: { color: '#ff9800' },
+                    selectedDataBackground: {
+                        lineStyle: { color: '#ff9800' },
+                        areaStyle: { color: '#ff9800', opacity: 0.1 }
+                    }
+                }
+            ],
             xAxis: {
                 type: 'category',
                 boundaryGap: type !== 'line',
@@ -1445,6 +1465,50 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         ))}
                     </div>
                 )}
+            </Modal>
+
+            {/* Metric Selection Modal for Charts */}
+            <Modal
+                title={<span className="text-[#e0e0e0] font-mono">CHỌN CHỈ TIÊU BIỂU ĐỒ</span>}
+                open={metricModalVisible}
+                onCancel={() => setMetricModalVisible(false)}
+                footer={null}
+                width={800}
+                styles={{ body: { background: '#0a0a0a' }, header: { background: '#0a0a0a' }, content: { background: '#0a0a0a' } }}
+                closeIcon={<X className="text-gray-400 hover:text-white" />}
+            >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar p-2">
+                    {metricGroups.map(group => (
+                        <div key={group.key} className="bg-[#111] border border-[#222] rounded p-0 flex flex-col">
+                            <div
+                                className="p-2 font-mono font-bold text-[10px] flex items-center justify-between sticky top-0 bg-[#161616] z-10 border-b border-[#222]"
+                                style={{ color: group.color }}
+                            >
+                                <span>{group.name}</span>
+                                <span className="bg-black/50 px-2 rounded-full text-[9px]">{group.filteredKeys.length}</span>
+                            </div>
+                            <div className="p-2 space-y-0.5">
+                                {group.filteredKeys.map(key => (
+                                    <div
+                                        key={key}
+                                        onClick={() => {
+                                            if (currentChartId) {
+                                                updateChart(currentChartId, { metric: key });
+                                                setMetricModalVisible(false);
+                                            }
+                                        }}
+                                        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-all hover:bg-white/5 border border-transparent hover:border-gray-700`}
+                                    >
+                                        <span className={`text-[11px] truncate flex-1 text-gray-400 hover:text-white`}>
+                                            {key}
+                                        </span>
+                                        {charts.find(c => c.id === currentChartId)?.metric === key && <Check size={12} className="text-[#ff9800]" />}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </Modal>
 
             {/* Zoom Modal */}
