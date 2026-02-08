@@ -155,6 +155,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [metricModalVisible, setMetricModalVisible] = useState(false);
     const [currentChartId, setCurrentChartId] = useState<string | null>(null);
     const [zoomedChartId, setZoomedChartId] = useState<string | null>(null);
+    const [chartMetricSearch, setChartMetricSearch] = useState('');
 
 
     // Fetch all symbols
@@ -655,22 +656,34 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [comparisonData, selectedMetrics]);
 
     // Grouping metrics for the specialized selector
-    const metricGroups = useMemo(() => {
-        const groups = [
-            { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
-            { key: 'calculated', name: 'Chỉ số tính toán (Advanced)', color: '#e91e63', keys: Object.keys(CALCULATED_METRICS) },
-            { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
-            { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
-            { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
-        ];
+    // Base grouping of metrics (unfiltered)
+    const baseMetricGroups = useMemo(() => [
+        { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
+        { key: 'calculated', name: 'Chỉ số tính toán (Advanced)', color: '#e91e63', keys: Object.keys(CALCULATED_METRICS) },
+        { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
+        { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
+        { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
+    ], [availableKeys]);
 
-        return groups.map(g => ({
+    // Derived groups for Table (filtered by metricSearch)
+    const filteredMetricGroups = useMemo(() => {
+        return baseMetricGroups.map(g => ({
             ...g,
             filteredKeys: g.keys.filter(k =>
                 !metricSearch || k.toLowerCase().includes(metricSearch.toLowerCase())
             ).sort()
         }));
-    }, [availableKeys, metricSearch]);
+    }, [baseMetricGroups, metricSearch]);
+
+    // Derived groups for Chart (filtered by chartMetricSearch)
+    const chartMetricGroups = useMemo(() => {
+        return baseMetricGroups.map(g => ({
+            ...g,
+            filteredKeys: g.keys.filter(k =>
+                !chartMetricSearch || k.toLowerCase().includes(chartMetricSearch.toLowerCase())
+            ).sort()
+        }));
+    }, [baseMetricGroups, chartMetricSearch]);
 
     // Generate chart options based on config
     const getChartOption = (config: ChartConfig, isZoomed: boolean) => {
@@ -1134,7 +1147,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                                    {metricGroups.filter(g => activeSource === 'all' || g.key === activeSource).map(group => (
+                                    {filteredMetricGroups.filter(g => activeSource === 'all' || g.key === activeSource).map(group => (
                                         <div key={group.key} className="bg-[#111] border border-[#222] rounded p-0 flex flex-col group">
                                             <div
                                                 className="p-3 font-mono font-bold text-[10px] flex items-center justify-between sticky top-0 bg-[#161616] z-10 border-b border-[#222]"
@@ -1469,47 +1482,88 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
             {/* Metric Selection Modal for Charts */}
             <Modal
-                title={<span className="text-[#e0e0e0] font-mono">CHỌN CHỈ TIÊU BIỂU ĐỒ</span>}
+                title={null}
                 open={metricModalVisible}
                 onCancel={() => setMetricModalVisible(false)}
                 footer={null}
-                width={800}
-                styles={{ body: { background: '#0a0a0a' }, header: { background: '#0a0a0a' }, content: { background: '#0a0a0a' } }}
+                width={900}
+                centered
+                styles={{ body: { background: '#0a0a0a', padding: 0, borderRadius: 8 }, content: { background: '#0a0a0a', padding: 0 } }}
                 closeIcon={<X className="text-gray-400 hover:text-white" />}
+                className="metric-selection-modal"
             >
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-h-[60vh] overflow-y-auto custom-scrollbar p-2">
-                    {metricGroups.map(group => (
-                        <div key={group.key} className="bg-[#111] border border-[#222] rounded p-0 flex flex-col">
-                            <div
-                                className="p-2 font-mono font-bold text-[10px] flex items-center justify-between sticky top-0 bg-[#161616] z-10 border-b border-[#222]"
-                                style={{ color: group.color }}
-                            >
-                                <span>{group.name}</span>
-                                <span className="bg-black/50 px-2 rounded-full text-[9px]">{group.filteredKeys.length}</span>
-                            </div>
-                            <div className="p-2 space-y-0.5">
-                                {group.filteredKeys.map(key => (
-                                    <div
-                                        key={key}
-                                        onClick={() => {
-                                            if (currentChartId) {
-                                                updateChart(currentChartId, { metric: key });
-                                                setMetricModalVisible(false);
-                                            }
-                                        }}
-                                        className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer transition-all hover:bg-white/5 border border-transparent hover:border-gray-700`}
-                                    >
-                                        <span className={`text-[11px] truncate flex-1 text-gray-400 hover:text-white`}>
-                                            {key}
-                                        </span>
-                                        {charts.find(c => c.id === currentChartId)?.metric === key && <Check size={12} className="text-[#ff9800]" />}
-                                    </div>
-                                ))}
-                            </div>
+                <div className="flex flex-col h-[70vh]">
+                    {/* Header with Search */}
+                    <div className="p-4 border-b border-[#333] flex items-center justify-between bg-[#111] rounded-t-lg">
+                        <div className="flex items-center gap-3">
+                            <Settings2 className="text-[#ff9800]" size={20} />
+                            <span className="text-lg font-bold text-[#e0e0e0] font-mono tracking-wide">CHỌN CHỈ TIÊU BIỂU ĐỒ</span>
                         </div>
-                    ))}
+                        <div className="w-[300px]">
+                            <Input
+                                prefix={<Search size={14} className="text-gray-500" />}
+                                placeholder="Tìm kiếm chỉ tiêu..."
+                                className="bg-[#222] border-[#333] text-white hover:border-[#ff9800] focus:border-[#ff9800]"
+                                value={chartMetricSearch}
+                                onChange={e => setChartMetricSearch(e.target.value)}
+                                allowClear
+                            />
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-[#0a0a0a]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {chartMetricGroups.map(group => (
+                                <div key={group.key} className="bg-[#111] border border-[#222] rounded-lg overflow-hidden flex flex-col hover:border-[#333] transition-colors">
+                                    <div
+                                        className="px-3 py-2 font-mono font-bold text-[11px] flex items-center justify-between bg-[#161616] border-b border-[#222]"
+                                        style={{ color: group.color }}
+                                    >
+                                        <span className="uppercase tracking-wider">{group.name}</span>
+                                        <span className="bg-[#222] px-2 py-0.5 rounded text-[10px] text-gray-400">{group.filteredKeys.length}</span>
+                                    </div>
+                                    <div className="p-2 space-y-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        {group.filteredKeys.length > 0 ? (
+                                            group.filteredKeys.map(key => {
+                                                const isActive = charts.find(c => c.id === currentChartId)?.metric === key;
+                                                return (
+                                                    <div
+                                                        key={key}
+                                                        onClick={() => {
+                                                            if (currentChartId) {
+                                                                updateChart(currentChartId, { metric: key });
+                                                                setMetricModalVisible(false);
+                                                            }
+                                                        }}
+                                                        className={`
+                                                            flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-all group
+                                                            ${isActive
+                                                                ? 'bg-[#ff9800]/10 border border-[#ff9800]/30'
+                                                                : 'hover:bg-[#222] border border-transparent'}
+                                                        `}
+                                                    >
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#ff9800]' : 'bg-gray-700 group-hover:bg-gray-500'}`} />
+                                                        <span className={`text-[12px] truncate flex-1 ${isActive ? 'text-[#ff9800] font-bold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                                            {key}
+                                                        </span>
+                                                        {isActive && <Check size={14} className="text-[#ff9800]" />}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-center py-4 text-gray-600 text-xs italic">
+                                                Không tìm thấy chỉ tiêu
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
                 </div>
             </Modal>
+
 
             {/* Zoom Modal */}
             <Modal
