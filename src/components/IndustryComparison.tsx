@@ -47,6 +47,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [loading, setLoading] = useState(false);
     const [allSymbols, setAllSymbols] = useState<StockSymbol[]>([]);
     const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
+    const [searchResults, setSearchResults] = useState<StockSymbol[]>([]);
+    const [searching, setSearching] = useState(false);
     const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
     const [currentWatchlistId, setCurrentWatchlistId] = useState<string | null>(null);
     const [watchlistName, setWatchlistName] = useState('');
@@ -243,6 +245,53 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             delete newData[symbol];
             return newData;
         });
+    };
+
+    // Server-side search function
+    const searchSymbols = async (searchTerm: string): Promise<StockSymbol[]> => {
+        if (!searchTerm || searchTerm.trim().length < 1) {
+            return [];
+        }
+
+        const term = searchTerm.trim();
+        console.log(`[SERVER SEARCH] Searching for: "${term}"`);
+
+        try {
+            const { data, error } = await supabase
+                .from('stock_symbols')
+                .select('symbol, company_name, icb_name2')
+                .or(`symbol.ilike.%${term}%,company_name.ilike.%${term}%`)
+                .order('symbol')
+                .limit(200);
+
+            if (error) {
+                console.error('[SERVER SEARCH] Error:', error);
+                return [];
+            }
+
+            console.log(`[SERVER SEARCH] Found ${data?.length || 0} results`);
+            return data || [];
+        } catch (e) {
+            console.error('[SERVER SEARCH] Exception:', e);
+            return [];
+        }
+    };
+
+    // Handle search input with server-side query
+    const handleSearch = async (value: string) => {
+        const trimmed = value.trim();
+        setSearchSymbol(trimmed);
+
+        if (!trimmed || trimmed.length < 1) {
+            setSearchResults([]);
+            setSearching(false);
+            return;
+        }
+
+        setSearching(true);
+        const results = await searchSymbols(trimmed);
+        setSearchResults(results);
+        setSearching(false);
     };
 
     const saveWatchlist = async () => {
@@ -646,10 +695,11 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             placeholder="Thêm mã chứng khoán..."
                             className="flex-1"
                             filterOption={false}
-                            onSearch={setSearchSymbol}
-                            onSelect={(val) => { if (val) { addSymbol(val); setSearchSymbol(''); } }}
+                            onSearch={handleSearch}
+                            onSelect={(val) => { if (val) { addSymbol(val); setSearchSymbol(''); setSearchResults([]); } }}
                             value={undefined}
-                            options={filteredSymbols.map(s => ({
+                            loading={searching}
+                            options={searchResults.map(s => ({
                                 value: s.symbol,
                                 label: (
                                     <div className="flex items-center justify-between w-full">
@@ -660,7 +710,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     </div>
                                 )
                             }))}
-                            notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không tìm thấy mã" />}
+                            notFoundContent={searching ? <Spin size="small" /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nhập để tìm kiếm mã" />}
                         />
 
                         <Select value={period} onChange={setPeriod} style={{ width: 80 }}>
