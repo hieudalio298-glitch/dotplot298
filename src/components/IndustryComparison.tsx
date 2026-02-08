@@ -523,12 +523,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [availableYears]);
 
     const filteredSymbols = useMemo(() => {
-        if (!searchSymbol) return allSymbols.slice(0, 100);
+        if (!searchSymbol) return allSymbols.slice(0, 500); // Increased from 100 to 500 for better coverage
         const search = searchSymbol.toLowerCase();
         return allSymbols.filter(s =>
             s.symbol.toLowerCase().includes(search) ||
             s.company_name?.toLowerCase().includes(search)
-        ).slice(0, 100);
+        ); // No limit when searching to show all matching results
     }, [allSymbols, searchSymbol]);
 
     return (
