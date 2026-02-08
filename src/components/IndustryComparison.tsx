@@ -83,11 +83,30 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     // Fetch all symbols
     useEffect(() => {
         const fetchSymbols = async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('stock_symbols')
                 .select('symbol, company_name, icb_name2')
                 .order('symbol');
-            if (data) setAllSymbols(data);
+
+            if (error) {
+                console.error('Error fetching symbols:', error);
+                return;
+            }
+
+            if (data) {
+                console.log(`Loaded ${data.length} symbols from database`);
+                console.log('Sample symbols:', data.slice(0, 5).map(s => s.symbol));
+
+                // Check if specific symbols exist
+                const testSymbols = ['VND', 'SSI', 'VCB', 'VPB', 'HCM'];
+                const found = testSymbols.filter(sym => data.some(d => d.symbol === sym));
+                const missing = testSymbols.filter(sym => !data.some(d => d.symbol === sym));
+
+                if (found.length > 0) console.log('Found symbols:', found);
+                if (missing.length > 0) console.warn('Missing symbols:', missing);
+
+                setAllSymbols(data);
+            }
         };
         fetchSymbols();
     }, []);
@@ -528,11 +547,18 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         const search = searchSymbol.toLowerCase().trim();
         if (!search) return allSymbols.slice(0, 500);
 
+        console.log(`[SEARCH] Looking for: "${search}" in ${allSymbols.length} total symbols`);
+
         // Filter matching symbols
         const matches = allSymbols.filter(s =>
             s.symbol.toLowerCase().includes(search) ||
             s.company_name?.toLowerCase().includes(search)
         );
+
+        console.log(`[SEARCH] Found ${matches.length} matches for "${search}"`);
+        if (matches.length > 0) {
+            console.log(`[SEARCH] Top matches:`, matches.slice(0, 5).map(s => s.symbol));
+        }
 
         // Sort by relevance: exact match > starts with > contains
         const sorted = matches.sort((a, b) => {
