@@ -34,6 +34,14 @@ interface ChartConfig {
     type: 'bar' | 'line' | 'stacked';
 }
 
+interface ChartTemplate {
+    id: string;
+    user_id: string;
+    name: string;
+    config: ChartConfig[];
+    created_at: string;
+}
+
 const CHART_COLORS = [
     '#ff9800', // Orange
     '#00e676', // Green
@@ -139,6 +147,13 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [charts, setCharts] = useState<ChartConfig[]>([
         { id: '1', metric: 'Chỉ số giá thị trường trên thu nhập (P/E)', period: 'year', type: 'bar' }
     ]);
+
+    const [templates, setTemplates] = useState<ChartTemplate[]>([]);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+    const [templateName, setTemplateName] = useState('');
+    const [templateInput, setTemplateInput] = useState(''); // For searching/filtering templates if needed, or duplicate state? Re-use templateName for saving.
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
 
     const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)'); // Keep for fallback logic
     const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar'); // Keep for fallback logic
@@ -625,6 +640,71 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         document.body.removeChild(link);
     };
 
+    // --- Template Logic ---
+    const fetchTemplates = async () => {
+        if (!user) return;
+        setLoadingTemplates(true);
+        const { data, error } = await supabase
+            .from('chart_templates')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching templates:', error);
+        } else {
+            setTemplates(data || []);
+        }
+        setLoadingTemplates(false);
+    };
+
+    const saveTemplate = async () => {
+        if (!user || !templateName.trim()) return;
+        setSavingWatchlist(true); // Using this for spinner/loading visual
+
+        try {
+            const { error } = await supabase.from('chart_templates').insert({
+                user_id: user.id,
+                name: templateName.trim(),
+                config: charts
+            });
+
+            if (error) throw error;
+
+            setTemplateName('');
+            setShowSaveTemplateModal(false);
+            fetchTemplates();
+        } catch (e) {
+            console.error('Error saving template:', e);
+            alert('Lỗi khi lưu mẫu biểu đồ (Có thể do chưa tạo bảng CSDL).');
+        }
+        setSavingWatchlist(false);
+    };
+
+    const deleteTemplate = async (id: string) => {
+        if (!user) return;
+        const { error } = await supabase.from('chart_templates').delete().eq('id', id);
+        if (!error) {
+            setTemplates(templates.filter(t => t.id !== id));
+        }
+    };
+
+    const applyTemplate = (template: ChartTemplate) => {
+        try {
+            const newCharts = template.config.map(c => ({ ...c, id: Date.now() + Math.random().toString() }));
+            setCharts(newCharts);
+            setShowTemplateModal(false);
+        } catch (e) {
+            console.error('Error applying template', e);
+        }
+    };
+
+    useEffect(() => {
+        if (showTemplateModal && user) {
+            fetchTemplates();
+        }
+    }, [showTemplateModal, user]);
+
     // Statistics
     const statistics = useMemo(() => {
         const stats: Record<string, { sum: number; avg: number; median: number; min: number; max: number }> = {};
@@ -807,14 +887,15 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     xAxisIndex: [0],
                     start: 0,
                     end: 100,
-                    bottom: 2,
-                    height: 10,
-                    borderColor: 'transparent',
-                    fillerColor: 'rgba(255, 152, 0, 0.1)',
-                    handleSize: '60%',
+                    bottom: 0,
+                    height: 16,
+                    borderColor: '#2a2a2a',
+                    fillerColor: 'rgba(255, 152, 0, 0.15)',
+                    handleSize: '80%',
                     handleStyle: {
                         color: '#ff9800',
-                        shadowBlur: 0
+                        shadowBlur: 2,
+                        shadowColor: 'rgba(0,0,0,0.5)'
                     },
                     textStyle: { color: 'transparent' }, // Hide text
                     moveHandleSize: 0,
@@ -1327,6 +1408,25 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             >
                                 Thêm biểu đồ
                             </Button>
+                            <div className="h-4 w-[1px] bg-[#333] mx-2" />
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<Save size={14} />}
+                                onClick={() => setShowSaveTemplateModal(true)}
+                                className="text-xs text-gray-400 hover:text-[#ff9800]"
+                            >
+                                Lưu mẫu
+                            </Button>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<FolderOpen size={14} />}
+                                onClick={() => setShowTemplateModal(true)}
+                                className="text-xs text-gray-400 hover:text-[#ff9800]"
+                            >
+                                Mẫu biểu đồ
+                            </Button>
                         </div>
                         <Button
                             size="small"
@@ -1614,6 +1714,65 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         </div>
                     );
                 })()}
+            </Modal>
+
+            {/* Save Template Modal */}
+            <Modal
+                title={<span className="text-[#e0e0e0] font-mono">LƯU MẪU BIỂU ĐỒ</span>}
+                open={showSaveTemplateModal}
+                onOk={saveTemplate}
+                onCancel={() => setShowSaveTemplateModal(false)}
+                okText="Lưu"
+                cancelText="Hủy"
+                styles={{ body: { background: '#0a0a0a' }, content: { background: '#0a0a0a', border: '1px solid #333' }, header: { background: '#0a0a0a', borderBottom: '1px solid #333', paddingBottom: 10 } }}
+            >
+                <div className="py-4">
+                    <p className="text-gray-400 text-xs mb-2">Lưu cấu hình {charts.length} biểu đồ hiện tại để sử dụng lại sau này.</p>
+                    <Input
+                        placeholder="Tên mẫu biểu đồ (VD: Phân tích Bank, Tổng quan...)"
+                        value={templateName}
+                        onChange={e => setTemplateName(e.target.value)}
+                        className="bg-[#111] border-[#333] text-[#e0e0e0]"
+                    />
+                </div>
+            </Modal>
+
+            {/* Load Template Modal */}
+            <Modal
+                title={<span className="text-[#e0e0e0] font-mono">DANH SÁCH MẪU BIỂU ĐỒ</span>}
+                open={showTemplateModal}
+                onCancel={() => setShowTemplateModal(false)}
+                footer={null}
+                styles={{ body: { background: '#0a0a0a' }, content: { background: '#0a0a0a', border: '1px solid #333' }, header: { background: '#0a0a0a', borderBottom: '1px solid #333', paddingBottom: 10 } }}
+            >
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar py-2">
+                    {loadingTemplates ? (
+                        <div className="text-center py-4"><Spin /></div>
+                    ) : templates.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 italic">Chưa có mẫu nào được lưu.</div>
+                    ) : (
+                        <div className="space-y-2">
+                            {templates.map(t => (
+                                <div key={t.id} className="bg-[#111] p-3 rounded border border-[#222] hover:border-[#ff9800] transition-colors flex justify-between items-center group">
+                                    <div
+                                        className="flex-1 cursor-pointer"
+                                        onClick={() => applyTemplate(t)}
+                                    >
+                                        <div className="text-[#e0e0e0] font-bold text-sm">{t.name}</div>
+                                        <div className="text-gray-500 text-[10px]">{new Date(t.created_at).toLocaleDateString()} • {t.config.length} biểu đồ</div>
+                                    </div>
+                                    <Button
+                                        type="text"
+                                        danger
+                                        icon={<Trash2 size={14} />}
+                                        onClick={() => deleteTemplate(t.id)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </Modal>
 
             <style>{`
