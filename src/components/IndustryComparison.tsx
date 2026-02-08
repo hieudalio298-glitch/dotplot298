@@ -45,6 +45,44 @@ interface Props {
     user: SupabaseUser | null;
 }
 
+const CALCULATED_METRICS = {
+    'Biên lợi nhuận gộp (%)': {
+        numerator: '5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ',
+        denominator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
+        type: 'percentage'
+    },
+    'Biên lợi nhuận ròng (%)': {
+        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
+        denominator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
+        type: 'percentage'
+    },
+    'ROA (%)': {
+        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
+        denominator: 'TỔNG CỘNG TÀI SẢN',
+        type: 'percentage'
+    },
+    'ROE (%)': {
+        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
+        denominator: 'B. VỐN CHỦ SỞ HỮU',
+        type: 'percentage'
+    },
+    'Tỷ số thanh toán hiện hành': {
+        numerator: 'A. TÀI SẢN NGẮN HẠN',
+        denominator: 'I. Nợ ngắn hạn',
+        type: 'number'
+    },
+    'Tỷ số Nợ/Vốn chủ sở hữu': {
+        numerator: 'A. NỢ PHẢI TRẢ',
+        denominator: 'B. VỐN CHỦ SỞ HỮU',
+        type: 'number'
+    },
+    'Vòng quay tài sản': {
+        numerator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
+        denominator: 'TỔNG CỘNG TÀI SẢN',
+        type: 'number'
+    }
+};
+
 const IndustryComparison: React.FC<Props> = ({ user }) => {
     // State
     const [loading, setLoading] = useState(false);
@@ -411,8 +449,23 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
             const row: any = { symbol, _hasData: hasData };
             selectedMetrics.forEach(metric => {
-                const val = targetData[metric];
-                row[metric] = parseValue(val);
+                // Check if it's a calculated metric
+                if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                    const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
+                    const num = parseValue(targetData[config.numerator]);
+                    const den = parseValue(targetData[config.denominator]);
+
+                    if (num !== undefined && den !== undefined && den !== 0) {
+                        const val = num / den;
+                        row[metric] = config.type === 'percentage' ? val * 100 : val;
+                    } else {
+                        row[metric] = undefined;
+                    }
+                } else {
+                    // Standard metric
+                    const val = targetData[metric];
+                    row[metric] = parseValue(val);
+                }
             });
             return row;
         });
@@ -452,6 +505,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const metricGroups = useMemo(() => {
         const groups = [
             { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
+            { key: 'calculated', name: 'Chỉ số tính toán (Advanced)', color: '#e91e63', keys: Object.keys(CALCULATED_METRICS) },
             { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
             { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
             { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
@@ -500,7 +554,20 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 stack: isStacked ? 'total' : undefined,
                 data: sortedPeriods.map(p => {
                     const match = symbolData.find(d => d.period === p);
-                    return match ? parseValue(match[chartMetric]) : null;
+                    if (!match) return null;
+
+                    if (CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS]) {
+                        const config = CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS];
+                        const num = parseValue(match[config.numerator]);
+                        const den = parseValue(match[config.denominator]);
+                        if (num !== undefined && den !== undefined && den !== 0) {
+                            const val = num / den;
+                            return config.type === 'percentage' ? val * 100 : val;
+                        }
+                        return null;
+                    }
+
+                    return parseValue(match[chartMetric]);
                 }),
                 connectNulls: true,
                 smooth: chartType === 'line',
