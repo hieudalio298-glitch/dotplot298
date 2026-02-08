@@ -47,38 +47,38 @@ interface Props {
 
 const CALCULATED_METRICS = {
     'Biên lợi nhuận gộp (%)': {
-        numerator: '5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ',
-        denominator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
+        numerator: ['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Tổng lợi nhuận gộp'],
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
         type: 'percentage'
     },
     'Biên lợi nhuận ròng (%)': {
-        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
-        denominator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
+        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
         type: 'percentage'
     },
     'ROA (%)': {
-        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
-        denominator: 'TỔNG CỘNG TÀI SẢN',
+        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
+        denominator: ['TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'],
         type: 'percentage'
     },
     'ROE (%)': {
-        numerator: '18. Lợi nhuận sau thuế thu nhập doanh nghiệp',
-        denominator: 'B. VỐN CHỦ SỞ HỮU',
+        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
+        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu'],
         type: 'percentage'
     },
     'Tỷ số thanh toán hiện hành': {
-        numerator: 'A. TÀI SẢN NGẮN HẠN',
-        denominator: 'I. Nợ ngắn hạn',
+        numerator: ['A. TÀI SẢN NGẮN HẠN', 'Tài sản ngắn hạn'],
+        denominator: ['I. Nợ ngắn hạn', 'Nợ ngắn hạn'],
         type: 'number'
     },
     'Tỷ số Nợ/Vốn chủ sở hữu': {
-        numerator: 'A. NỢ PHẢI TRẢ',
-        denominator: 'B. VỐN CHỦ SỞ HỮU',
+        numerator: ['A. NỢ PHẢI TRẢ', 'Nợ phải trả'],
+        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu'],
         type: 'number'
     },
     'Vòng quay tài sản': {
-        numerator: '3. Doanh thu thuần về bán hàng và cung cấp dịch vụ',
-        denominator: 'TỔNG CỘNG TÀI SẢN',
+        numerator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
+        denominator: ['TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'],
         type: 'number'
     }
 };
@@ -442,12 +442,13 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         const normalizeKey = (k: string) => {
             return k.toLowerCase()
                 .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/\(.*\)/g, "") // Remove suffixes like (270=...)
                 .replace(/^[0-9ivx]+\.\s*/, "") // Remove prefixes like "1. ", "II. "
                 .replace(/[^a-z0-9]/g, ""); // Remove non-alphanumeric
         };
 
         const targetKey = normalizeKey(key);
-        const foundKey = Object.keys(data).find(k => normalizeKey(k) === targetKey);
+        const foundKey = Object.keys(data).find(k => normalizeKey(k) === targetKey || normalizeKey(k).includes(targetKey)); // Added includes for robustness
 
         if (foundKey) {
             // console.log(`[Fuzzy Match] '${key}' -> '${foundKey}'`);
@@ -478,8 +479,18 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 // Check if it's a calculated metric
                 if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
                     const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
-                    const num = getValue(targetData, config.numerator);
-                    const den = getValue(targetData, config.denominator);
+
+                    const getMetricValue = (keys: string | string[]) => {
+                        const keyList = Array.isArray(keys) ? keys : [keys];
+                        for (const k of keyList) {
+                            const val = getValue(targetData, k);
+                            if (val !== undefined) return val;
+                        }
+                        return undefined;
+                    };
+
+                    const num = getMetricValue(config.numerator);
+                    const den = getMetricValue(config.denominator);
 
                     if (num !== undefined && den !== undefined && den !== 0) {
                         const val = num / den;
@@ -487,13 +498,14 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     } else {
                         // DEBUG: Log why it failed
                         if (symbolIdx === 0) { // Only log for first symbol to avoid spam
-                            console.log(`[Calc Failed] ${metric}: num=${num} (${config.numerator}), den=${den} (${config.denominator})`);
-                            if (num === undefined && targetData) {
-                                console.log('Available keys:', Object.keys(targetData).slice(0, 20));
-                                // Check if key exists but with different chars
-                                const numKey = config.numerator;
-                                const found = Object.keys(targetData).find(k => k === numKey);
-                                console.log(`Key '${numKey}' found exactly?`, found);
+                            console.log(`[Calc Failed] ${metric}:`);
+                            console.log(`  Expected Numerator keys: ${Array.isArray(config.numerator) ? config.numerator.join(', ') : config.numerator}`);
+                            console.log(`  Found Numerator: ${num}`);
+                            console.log(`  Expected Denominator keys: ${Array.isArray(config.denominator) ? config.denominator.join(', ') : config.denominator}`);
+                            console.log(`  Found Denominator: ${den}`);
+
+                            if (num === undefined && targetData && Object.keys(targetData).length > 0) {
+                                // console.log('Available keys:', Object.keys(targetData).slice(0, 20));
                             }
                         }
                         row[metric] = undefined;
@@ -595,8 +607,19 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
                     if (CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS]) {
                         const config = CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS];
-                        const num = getValue(match, config.numerator);
-                        const den = getValue(match, config.denominator);
+
+                        const getMetricValue = (keys: string | string[]) => {
+                            const keyList = Array.isArray(keys) ? keys : [keys];
+                            for (const k of keyList) {
+                                const val = getValue(match, k);
+                                if (val !== undefined) return val;
+                            }
+                            return undefined;
+                        };
+
+                        const num = getMetricValue(config.numerator);
+                        const den = getMetricValue(config.denominator);
+
                         if (num !== undefined && den !== undefined && den !== 0) {
                             const val = num / den;
                             return config.type === 'percentage' ? val * 100 : val;
