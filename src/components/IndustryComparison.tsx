@@ -295,8 +295,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
                                 const cleanD: any = {};
                                 Object.keys(d).forEach(k => {
-                                    // Trim key and remove leading underscores
-                                    const ck = k.trim().replace(/^_+/, '');
+                                    // Trim key, remove leading underscores, and normalize unicode
+                                    const ck = k.trim().replace(/^_+/, '').normalize('NFC');
                                     cleanD[ck] = d[k];
 
                                     if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter'].includes(ck)) {
@@ -435,7 +435,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const comparisonData = useMemo(() => {
         if (selectedSymbols.length === 0) return [];
 
-        return selectedSymbols.map(symbol => {
+        return selectedSymbols.map((symbol, symbolIdx) => {
             const data = financialData[symbol] || [];
             // Find data for selected year and quarter
             const yearDataMatch = data.find(d => {
@@ -448,7 +448,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             const targetData = (yearDataMatch || {}) as Record<string, any>;
 
             const row: any = { symbol, _hasData: hasData };
-            selectedMetrics.forEach(metric => {
+            selectedMetrics.forEach((metric, idx) => {
                 // Check if it's a calculated metric
                 if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
                     const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
@@ -459,6 +459,17 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         const val = num / den;
                         row[metric] = config.type === 'percentage' ? val * 100 : val;
                     } else {
+                        // DEBUG: Log why it failed
+                        if (symbolIdx === 0) { // Only log for first symbol to avoid spam
+                            console.log(`[Calc Failed] ${metric}: num=${num} (${config.numerator}), den=${den} (${config.denominator})`);
+                            if (num === undefined && targetData) {
+                                console.log('Available keys:', Object.keys(targetData).slice(0, 20));
+                                // Check if key exists but with different chars
+                                const numKey = config.numerator;
+                                const found = Object.keys(targetData).find(k => k === numKey);
+                                console.log(`Key '${numKey}' found exactly?`, found);
+                            }
+                        }
                         row[metric] = undefined;
                     }
                 } else {
