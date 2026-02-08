@@ -13,8 +13,11 @@ interface StockSymbol {
 
 interface Watchlist {
     id: string;
+    user_id: string;
     name: string;
     symbols: string[];
+    created_at: string;
+    updated_at: string;
 }
 
 interface FinancialData {
@@ -54,6 +57,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [watchlistName, setWatchlistName] = useState('');
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [savingWatchlist, setSavingWatchlist] = useState(false);
+    const [loadingWatchlists, setLoadingWatchlists] = useState(false);
 
     const [financialData, setFinancialData] = useState<Record<string, FinancialData[]>>({});
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Chỉ số giá thị trường trên thu nhập (P/E)', 'Giá trị sổ sách của cổ phiếu (BVPS)', 'Thu nhập trên mỗi cổ phần của 4 quý gần nhất (EPS)']);
@@ -142,6 +147,77 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         }
 
         if (data) setWatchlists(data);
+    };
+
+    const saveWatchlist = async () => {
+        if (!user || !watchlistName.trim()) {
+            alert('Vui lòng nhập tên watchlist');
+            return;
+        }
+
+        if (selectedSymbols.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 mã chứng khoán');
+            return;
+        }
+
+        setSavingWatchlist(true);
+
+        const watchlistData = {
+            user_id: user.id,
+            name: watchlistName.trim(),
+            symbols: selectedSymbols
+        };
+
+        const { error } = await supabase
+            .from('user_watchlists')
+            .upsert(watchlistData, {
+                onConflict: 'user_id,name'
+            });
+
+        if (error) {
+            console.error('Error saving watchlist:', error);
+            alert('Không thể lưu watchlist');
+        } else {
+            alert(`Watchlist "${watchlistName}" đã được lưu`);
+            setWatchlistName('');
+            setShowSaveModal(false);
+            loadWatchlists(); // Refresh list
+        }
+
+        setSavingWatchlist(false);
+    };
+
+    const applyWatchlist = async (watchlist: Watchlist) => {
+        try {
+            // Simply load the symbols
+            setSelectedSymbols(watchlist.symbols);
+            setShowLoadModal(false);
+
+            // Fetch financial data for the symbols
+            fetchFinancialData();
+        } catch (error) {
+            console.error('Error applying watchlist:', error);
+            alert('Không thể load watchlist');
+        }
+    };
+
+    const deleteWatchlist = async (watchlistId: string, watchlistName: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa watchlist "${watchlistName}"?`)) {
+            return;
+        }
+
+        const { error } = await supabase
+            .from('user_watchlists')
+            .delete()
+            .eq('id', watchlistId);
+
+        if (error) {
+            console.error('Error deleting watchlist:', error);
+            alert('Không thể xóa watchlist');
+        } else {
+            alert(`Watchlist "${watchlistName}" đã được xóa`);
+            loadWatchlists(); // Refresh list
+        }
     };
 
     const fetchFinancialData = async () => {
@@ -294,42 +370,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         setSearching(false);
     };
 
-    const saveWatchlist = async () => {
-        if (!user || !watchlistName.trim()) return;
 
-        try {
-            const watchlistData = {
-                user_id: user.id,
-                name: watchlistName,
-                symbols: selectedSymbols,
-                updated_at: new Date().toISOString()
-            };
-
-            if (currentWatchlistId) {
-                await supabase.from('user_watchlists').update(watchlistData).eq('id', currentWatchlistId);
-            } else {
-                const { data } = await supabase.from('user_watchlists').insert(watchlistData).select().single();
-                if (data) setCurrentWatchlistId(data.id);
-            }
-
-            setShowSaveModal(false);
-            loadWatchlists();
-        } catch (e) {
-            console.error(e);
-        }
-    };
-
-    const loadWatchlist = (watchlist: Watchlist) => {
-        setSelectedSymbols(watchlist.symbols);
-        setCurrentWatchlistId(watchlist.id);
-        setWatchlistName(watchlist.name);
-        setShowLoadModal(false);
-    };
-
-    const deleteWatchlist = async (id: string) => {
-        await supabase.from('user_watchlists').delete().eq('id', id);
-        loadWatchlists();
-    };
 
     // Helper to parse numeric values from strings
     const parseValue = (v: any) => {
@@ -1066,6 +1107,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 onCancel={() => setShowSaveModal(false)}
                 okText="Lưu"
                 cancelText="Hủy"
+                confirmLoading={savingWatchlist}
                 styles={{ body: { background: '#0a0a0a' }, header: { background: '#0a0a0a' }, content: { background: '#0a0a0a' } }}
             >
                 <Input
@@ -1095,7 +1137,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             <div
                                 key={wl.id}
                                 className="p-3 bg-[#111] border border-[#333] hover:border-[#ff9800] cursor-pointer transition-all flex justify-between items-center"
-                                onClick={() => loadWatchlist(wl)}
+                                onClick={() => applyWatchlist(wl)}
                             >
                                 <div>
                                     <div className="font-bold text-[#e0e0e0]">{wl.name}</div>
@@ -1104,7 +1146,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 <Trash2
                                     size={14}
                                     className="text-gray-600 hover:text-red-500"
-                                    onClick={e => { e.stopPropagation(); deleteWatchlist(wl.id); }}
+                                    onClick={e => { e.stopPropagation(); deleteWatchlist(wl.id, wl.name); }}
                                 />
                             </div>
                         ))}
