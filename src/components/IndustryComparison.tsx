@@ -26,6 +26,13 @@ interface FinancialData {
     [key: string]: any;
 }
 
+interface ChartConfig {
+    id: string;
+    metric: string;
+    period: 'year' | 'quarter';
+    type: 'bar' | 'line' | 'stacked';
+}
+
 const CHART_COLORS = [
     '#ff9800', // Orange
     '#00e676', // Green
@@ -47,23 +54,23 @@ interface Props {
 
 const CALCULATED_METRICS = {
     'Biên lợi nhuận gộp (%)': {
-        numerator: ['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Tổng lợi nhuận gộp'],
-        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
+        numerator: ['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Tổng lợi nhuận gộp', 'Lợi nhuận gộp', '14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', 'I. Thu nhập lãi thuần'], // Bank uses Net Interest Income as proxy? Maybe not standard but useful.
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', '1. Doanh thu phí bảo hiểm thuần', 'I. Thu nhập lãi thuần'], // Using Net Interest Income as revenue for Banks
         type: 'percentage'
     },
     'Biên lợi nhuận ròng (%)': {
-        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
-        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', '1. Doanh thu phí bảo hiểm thuần', 'I. Thu nhập lãi thuần', 'Doanh thu thuần HĐKD BH'],
         type: 'percentage'
     },
     'ROA (%)': {
-        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
-        denominator: ['TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'],
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['270. Tổng cộng tài sản', 'Tổng cộng tài sản', 'TỔNG CỘNG TÀI SẢN', 'Tài sản'],
         type: 'percentage'
     },
     'ROE (%)': {
-        numerator: ['18. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'XI. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế'],
-        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu'],
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['400. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'B. VỐN CHỦ SỞ HỮU', 'VIII. Vốn và các quỹ', 'Vốn và các quỹ'],
         type: 'percentage'
     },
     'Tỷ số thanh toán hiện hành': {
@@ -72,12 +79,22 @@ const CALCULATED_METRICS = {
         type: 'number'
     },
     'Tỷ số Nợ/Vốn chủ sở hữu': {
-        numerator: ['A. NỢ PHẢI TRẢ', 'Nợ phải trả'],
-        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu'],
+        numerator: ['A. NỢ PHẢI TRẢ', 'Nợ phải trả', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu', 'VIII. Vốn và các quỹ'],
         type: 'number'
     },
+    'Tỷ số nợ trên vốn chủ sở hữu': {
+        numerator: ['300. Nợ phải trả', 'Nợ phải trả', 'A. NỢ PHẢI TRẢ', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['400. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'B. VỐN CHỦ SỞ HỮU', 'VIII. Vốn và các quỹ', 'Vốn và các quỹ'],
+        type: 'ratio'
+    },
+    'Tỷ số nợ trên tổng tài sản': {
+        numerator: ['300. Nợ phải trả', 'Nợ phải trả', 'A. NỢ PHẢI TRẢ', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['270. Tổng cộng tài sản', 'Tổng cộng tài sản', 'TỔNG CỘNG TÀI SẢN'],
+        type: 'ratio'
+    },
     'Vòng quay tài sản': {
-        numerator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần'],
+        numerator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'I. Thu nhập lãi thuần', '5. Doanh thu thuần HĐKD BH (10=03+04)'],
         denominator: ['TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'],
         type: 'number'
     }
@@ -98,12 +115,13 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [savingWatchlist, setSavingWatchlist] = useState(false);
     const [loadingWatchlists, setLoadingWatchlists] = useState(false);
 
-    const [financialData, setFinancialData] = useState<Record<string, FinancialData[]>>({});
+    const [financialData, setFinancialData] = useState<Record<string, { year: FinancialData[], quarter: FinancialData[] }>>({});
+
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Chỉ số giá thị trường trên thu nhập (P/E)', 'Giá trị sổ sách của cổ phiếu (BVPS)', 'Thu nhập trên mỗi cổ phần của 4 quý gần nhất (EPS)']);
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
     const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
-    const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)');
+
 
     const [availableKeys, setAvailableKeys] = useState<{
         ratios: Set<string>;
@@ -116,7 +134,14 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         balance: new Set(),
         cashflow: new Set()
     });
-    const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar');
+
+    const [charts, setCharts] = useState<ChartConfig[]>([
+        { id: '1', metric: 'Chỉ số giá thị trường trên thu nhập (P/E)', period: 'year', type: 'bar' }
+    ]);
+
+    const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)'); // Keep for fallback logic
+    const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar'); // Keep for fallback logic
+
     const [searchSymbol, setSearchSymbol] = useState('');
     const [metricSearch, setMetricSearch] = useState('');
     const [showMetricModal, setShowMetricModal] = useState(false);
@@ -163,12 +188,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         if (user) loadWatchlists();
     }, [user]);
 
-    // Fetch financial data when symbols change
+    // Fetch financial data when symbols change. Note: logic changed to fetch ALL period types.
     useEffect(() => {
         if (selectedSymbols.length > 0) {
             fetchFinancialData();
         }
-    }, [selectedSymbols, period]);
+    }, [selectedSymbols]); // Remove period dependency as we fetch both now
 
     const loadWatchlists = async () => {
         if (!user) return;
@@ -263,7 +288,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         setLoading(true);
 
         try {
-            const results: Record<string, FinancialData[]> = {};
+            const results: Record<string, { year: FinancialData[], quarter: FinancialData[] }> = {};
             const newKeys = {
                 ratios: new Set<string>(),
                 income: new Set<string>(),
@@ -272,26 +297,31 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             };
 
             await Promise.all(selectedSymbols.map(async (symbol) => {
+                // Fetch ALL period types (year and quarter)
                 const [ratioRes, incomeRes, balanceRes, cashflowRes] = await Promise.all([
-                    supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'income_statement').eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'balance_sheet').eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'cash_flow').eq('period_type', period)
+                    supabase.from('financial_ratios').select('data, period_type').eq('symbol', symbol),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'income_statement'),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'balance_sheet'),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'cash_flow')
                 ]);
 
-                const dataMap = new Map();
+                const dataMapYear = new Map();
+                const dataMapQuarter = new Map();
 
                 const processSource = (res: any, category: keyof typeof newKeys) => {
                     if (res.data) {
                         res.data.forEach((row: any) => {
+                            const pType = row.period_type; // 'year' or 'quarter'
+                            const targetMap = pType === 'year' ? dataMapYear : dataMapQuarter;
+
                             const innerData = Array.isArray(row.data) ? row.data : [row.data];
                             innerData.forEach((d: any) => {
                                 const year = d.Năm || d.year || d.Year || d.report_year;
                                 const quarter = d.Quý || d.quarter || d.Quarter || d.report_quarter || 0;
                                 if (!year) return;
 
-                                const key = `${year}-${quarter}`;
-                                const existing = dataMap.get(key) || {};
+                                const key = pType === 'year' ? `${year}` : `${year}-${quarter}`;
+                                const existing = targetMap.get(key) || {};
 
                                 const cleanD: any = {};
                                 Object.keys(d).forEach(k => {
@@ -299,12 +329,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     const ck = k.trim().replace(/^_+/, '').normalize('NFC');
                                     cleanD[ck] = d[k];
 
-                                    if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter'].includes(ck)) {
+                                    if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter', 'period_type'].includes(ck)) {
                                         newKeys[category].add(ck);
                                     }
                                 });
 
-                                dataMap.set(key, { ...existing, ...cleanD });
+                                targetMap.set(key, { ...existing, ...cleanD });
                             });
                         });
                     }
@@ -315,16 +345,23 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 processSource(balanceRes, 'balance');
                 processSource(cashflowRes, 'cashflow');
 
-                results[symbol] = Array.from(dataMap.values()).map(d => ({
-                    ...d,
-                    symbol,
-                    period: period === 'year' ? `${d.Năm || d.year || d.Year}` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
-                    year: parseInt(d.Năm || d.year || d.Year || 0),
-                    quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
-                })).sort((a, b) => {
-                    if (b.year !== a.year) return b.year - a.year;
-                    return b.quarter - a.quarter;
-                });
+                const formatData = (map: Map<any, any>, isYear: boolean) => {
+                    return Array.from(map.values()).map(d => ({
+                        ...d,
+                        symbol,
+                        period: isYear ? `${d.Năm || d.year || d.Year}` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
+                        year: parseInt(d.Năm || d.year || d.Year || 0),
+                        quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
+                    })).sort((a, b) => {
+                        if (b.year !== a.year) return b.year - a.year;
+                        return b.quarter - a.quarter;
+                    });
+                };
+
+                results[symbol] = {
+                    year: formatData(dataMapYear, true),
+                    quarter: formatData(dataMapQuarter, false)
+                };
             }));
 
             console.log(`Fetched financial data for ${selectedSymbols.length} symbols. Found keys:`,
@@ -463,7 +500,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         if (selectedSymbols.length === 0) return [];
 
         return selectedSymbols.map((symbol, symbolIdx) => {
-            const data = financialData[symbol] || [];
+            const dataObj = financialData[symbol] || { year: [], quarter: [] };
+            const data = period === 'year' ? dataObj.year : dataObj.quarter;
             // Find data for selected year and quarter
             const yearDataMatch = data.find(d => {
                 const yMatch = d.year === selectedYear;
@@ -520,6 +558,65 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         });
     }, [financialData, selectedSymbols, selectedMetrics, selectedYear, selectedQuarter, period]);
 
+    const exportToCSV = () => {
+        // Use the same periods as the table
+        const periods = tableColumns.slice(1).map(c => c.title as string);
+        const headers = ['Mã', 'Chỉ tiêu', ...periods];
+        const csvRows = [headers.join(',')];
+
+        selectedSymbols.forEach(symbol => {
+            const dataObj = financialData[symbol];
+            if (!dataObj) return;
+
+            const data = period === 'year' ? dataObj.year : dataObj.quarter;
+
+            selectedMetrics.forEach(metric => {
+                const row = [symbol, metric];
+                periods.forEach(p => {
+                    const match = data.find((d: any) => d.period === p);
+                    if (!match) {
+                        row.push('');
+                        return;
+                    }
+
+                    let val: number | undefined;
+
+                    if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                        const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
+                        const getMetricValue = (keys: string | string[]) => {
+                            const keyList = Array.isArray(keys) ? keys : [keys];
+                            for (const k of keyList) {
+                                const val = getValue(match, k);
+                                if (val !== undefined) return val;
+                            }
+                            return undefined;
+                        };
+                        const num = getMetricValue(config.numerator);
+                        const den = getMetricValue(config.denominator);
+                        if (num !== undefined && den !== undefined && den !== 0) {
+                            val = num / den;
+                            // Export raw value, let user format
+                        }
+                    } else {
+                        val = getValue(match, metric);
+                    }
+
+                    row.push(val !== undefined ? val.toString() : '');
+                });
+                csvRows.push(row.join(','));
+            });
+        });
+
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `financial_comparison_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     // Statistics
     const statistics = useMemo(() => {
         const stats: Record<string, { sum: number; avg: number; median: number; min: number; max: number }> = {};
@@ -568,45 +665,49 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         }));
     }, [availableKeys, metricSearch]);
 
-    // Chart options - Independent Time Series
-    const chartOptions = useMemo(() => {
-        if (selectedSymbols.length === 0 || !chartMetric) return {};
+    // Generate chart options based on config
+    const getChartOption = (config: ChartConfig) => {
+        const { metric, period: chartPeriod, type } = config;
 
-        // 1. Collect all unique time periods across all selected symbols
-        const periodsSet = new Set<string>();
-        selectedSymbols.forEach(symbol => {
-            const data = financialData[symbol] || [];
-            data.forEach(d => periodsSet.add(d.period));
+        // 1. Collect all periods from RELEVANT data (year or quarter)
+        const allPeriods = new Set<string>();
+        Object.values(financialData).forEach(dataObj => {
+            const data = chartPeriod === 'year' ? dataObj.year : dataObj.quarter;
+            data.forEach((d: any) => allPeriods.add(d.period));
         });
 
-        // 2. Sort periods chronologically (Year -> Quarter)
-        const sortedPeriods = Array.from(periodsSet).sort((a, b) => {
-            const parsePeriod = (p: string) => {
+        // Sort periods chronologically
+        const sortedPeriods = Array.from(allPeriods).sort((a, b) => {
+            // Extract year/quarter from string "2023" or "Q1/2023"
+            const parseP = (p: string) => {
                 if (p.startsWith('Q')) {
-                    const [qPart, yPart] = p.split('/');
-                    return parseInt(yPart) * 10 + parseInt(qPart.slice(1));
+                    const [q, y] = p.replace('Q', '').split('/');
+                    return parseInt(y) * 10 + parseInt(q);
                 }
                 return parseInt(p) * 10;
             };
-            return parsePeriod(a) - parsePeriod(b);
+            return parseP(a) - parseP(b);
         });
 
-        // 3. Create series for each symbol
         const series = selectedSymbols.map((symbol, idx) => {
-            const symbolData = financialData[symbol] || [];
-            const isStacked = chartType === 'stacked';
-            const type = isStacked ? 'bar' : chartType;
+            const dataObj = financialData[symbol];
+            if (!dataObj) return null;
+
+            const symbolData = chartPeriod === 'year' ? dataObj.year : dataObj.quarter;
+
+            const isStacked = type === 'stacked';
+            const actualType = isStacked ? 'bar' : type;
 
             return {
                 name: symbol,
-                type: type,
+                type: actualType,
                 stack: isStacked ? 'total' : undefined,
                 data: sortedPeriods.map(p => {
-                    const match = symbolData.find(d => d.period === p);
+                    const match = symbolData.find((d: any) => d.period === p);
                     if (!match) return null;
 
-                    if (CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS]) {
-                        const config = CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS];
+                    if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                        const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
 
                         const getMetricValue = (keys: string | string[]) => {
                             const keyList = Array.isArray(keys) ? keys : [keys];
@@ -627,76 +728,71 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         return null;
                     }
 
-                    return parseValue(match[chartMetric]);
+                    return getValue(match, metric);
                 }),
                 connectNulls: true,
-                smooth: chartType === 'line',
+                smooth: type === 'line',
                 emphasis: { focus: 'series' },
                 itemStyle: {
-                    borderRadius: type === 'bar' && !isStacked ? [4, 4, 0, 0] : 0
+                    color: CHART_COLORS[idx % CHART_COLORS.length]
                 }
             };
-        });
+        }).filter(Boolean);
+
+        const isPercentage = metric.includes('(%)') ||
+            (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]?.type === 'percentage');
 
         return {
-            backgroundColor: 'transparent',
+            title: {
+                text: `${metric} (${chartPeriod === 'year' ? 'Năm' : 'Quý'})`,
+                left: 'center',
+                textStyle: { color: '#fff', fontSize: 14 }
+            },
             tooltip: {
                 trigger: 'axis',
-                backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                backgroundColor: 'rgba(30, 30, 30, 0.9)',
                 borderColor: '#444',
-                padding: [10, 15],
-                textStyle: { color: '#e0e0e0', fontSize: 12 },
-                axisPointer: { type: 'cross', label: { backgroundColor: '#333' } }
-            },
-            dataZoom: [
-                {
-                    type: 'inside',
-                    start: 0,
-                    end: 100
-                },
-                {
-                    type: 'slider',
-                    show: true,
-                    bottom: 10,
-                    height: 20,
-                    borderColor: 'transparent',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    fillerColor: 'rgba(22, 119, 255, 0.2)',
-                    handleStyle: { color: '#1677ff' },
-                    textStyle: { color: '#888' }
+                textStyle: { color: '#fff' },
+                valueFormatter: (value: number) => {
+                    if (value === undefined || value === null) return '-';
+                    return formatFinancialValue(value, 2) + (isPercentage ? '%' : '');
                 }
-            ],
+            },
             legend: {
-                textStyle: { color: '#888', fontSize: 10 },
-                top: 0
+                data: selectedSymbols,
+                top: 30,
+                textStyle: { color: '#ccc' }
             },
             grid: {
-                left: '2%',
+                left: '3%',
                 right: '4%',
-                bottom: '12%',
-                top: '15%',
+                bottom: '3%',
                 containLabel: true
             },
             xAxis: {
                 type: 'category',
+                boundaryGap: type !== 'line',
                 data: sortedPeriods,
-                axisLabel: { color: '#888', rotate: 30, fontSize: 10 },
-                axisLine: { lineStyle: { color: '#222' } }
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#aaa', rotate: 45 }
             },
             yAxis: {
                 type: 'value',
+                axisLine: { lineStyle: { color: '#555' } },
                 axisLabel: {
-                    color: '#666',
-                    fontSize: 10,
-                    formatter: (val: number) => formatFinancialValue(val, 1)
+                    color: '#aaa',
+                    formatter: (value: number) => {
+                        if (Math.abs(value) >= 1e12) return (value / 1e12).toFixed(1) + 'kT';
+                        if (Math.abs(value) >= 1e9) return (value / 1e9).toFixed(1) + ' tỷ';
+                        if (Math.abs(value) >= 1e6) return (value / 1e6).toFixed(0) + ' tr';
+                        return value;
+                    }
                 },
-                splitLine: { lineStyle: { color: '#1a1a1a' } },
-                axisLine: { show: false }
+                splitLine: { lineStyle: { color: '#333' } }
             },
-            color: CHART_COLORS,
-            series
+            series: series
         };
-    }, [financialData, selectedSymbols, chartMetric, chartType, period]);
+    };
 
     // Table columns
     const tableColumns = useMemo(() => {
@@ -754,8 +850,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     // Available years
     const availableYears = useMemo(() => {
         const years = new Set<number>();
-        Object.values(financialData).forEach(data => {
-            data.forEach(d => years.add(d.year));
+        Object.values(financialData).forEach(dataObj => {
+            dataObj.year.forEach((d: any) => years.add(d.year));
         });
         return Array.from(years).sort((a, b) => b - a);
     }, [financialData]);
@@ -1025,13 +1121,17 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                                             <span className={`text-[11px] truncate flex-1 ${isChecked ? 'text-[#ff9800] font-bold' : 'text-gray-400'}`}>
                                                                 {key}
                                                             </span>
-                                                            <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này">
+                                                            <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này (Biểu đồ 1)">
                                                                 <Activity
                                                                     size={14}
-                                                                    className={`cursor-pointer hover:text-[#1677ff] transition-colors ${chartMetric === key ? 'text-[#1677ff]' : 'text-gray-700'}`}
+                                                                    className={`cursor-pointer hover:text-[#1677ff] transition-colors ${charts.some(c => c.metric === key) ? 'text-[#1677ff]' : 'text-gray-700'}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        setChartMetric(key);
+                                                                        const newCharts = [...charts];
+                                                                        if (newCharts.length > 0) {
+                                                                            newCharts[0].metric = key;
+                                                                            setCharts(newCharts);
+                                                                        }
                                                                     }}
                                                                 />
                                                             </Tooltip>
@@ -1139,91 +1239,126 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 </Card>
             </div>
 
-            {/* RIGHT PANEL - CHART */}
+            {/* RIGHT PANEL - CHARTS */}
             <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'right' ? 'absolute inset-0 z-50 w-full h-full bg-[#030712]' :
                 maximizedPanel === 'left' ? 'hidden' : 'w-1/2'
                 }`}>
-                <Card
-                    className="border-none bg-[#0b0e11] shadow-2xl flex-1"
-                    title={
-                        <div className="flex justify-between items-center gap-4">
-                            <div className="flex items-center gap-2 min-w-fit">
-                                <Activity size={16} className="text-[#1677ff]" />
-                                <span className="text-[#e0e0e0] font-mono font-bold text-xs uppercase">Phân tích Trend</span>
-                            </div>
-
-                            <Select
-                                showSearch
-                                placeholder="Tìm chỉ tiêu..."
-                                className="flex-1 max-w-[500px]"
+                <div className="bg-[#1e1e1e] rounded-lg border border-[#333] p-4 flex-1 flex flex-col overflow-hidden shadow-2xl">
+                    <div className="flex justify-between items-center mb-4 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp size={18} className="text-[#ff9800]" />
+                            <h3 className="text-white font-bold uppercase text-sm">Phân tích Xu hướng</h3>
+                            <Button
+                                type="dashed"
                                 size="small"
-                                value={chartMetric}
-                                onChange={setChartMetric}
-                                dropdownStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    String(option?.value ?? "").toLowerCase().includes(input.toLowerCase())
-                                }
+                                icon={<Plus size={14} />}
+                                onClick={() => setCharts([...charts, { id: Date.now().toString(), metric: charts[charts.length - 1]?.metric || 'ROA (%)', period: 'year', type: 'line' }])}
+                                className="ml-2 text-xs border-dashed border-gray-600 text-gray-400 hover:text-[#ff9800] hover:border-[#ff9800]"
                             >
-                                {metricGroups.map(group => (
-                                    <Select.OptGroup key={group.key} label={<span className="text-[10px] uppercase tracking-widest" style={{ color: group.color }}>{group.name}</span>}>
-                                        {group.filteredKeys.map(k => (
-                                            <Select.Option key={k} value={k}>
-                                                <span className="text-gray-300 text-[11px]">{k}</span>
-                                            </Select.Option>
-                                        ))}
-                                    </Select.OptGroup>
-                                ))}
-                            </Select>
-
-                            <div className="flex items-center gap-2">
-                                <Button.Group size="small" className="min-w-fit">
-                                    <Tooltip title="Biểu đồ cột">
-                                        <Button
-                                            icon={<BarChart3 size={12} />}
-                                            onClick={() => setChartType('bar')}
-                                            type={chartType === 'bar' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="Biểu đồ cột chồng">
-                                        <Button
-                                            icon={<Layers size={12} />}
-                                            onClick={() => setChartType('stacked')}
-                                            type={chartType === 'stacked' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="Biểu đồ đường">
-                                        <Button
-                                            icon={<LineChart size={12} />}
-                                            onClick={() => setChartType('line')}
-                                            type={chartType === 'line' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                </Button.Group>
-
-                                <Button
-                                    size="small"
-                                    icon={maximizedPanel === 'right' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                                    onClick={() => setMaximizedPanel(maximizedPanel === 'right' ? 'none' : 'right')}
-                                    className="bg-transparent border-gray-700 text-gray-500"
-                                />
-                            </div>
+                                Thêm biểu đồ
+                            </Button>
                         </div>
-                    }
-                >
-                    {selectedSymbols.length > 0 ? (
-                        <ReactECharts
-                            key={selectedSymbols.join(',')}
-                            option={chartOptions}
-                            style={{ height: '100%', minHeight: 400 }}
-                            theme="dark"
+                        <Button
+                            size="small"
+                            icon={maximizedPanel === 'right' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                            onClick={() => setMaximizedPanel(maximizedPanel === 'right' ? 'none' : 'right')}
+                            className="bg-transparent border-gray-700 text-gray-500 hover:text-white"
                         />
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <Empty description="Chọn mã để xem biểu đồ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                        </div>
-                    )}
-                </Card>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                        {charts.map((chart, index) => (
+                            <div key={chart.id} className="bg-[#252525] rounded p-3 border border-[#444] relative group">
+                                {/* Chart Controls */}
+                                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <div className="flex items-center gap-2 flex-1">
+                                        <div className="text-xs text-gray-500 font-bold w-6">#{index + 1}</div>
+                                        <Select
+                                            size="small"
+                                            value={chart.metric}
+                                            onChange={(val) => {
+                                                const newCharts = [...charts];
+                                                newCharts[index].metric = val;
+                                                setCharts(newCharts);
+                                            }}
+                                            style={{ width: 220 }}
+                                            className="custom-select-dark"
+                                            showSearch
+                                            optionFilterProp="children"
+                                            popupMatchSelectWidth={300}
+                                        >
+                                            {metricGroups.map(group => (
+                                                <Select.OptGroup key={group.key} label={<span style={{ color: group.color }}>{group.name}</span>}>
+                                                    {group.filteredKeys.map(k => (
+                                                        <Select.Option key={k} value={k}>{k}</Select.Option>
+                                                    ))}
+                                                </Select.OptGroup>
+                                            ))}
+                                        </Select>
+
+                                        <Select
+                                            size="small"
+                                            value={chart.period}
+                                            onChange={(val) => {
+                                                const newCharts = [...charts];
+                                                newCharts[index].period = val;
+                                                setCharts(newCharts);
+                                            }}
+                                            style={{ width: 80 }}
+                                            className="custom-select-dark"
+                                        >
+                                            <Select.Option value="year">Năm</Select.Option>
+                                            <Select.Option value="quarter">Quý</Select.Option>
+                                        </Select>
+
+                                        <Select
+                                            size="small"
+                                            value={chart.type}
+                                            onChange={(val) => {
+                                                const newCharts = [...charts];
+                                                newCharts[index].type = val;
+                                                setCharts(newCharts);
+                                            }}
+                                            style={{ width: 100 }}
+                                            className="custom-select-dark"
+                                        >
+                                            <Select.Option value="bar"><BarChart3 size={14} className="mr-1 inline" /> Cột</Select.Option>
+                                            <Select.Option value="line"><LineChart size={14} className="mr-1 inline" /> Đường</Select.Option>
+                                            <Select.Option value="stacked"><Layers size={14} className="mr-1 inline" /> Chồng</Select.Option>
+                                        </Select>
+                                    </div>
+
+                                    {charts.length > 1 && (
+                                        <Button
+                                            type="text"
+                                            danger
+                                            size="small"
+                                            icon={<Trash2 size={14} />}
+                                            onClick={() => setCharts(charts.filter(c => c.id !== chart.id))}
+                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Chart Render */}
+                                <div className="h-[300px]">
+                                    {selectedSymbols.length > 0 ? (
+                                        <ReactECharts
+                                            option={getChartOption(chart)}
+                                            style={{ height: '100%', width: '100%' }}
+                                            theme="dark"
+                                        />
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                                            <BarChart3 size={32} className="mb-2 opacity-20" />
+                                            <p className="text-xs">Chọn mã để xem biểu đồ</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Save Modal */}
