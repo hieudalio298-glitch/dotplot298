@@ -931,6 +931,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 >
                     {selectedSymbols.length > 0 ? (
                         <ReactECharts
+                            key={selectedSymbols.join(',')}
                             option={chartOptions}
                             style={{ height: '100%', minHeight: 400 }}
                             theme="dark"
