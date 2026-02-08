@@ -523,12 +523,41 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [availableYears]);
 
     const filteredSymbols = useMemo(() => {
-        if (!searchSymbol) return allSymbols.slice(0, 500); // Increased from 100 to 500 for better coverage
-        const search = searchSymbol.toLowerCase();
-        return allSymbols.filter(s =>
+        if (!searchSymbol) return allSymbols.slice(0, 500);
+
+        const search = searchSymbol.toLowerCase().trim();
+        if (!search) return allSymbols.slice(0, 500);
+
+        // Filter matching symbols
+        const matches = allSymbols.filter(s =>
             s.symbol.toLowerCase().includes(search) ||
             s.company_name?.toLowerCase().includes(search)
-        ); // No limit when searching to show all matching results
+        );
+
+        // Sort by relevance: exact match > starts with > contains
+        const sorted = matches.sort((a, b) => {
+            const aSymbol = a.symbol.toLowerCase();
+            const bSymbol = b.symbol.toLowerCase();
+            const aName = (a.company_name || '').toLowerCase();
+            const bName = (b.company_name || '').toLowerCase();
+
+            // Exact match in symbol (highest priority)
+            if (aSymbol === search && bSymbol !== search) return -1;
+            if (bSymbol === search && aSymbol !== search) return 1;
+
+            // Starts with in symbol
+            if (aSymbol.startsWith(search) && !bSymbol.startsWith(search)) return -1;
+            if (bSymbol.startsWith(search) && !aSymbol.startsWith(search)) return 1;
+
+            // Contains in symbol
+            if (aSymbol.includes(search) && !bSymbol.includes(search)) return -1;
+            if (bSymbol.includes(search) && !aSymbol.includes(search)) return 1;
+
+            // Alphabetical order
+            return aSymbol.localeCompare(bSymbol);
+        });
+
+        return sorted.slice(0, 200); // Limit to 200 for performance
     }, [allSymbols, searchSymbol]);
 
     return (
