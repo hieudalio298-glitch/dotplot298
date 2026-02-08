@@ -718,6 +718,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             const isStacked = type === 'stacked';
             const actualType = isStacked ? 'bar' : type;
 
+            console.log(`[Chart Debug] Symbol: ${symbol} | Type: ${type} | IsStacked: ${isStacked} | Stack: ${isStacked ? 'total' : 'none'}`);
+
             return {
                 name: symbol,
                 type: actualType,
@@ -763,7 +765,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]?.type === 'percentage');
 
         return {
-            backgroundColor: '#000',
+            backgroundColor: '#000000',
             title: {
                 text: `${metric} (${chartPeriod === 'year' ? 'Năm' : 'Quý'})`,
                 left: 'center',
@@ -797,23 +799,20 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     xAxisIndex: [0],
                     start: 0,
                     end: 100,
-                    bottom: 8,
-                    height: 12,
-                    borderColor: '#333',
-                    fillerColor: 'rgba(255, 152, 0, 0.15)',
-                    handleIcon: 'path://M10.7,11.9v-1.3H9.3v1.3c-4.9,0.3-8.8,4.4-8.8,9.4c0,5,3.9,9.1,8.8,9.4v1.3h1.3v-1.3c4.9-0.3,8.8-4.4,8.8-9.4C19.5,16.3,15.6,12.2,10.7,11.9z M13.3,24.4H6.7V23h6.6V24.4z M13.3,19.6H6.7v-1.4h6.6V19.6z',
-                    handleSize: '80%',
+                    bottom: 2,
+                    height: 10,
+                    borderColor: 'transparent',
+                    fillerColor: 'rgba(255, 152, 0, 0.1)',
+                    handleSize: '60%',
                     handleStyle: {
                         color: '#ff9800',
-                        shadowBlur: 3,
-                        shadowColor: 'rgba(0, 0, 0, 0.6)',
-                        shadowOffsetX: 2,
-                        shadowOffsetY: 2
+                        shadowBlur: 0
                     },
-                    textStyle: { color: '#888' },
+                    textStyle: { color: 'transparent' }, // Hide text
                     moveHandleSize: 0,
+                    showDetail: false, // Hide detail text
                     selectedDataBackground: {
-                        lineStyle: { color: '#ff9800' },
+                        lineStyle: { color: '#ff9800', opacity: 0.5 },
                         areaStyle: { color: '#ff9800', opacity: 0.1 }
                     }
                 }
