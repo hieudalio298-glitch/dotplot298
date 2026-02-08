@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card, Select, Button, Table, Empty, Spin, Input, Modal, Tooltip, Space, Dropdown, Statistic, Tag, Popover, Checkbox, Divider } from 'antd';
-import { Plus, Trash2, Save, FolderOpen, BarChart3, LineChart, TrendingUp, Search, RefreshCw, Settings, Eye, EyeOff, Download, Layers, Activity, Maximize2, Minimize2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Filter, Download, Plus, Trash2, Maximize2, Minimize2, LineChart, BarChart, Layers, Settings2, MoreHorizontal, Check, X, Sparkles, FolderOpen, Save, Search, Eye, EyeOff, RefreshCw, Activity, Settings } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { supabase } from '../supabaseClient';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -150,6 +151,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [maximizedPanel, setMaximizedPanel] = useState<'none' | 'left' | 'right'>('none');
     const [isFullScreen, setIsFullScreen] = useState(false);
 
+    // New states for chart management
+    const [metricModalVisible, setMetricModalVisible] = useState(false);
+    const [currentChartId, setCurrentChartId] = useState<string | null>(null);
+    const [zoomedChartId, setZoomedChartId] = useState<string | null>(null);
+
+
     // Fetch all symbols
     useEffect(() => {
         const fetchSymbols = async () => {
@@ -265,7 +272,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     };
 
     const deleteWatchlist = async (watchlistId: string, watchlistName: string) => {
-        if (!confirm(`Bạn có chắc muốn xóa watchlist "${watchlistName}"?`)) {
+        if (!confirm(`Bạn có chắc muốn xóa watchlist "${watchlistName}" ? `)) {
             return;
         }
 
@@ -320,7 +327,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 const quarter = d.Quý || d.quarter || d.Quarter || d.report_quarter || 0;
                                 if (!year) return;
 
-                                const key = pType === 'year' ? `${year}` : `${year}-${quarter}`;
+                                const key = pType === 'year' ? `${year} ` : `${year} -${quarter} `;
                                 const existing = targetMap.get(key) || {};
 
                                 const cleanD: any = {};
@@ -349,7 +356,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     return Array.from(map.values()).map(d => ({
                         ...d,
                         symbol,
-                        period: isYear ? `${d.Năm || d.year || d.Year}` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
+                        period: isYear ? `${d.Năm || d.year || d.Year} ` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
                         year: parseInt(d.Năm || d.year || d.Year || 0),
                         quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
                     })).sort((a, b) => {
@@ -666,7 +673,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [availableKeys, metricSearch]);
 
     // Generate chart options based on config
-    const getChartOption = (config: ChartConfig) => {
+    const getChartOption = (config: ChartConfig, isZoomed: boolean) => {
         const { metric, period: chartPeriod, type } = config;
 
         // 1. Collect all periods from RELEVANT data (year or quarter)
@@ -746,7 +753,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             title: {
                 text: `${metric} (${chartPeriod === 'year' ? 'Năm' : 'Quý'})`,
                 left: 'center',
-                textStyle: { color: '#fff', fontSize: 14 }
+                textStyle: { color: '#fff', fontSize: isZoomed ? 18 : 14 }
             },
             tooltip: {
                 trigger: 'axis',
@@ -760,7 +767,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             },
             legend: {
                 data: selectedSymbols,
-                top: 30,
+                top: isZoomed ? 40 : 30,
                 textStyle: { color: '#ccc' }
             },
             grid: {
@@ -794,6 +801,20 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         };
     };
 
+    // Update chart config
+    const updateChart = (id: string, updates: Partial<ChartConfig>) => {
+        setCharts(prevCharts =>
+            prevCharts.map(chart =>
+                chart.id === id ? { ...chart, ...updates } : chart
+            )
+        );
+    };
+
+    // Remove chart
+    const removeChart = (id: string) => {
+        setCharts(prevCharts => prevCharts.filter(chart => chart.id !== id));
+    };
+
     // Table columns
     const tableColumns = useMemo(() => {
         const cols: any[] = [
@@ -809,7 +830,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             <span className="font-bold text-[#ff9800]">{text}</span>
                             {!record._hasData && (
                                 <Tooltip title={`Không tìm thấy dữ liệu cho ${period === 'quarter' ? `Q${selectedQuarter} ` : ''}${selectedYear}`}>
-                                    <Activity size={10} className="text-gray-600" />
+                                    <Sparkles size={10} className="text-gray-600" />
                                 </Tooltip>
                             )}
                         </div>
@@ -929,7 +950,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     title={
                         <div className="flex justify-between items-center">
                             <Space>
-                                <Activity size={16} className="text-[#ff9800]" />
+                                <TrendingUp size={16} className="text-[#ff9800]" />
                                 <span className="text-[#e0e0e0] font-mono font-bold">SO SÁNH DỮ LIỆU</span>
                             </Space>
                             <Space>
@@ -1036,7 +1057,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     {/* Metric Selector Button */}
                     <div className="mb-4">
                         <Button
-                            icon={<Settings size={14} />}
+                            icon={<Settings2 size={14} />}
                             onClick={() => setShowMetricModal(true)}
                             className="bg-transparent border-[#ff9800] text-[#ff9800] hover:bg-[#ff9800]/10 uppercase font-mono font-bold h-9"
                         >
@@ -1122,7 +1143,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                                                 {key}
                                                             </span>
                                                             <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này (Biểu đồ 1)">
-                                                                <Activity
+                                                                <TrendingUp
                                                                     size={14}
                                                                     className={`cursor-pointer hover:text-[#1677ff] transition-colors ${charts.some(c => c.metric === key) ? 'text-[#1677ff]' : 'text-gray-700'}`}
                                                                     onClick={(e) => {
@@ -1268,84 +1289,94 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
                     <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
                         {charts.map((chart, index) => (
-                            <div key={chart.id} className="bg-[#252525] rounded p-3 border border-[#444] relative group">
-                                {/* Chart Controls */}
-                                <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                    <div className="flex items-center gap-2 flex-1">
-                                        <div className="text-xs text-gray-500 font-bold w-6">#{index + 1}</div>
-                                        <Select
-                                            size="small"
-                                            value={chart.metric}
-                                            onChange={(val) => {
-                                                const newCharts = [...charts];
-                                                newCharts[index].metric = val;
-                                                setCharts(newCharts);
-                                            }}
-                                            style={{ width: 220 }}
-                                            className="custom-select-dark"
-                                            showSearch
-                                            optionFilterProp="children"
-                                            popupMatchSelectWidth={300}
-                                        >
-                                            {metricGroups.map(group => (
-                                                <Select.OptGroup key={group.key} label={<span style={{ color: group.color }}>{group.name}</span>}>
-                                                    {group.filteredKeys.map(k => (
-                                                        <Select.Option key={k} value={k}>{k}</Select.Option>
-                                                    ))}
-                                                </Select.OptGroup>
-                                            ))}
-                                        </Select>
-
-                                        <Select
-                                            size="small"
-                                            value={chart.period}
-                                            onChange={(val) => {
-                                                const newCharts = [...charts];
-                                                newCharts[index].period = val;
-                                                setCharts(newCharts);
-                                            }}
-                                            style={{ width: 80 }}
-                                            className="custom-select-dark"
-                                        >
-                                            <Select.Option value="year">Năm</Select.Option>
-                                            <Select.Option value="quarter">Quý</Select.Option>
-                                        </Select>
-
-                                        <Select
-                                            size="small"
-                                            value={chart.type}
-                                            onChange={(val) => {
-                                                const newCharts = [...charts];
-                                                newCharts[index].type = val;
-                                                setCharts(newCharts);
-                                            }}
-                                            style={{ width: 100 }}
-                                            className="custom-select-dark"
-                                        >
-                                            <Select.Option value="bar"><BarChart3 size={14} className="mr-1 inline" /> Cột</Select.Option>
-                                            <Select.Option value="line"><LineChart size={14} className="mr-1 inline" /> Đường</Select.Option>
-                                            <Select.Option value="stacked"><Layers size={14} className="mr-1 inline" /> Chồng</Select.Option>
-                                        </Select>
+                            <div key={chart.id} className="bg-[#0a0a0a] border border-[#333] hover:border-[#555] transition-all duration-300 rounded overflow-hidden flex flex-col relative group">
+                                {/* Chart Header */}
+                                <div className="px-3 py-2 border-b border-[#333] flex items-center justify-between bg-[#0a0a0a]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-[#ff9800] rounded-full" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[#e0e0e0] text-xs font-mono font-bold truncate max-w-[200px]" title={chart.metric}>
+                                                {chart.metric}
+                                            </span>
+                                            <Tooltip title="Change Metric">
+                                                <button
+                                                    onClick={() => {
+                                                        setCurrentChartId(chart.id);
+                                                        setMetricModalVisible(true);
+                                                    }}
+                                                    className="text-[#666] hover:text-[#ff9800] transition-colors"
+                                                >
+                                                    <Settings2 size={12} />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
                                     </div>
+                                    <div className="flex bg-[#000] border border-[#333] rounded p-0.5 gap-0.5 items-center">
+                                        {/* Chart Type Toggles */}
+                                        {[
+                                            { id: 'line', icon: LineChart, label: 'Line' },
+                                            { id: 'bar', icon: BarChart, label: 'Bar' },
+                                            { id: 'stack', icon: Layers, label: 'Stacked' }
+                                        ].map((type) => (
+                                            <Tooltip title={type.label} key={type.id}>
+                                                <button
+                                                    onClick={() => updateChart(chart.id, { type: type.id as any })}
+                                                    className={`
+                                                    w-6 h-6 flex items-center justify-center rounded-sm transition-all
+                                                    ${chart.type === type.id
+                                                            ? 'bg-[#ff9800] text-black shadow-sm'
+                                                            : 'text-[#666] hover:text-[#e0e0e0] hover:bg-[#222]'}
+                                                `}
+                                                >
+                                                    <type.icon size={12} strokeWidth={2} />
+                                                </button>
+                                            </Tooltip>
+                                        ))}
 
-                                    {charts.length > 1 && (
-                                        <Button
-                                            type="text"
-                                            danger
-                                            size="small"
-                                            icon={<Trash2 size={14} />}
-                                            onClick={() => setCharts(charts.filter(c => c.id !== chart.id))}
-                                            className="opacity-0 group-hover:opacity-100 transition-opacity"
-                                        />
-                                    )}
+                                        <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
+
+                                        {/* Period Toggle */}
+                                        <Tooltip title={chart.period === 'year' ? "Switch to Quarter" : "Switch to Year"}>
+                                            <button
+                                                onClick={() => updateChart(chart.id, { period: chart.period === 'year' ? 'quarter' : 'year' })}
+                                                className="h-6 px-1.5 flex items-center justify-center rounded-sm text-[9px] font-mono font-bold uppercase text-[#e0e0e0] hover:bg-[#222] transition-colors"
+                                            >
+                                                {chart.period === 'year' ? 'YR' : 'QTR'}
+                                            </button>
+                                        </Tooltip>
+
+                                        <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
+
+                                        {/* Actions */}
+                                        <Tooltip title="Fullscreen">
+                                            <button
+                                                onClick={() => {
+                                                    setZoomedChartId(chart.id);
+                                                }}
+                                                className="w-6 h-6 flex items-center justify-center rounded-sm text-[#666] hover:text-[#1677ff] hover:bg-[#1677ff]/10 transition-colors"
+                                            >
+                                                <Maximize2 size={12} />
+                                            </button>
+                                        </Tooltip>
+
+                                        <Tooltip title="Remove Chart">
+                                            <button
+                                                onClick={() => removeChart(chart.id)}
+                                                className="w-6 h-6 flex items-center justify-center rounded-sm text-[#666] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </Tooltip>
+                                    </div>
                                 </div>
 
-                                {/* Chart Render */}
-                                <div className="h-[300px]">
+                                {/* Chart Body */}
+                                <div className="h-[300px] w-full bg-[#000]">
                                     {selectedSymbols.length > 0 ? (
                                         <ReactECharts
-                                            option={getChartOption(chart)}
+                                            option={getChartOption(chart, false)}
                                             style={{ height: '100%', width: '100%' }}
+                                            notMerge={true}
                                             theme="dark"
                                         />
                                     ) : (
@@ -1414,6 +1445,41 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                         ))}
                     </div>
                 )}
+            </Modal>
+
+            {/* Zoom Modal */}
+            <Modal
+                title={null}
+                open={!!zoomedChartId}
+                onCancel={() => setZoomedChartId(null)}
+                footer={null}
+                width="90%"
+                style={{ top: 20 }}
+                styles={{ body: { background: '#0a0a0a', padding: 0 }, content: { background: '#0a0a0a', padding: 0 } }}
+                closeIcon={<X className="text-gray-400 hover:text-white" />}
+            >
+                {zoomedChartId && (() => {
+                    const chart = charts.find(c => c.id === zoomedChartId);
+                    if (!chart) return null;
+                    return (
+                        <div className="h-[70vh] p-4 flex flex-col">
+                            <div className="flex justify-between items-center mb-4 border-b border-[#333] pb-2">
+                                <span className="text-lg font-bold text-[#ff9800] uppercase font-mono">{chart.metric}</span>
+                                <div className="text-xs text-gray-500">
+                                    {chart.period === 'year' ? 'Dữ liệu THEO NĂM' : 'Dữ liệu THEO QUÝ'} | {selectedSymbols.join(', ')}
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <ReactECharts
+                                    option={getChartOption(chart, true)}
+                                    style={{ height: '100%', width: '100%' }}
+                                    theme="dark"
+                                    notMerge={true}
+                                />
+                            </div>
+                        </div>
+                    );
+                })()}
             </Modal>
 
             <style>{`
