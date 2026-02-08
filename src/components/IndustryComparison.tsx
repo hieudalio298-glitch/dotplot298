@@ -209,6 +209,12 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
     const removeSymbol = (symbol: string) => {
         setSelectedSymbols(selectedSymbols.filter(s => s !== symbol));
+        // Also remove financial data for this symbol
+        setFinancialData(prevData => {
+            const newData = { ...prevData };
+            delete newData[symbol];
+            return newData;
+        });
     };
 
     const saveWatchlist = async () => {
