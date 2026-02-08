@@ -86,7 +86,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             const { data, error } = await supabase
                 .from('stock_symbols')
                 .select('symbol, company_name, icb_name2')
-                .order('symbol');
+                .order('symbol')
+                .range(0, 9999); // Fetch up to 10000 symbols (bypasses default 1000 limit)
 
             if (error) {
                 console.error('Error fetching symbols:', error);
@@ -94,16 +95,17 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             }
 
             if (data) {
-                console.log(`Loaded ${data.length} symbols from database`);
-                console.log('Sample symbols:', data.slice(0, 5).map(s => s.symbol));
+                console.log(`✅ Loaded ${data.length} symbols from database`);
+                console.log('First 5:', data.slice(0, 5).map(s => s.symbol));
+                console.log('Last 5:', data.slice(-5).map(s => s.symbol));
 
                 // Check if specific symbols exist
-                const testSymbols = ['VND', 'SSI', 'VCB', 'VPB', 'HCM'];
+                const testSymbols = ['VND', 'SSI', 'VCB', 'VPB', 'HCM', 'HPG', 'VNM'];
                 const found = testSymbols.filter(sym => data.some(d => d.symbol === sym));
                 const missing = testSymbols.filter(sym => !data.some(d => d.symbol === sym));
 
-                if (found.length > 0) console.log('Found symbols:', found);
-                if (missing.length > 0) console.warn('Missing symbols:', missing);
+                if (found.length > 0) console.log('✅ Found symbols:', found);
+                if (missing.length > 0) console.warn('⚠️ Missing symbols:', missing);
 
                 setAllSymbols(data);
             }
@@ -125,11 +127,18 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
     const loadWatchlists = async () => {
         if (!user) return;
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('user_watchlists')
             .select('*')
             .eq('user_id', user.id)
             .order('updated_at', { ascending: false });
+
+        if (error) {
+            // Table might not exist yet - silently ignore
+            console.log('Watchlists not available (table may not exist)');
+            return;
+        }
+
         if (data) setWatchlists(data);
     };
 
