@@ -783,13 +783,20 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             },
             legend: {
                 data: selectedSymbols,
-                top: isZoomed ? 40 : 30,
-                textStyle: { color: '#ccc' }
+                top: isZoomed ? 35 : 25,
+                type: 'scroll',
+                itemWidth: 8,
+                itemHeight: 8,
+                icon: 'circle',
+                textStyle: { color: '#ccc', fontSize: 10 },
+                pageIconColor: '#ff9800',
+                pageTextStyle: { color: '#ccc' }
             },
             grid: {
                 left: '3%',
                 right: '4%',
-                bottom: 40,
+                bottom: 25,
+                top: isZoomed ? 80 : 60,
                 containLabel: true
             },
             dataZoom: [
