@@ -431,6 +431,32 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         return val.toFixed(precision);
     };
 
+    // Helper to find value with fuzzy matching
+    const getValue = (data: Record<string, any>, key: string) => {
+        if (!data) return undefined;
+
+        // 1. Exact match
+        if (data[key] !== undefined) return parseValue(data[key]);
+
+        // 2. Normalized match
+        const normalizeKey = (k: string) => {
+            return k.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/^[0-9ivx]+\.\s*/, "") // Remove prefixes like "1. ", "II. "
+                .replace(/[^a-z0-9]/g, ""); // Remove non-alphanumeric
+        };
+
+        const targetKey = normalizeKey(key);
+        const foundKey = Object.keys(data).find(k => normalizeKey(k) === targetKey);
+
+        if (foundKey) {
+            // console.log(`[Fuzzy Match] '${key}' -> '${foundKey}'`);
+            return parseValue(data[foundKey]);
+        }
+
+        return undefined;
+    };
+
     // Get comparison data for selected year/quarter
     const comparisonData = useMemo(() => {
         if (selectedSymbols.length === 0) return [];
@@ -452,8 +478,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 // Check if it's a calculated metric
                 if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
                     const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
-                    const num = parseValue(targetData[config.numerator]);
-                    const den = parseValue(targetData[config.denominator]);
+                    const num = getValue(targetData, config.numerator);
+                    const den = getValue(targetData, config.denominator);
 
                     if (num !== undefined && den !== undefined && den !== 0) {
                         const val = num / den;
@@ -569,8 +595,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
                     if (CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS]) {
                         const config = CALCULATED_METRICS[chartMetric as keyof typeof CALCULATED_METRICS];
-                        const num = parseValue(match[config.numerator]);
-                        const den = parseValue(match[config.denominator]);
+                        const num = getValue(match, config.numerator);
+                        const den = getValue(match, config.denominator);
                         if (num !== undefined && den !== undefined && den !== 0) {
                             const val = num / den;
                             return config.type === 'percentage' ? val * 100 : val;
