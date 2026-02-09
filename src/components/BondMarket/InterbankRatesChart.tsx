@@ -59,34 +59,21 @@ const InterbankRatesChart: React.FC = () => {
             }
 
             const latestDate = latestDateData[0].date;
+            // Calculate date 2 years ago
+            const twoYearsAgo = dayjs(latestDate).subtract(2, 'year').format('YYYY-MM-DD');
 
-            // Strategy: Fetch distinct dates to find closest matches
-            const { data: distinctDates } = await supabase
-                .from('interbank_rates')
-                .select('date')
-                .order('date', { ascending: false })
-                .limit(60);
-
-            if (!distinctDates) return;
-
-            const availableDates = Array.from(new Set(distinctDates.map(d => d.date)));
-            const dates = [
-                availableDates[0], // Latest
-                availableDates.find(d => dayjs(d).isSameOrBefore(dayjs(latestDate).subtract(1, 'week'))) || availableDates[1],
-                availableDates.find(d => dayjs(d).isSameOrBefore(dayjs(latestDate).subtract(1, 'month')))
-            ].filter(Boolean) as string[];
-
-            // Deduplicate targetDates
-            const uniqueTargetDates = Array.from(new Set(dates));
-
+            // Fetch all data from the last 2 years
             const { data } = await supabase
                 .from('interbank_rates')
                 .select('*')
-                .in('date', uniqueTargetDates);
+                .gte('date', twoYearsAgo)
+                .order('date', { ascending: true });
 
-            if (data) {
+            if (data && data.length > 0) {
+                // Get unique dates
+                const uniqueDates = Array.from(new Set(data.map(d => d.date)));
                 setRawData(data);
-                setTargetDates(uniqueTargetDates);
+                setTargetDates(uniqueDates);
             }
         } catch (error) {
             console.error('Error fetching interbank rates:', error);
