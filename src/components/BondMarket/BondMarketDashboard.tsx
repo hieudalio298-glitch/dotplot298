@@ -1,6 +1,7 @@
 import React from 'react';
 import { Row, Col, Card } from 'antd';
 import YieldCurveChart from './YieldCurveChart';
+import InterbankRatesChart from './InterbankRatesChart';
 
 const BondMarketDashboard: React.FC = () => {
     return (
@@ -10,8 +11,8 @@ const BondMarketDashboard: React.FC = () => {
                     <YieldCurveChart />
                 </div>
                 {/* Placeholders for other charts */}
-                <div className="bg-[#0a0a0a] border border-[#333] p-4 flex items-center justify-center">
-                    <span className="text-gray-600 font-mono text-xs uppercase">Interbank Rates (Coming Soon)</span>
+                <div className="bg-[#0a0a0a] border border-[#333] p-4">
+                    <InterbankRatesChart />
                 </div>
                 <div className="bg-[#0a0a0a] border border-[#333] p-4 flex items-center justify-center">
                     <span className="text-gray-600 font-mono text-xs uppercase">Auction Results (Coming Soon)</span>

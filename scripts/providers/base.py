@@ -30,6 +30,20 @@ class BaseProvider:
         wait=wait_exponential(multiplier=1, min=2, max=10),
         retry=retry_if_exception_type(httpx.HTTPError)
     )
+    def _get(self, url: str, **kwargs) -> httpx.Response:
+        try:
+            response = self.client.get(url, **kwargs)
+            response.raise_for_status()
+            return response
+        except httpx.HTTPError as e:
+            logger.error(f"HTTP error getting {url}: {e}")
+            raise
+
+    @retry(
+        stop=stop_after_attempt(3),
+        wait=wait_exponential(multiplier=1, min=2, max=10),
+        retry=retry_if_exception_type(httpx.HTTPError)
+    )
     def _post(self, url: str, **kwargs) -> httpx.Response:
         try:
             response = self.client.post(url, **kwargs)
