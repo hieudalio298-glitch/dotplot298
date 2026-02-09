@@ -8,12 +8,25 @@ import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';
 
 dayjs.extend(isSameOrBefore);
 
-interface InterbankData {
-    tenor_label: string;
-    rate: number;
-    volume: number | null;
+interface InterbankWideData {
     date: string;
-    source: string;
+    on_rate?: number | null;
+    on_volume?: number | null;
+    '1w_rate'?: number | null;
+    '1w_volume'?: number | null;
+    '2w_rate'?: number | null;
+    '2w_volume'?: number | null;
+    '1m_rate'?: number | null;
+    '1m_volume'?: number | null;
+    '3m_rate'?: number | null;
+    '3m_volume'?: number | null;
+    '6m_rate'?: number | null;
+    '6m_volume'?: number | null;
+    '9m_rate'?: number | null;
+    '9m_volume'?: number | null;
+    '1y_rate'?: number | null;
+    '1y_volume'?: number | null;
+    [key: string]: any;
 }
 
 type ChartType = 'line' | 'bar' | 'stacked';
@@ -24,7 +37,7 @@ const ALL_TENORS = ['ON', '1W', '2W', '1M', '3M', '6M', '9M', '1Y'];
 const InterbankRatesChart: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [chartOption, setChartOption] = useState<any>({});
-    const [rawData, setRawData] = useState<InterbankData[]>([]);
+    const [rawData, setRawData] = useState<InterbankWideData[]>([]);
     const [targetDates, setTargetDates] = useState<string[]>([]);
 
     // UI Controls State
@@ -46,32 +59,15 @@ const InterbankRatesChart: React.FC = () => {
         try {
             setLoading(true);
 
-            // Get latest date
-            const { data: latestDateData } = await supabase
-                .from('interbank_rates')
-                .select('date')
-                .order('date', { ascending: false })
-                .limit(1);
-
-            if (!latestDateData || latestDateData.length === 0) {
-                setLoading(false);
-                return;
-            }
-
-            const latestDate = latestDateData[0].date;
-            // Calculate date 2 years ago
-            const twoYearsAgo = dayjs(latestDate).subtract(2, 'year').format('YYYY-MM-DD');
-
-            // Fetch all data from the last 2 years
+            // Fetch all data
             const { data } = await supabase
                 .from('interbank_rates')
                 .select('*')
-                .gte('date', twoYearsAgo)
                 .order('date', { ascending: true });
 
             if (data && data.length > 0) {
                 // Get unique dates
-                const uniqueDates = Array.from(new Set(data.map(d => d.date)));
+                const uniqueDates = data.map(d => d.date);
                 setRawData(data);
                 setTargetDates(uniqueDates);
             }
@@ -83,29 +79,17 @@ const InterbankRatesChart: React.FC = () => {
     };
 
     const processChartData = () => {
-        // Define tenor order
-        const tenorOrderMap: Record<string, number> = {
-            'ON': 0, 'OVERNIGHT': 0,
-            '1W': 7, '1TUAN': 7,
-            '2W': 14, '2TUAN': 14,
-            '1M': 30, '1THANG': 30,
-            '3M': 90, '3THANG': 90,
-            '6M': 180, '6THANG': 180,
-            '9M': 270, '9THANG': 270,
-            '1Y': 365, '1NAM': 365, '12M': 365
+        // Map tenors to column names
+        const tenorToColumn: Record<string, { rate: string; volume: string }> = {
+            'ON': { rate: 'on_rate', volume: 'on_volume' },
+            '1W': { rate: '1w_rate', volume: '1w_volume' },
+            '2W': { rate: '2w_rate', volume: '2w_volume' },
+            '1M': { rate: '1m_rate', volume: '1m_volume' },
+            '3M': { rate: '3m_rate', volume: '3m_volume' },
+            '6M': { rate: '6m_rate', volume: '6m_volume' },
+            '9M': { rate: '9m_rate', volume: '9m_volume' },
+            '1Y': { rate: '1y_rate', volume: '1y_volume' }
         };
-
-        // Filter data by selected tenors
-        const filteredData = rawData.filter(d =>
-            selectedTenors.some(t => t.toUpperCase() === d.tenor_label.toUpperCase())
-        );
-
-        const uniqueTenors = Array.from(new Set(filteredData.map(d => d.tenor_label)));
-        const sortedTenors = uniqueTenors.sort((a, b) => {
-            const valA = tenorOrderMap[a.toUpperCase()] ?? 9999;
-            const valB = tenorOrderMap[b.toUpperCase()] ?? 9999;
-            return valA - valB;
-        });
 
         // Sort dates chronologically
         const sortedDates = [...targetDates].sort((a, b) =>
@@ -127,25 +111,21 @@ const InterbankRatesChart: React.FC = () => {
             '1Y': '#fdcb6e'
         };
 
-        // Create series EXPLICITLY based on selectedTenors to prevent old data from sticking around
+        // Create series for each selected tenor
         const series = selectedTenors.map((tenor, index) => {
-            const values = sortedDates.map(date => {
-                // Find matching data - be case-insensitive and handle space trimming
-                const found = rawData.find(d =>
-                    d.date === date &&
-                    d.tenor_label.trim().toUpperCase() === tenor.toUpperCase()
-                );
+            const columnNames = tenorToColumn[tenor];
+            if (!columnNames) return null;
 
-                if (viewMode === 'rates') {
-                    if (!found) return null;
-                    let val = found.rate;
-                    // Safety scaling: if value is clearly an unscaled integer (e.g. 885 or 85)
-                    if (val >= 100) val = val / 100.0;
-                    else if (val >= 20) val = val / 10.0;
-                    return val;
-                } else {
-                    return found && found.volume !== null ? found.volume : null;
-                }
+            const columnName = viewMode === 'rates' ? columnNames.rate : columnNames.volume;
+
+            const values = sortedDates.map(date => {
+                const found = rawData.find(d => d.date === date);
+                if (!found) return null;
+
+                const val = found[columnName];
+                if (val === null || val === undefined) return null;
+
+                return val;
             });
 
             const baseConfig: any = {
@@ -155,14 +135,13 @@ const InterbankRatesChart: React.FC = () => {
                 itemStyle: {
                     color: tenorColors[tenor] || `hsl(${index * 45}, 70%, 60%)`
                 },
-                // Handle null values better (connect dots for lines)
                 connectNulls: true
             };
 
             if (seriesType === 'line') {
                 baseConfig.smooth = true;
                 baseConfig.symbol = 'circle';
-                baseConfig.symbolSize = 4; // Smaller symbols for cleaner look
+                baseConfig.symbolSize = 4;
                 baseConfig.lineStyle = { width: 2 };
             }
 
@@ -171,7 +150,7 @@ const InterbankRatesChart: React.FC = () => {
             }
 
             return baseConfig;
-        });
+        }).filter(s => s !== null);
 
         const yAxisLabel = viewMode === 'rates' ? 'Rate (%)' : 'Volume (Billion VND)';
         const tooltipFormatter = viewMode === 'rates'
@@ -200,7 +179,7 @@ const InterbankRatesChart: React.FC = () => {
                 formatter: tooltipFormatter
             },
             legend: {
-                data: selectedTenors, // Only show selected tenors in legend
+                data: selectedTenors,
                 textStyle: { color: '#ccc' },
                 bottom: 0
             },

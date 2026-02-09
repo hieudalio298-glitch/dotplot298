@@ -77,6 +77,7 @@ class ABOMarketWatchProvider(BaseProvider):
     def _match_abo_interbank_tenor(self, text: str) -> Optional[tuple[str, int]]:
         text_upper = re.sub(r"\s+", " ", text.strip().upper())
         if "OVERNIGHT" in text_upper or "O/N" in text_upper: return ('ON', 0)
+        if "1D" in text_upper: return ('ON', 0)
         if "1 WEEK" in text_upper or "1W" in text_upper: return ('1W', 7)
         if "1 MONTH" in text_upper or "1M" in text_upper: return ('1M', 30)
         if "3 MONTH" in text_upper or "3M" in text_upper: return ('3M', 90)
