@@ -120,13 +120,30 @@ const InterbankRatesChart: React.FC = () => {
             return valA - valB;
         });
 
+        // Sort dates chronologically
+        const sortedDates = [...targetDates].sort((a, b) =>
+            new Date(a).getTime() - new Date(b).getTime()
+        );
+
         const isStacked = chartType === 'stacked';
         const seriesType = chartType === 'line' ? 'line' : 'bar';
 
-        const series = targetDates.map((date, index) => {
-            const dayData = filteredData.filter(d => d.date === date);
-            const values = sortedTenors.map(t => {
-                const found = dayData.find(d => d.tenor_label === t);
+        // Define colors for tenors
+        const tenorColors: Record<string, string> = {
+            'ON': '#00e676',
+            '1W': '#ffea00',
+            '2W': '#2979ff',
+            '1M': '#ff6b6b',
+            '3M': '#4ecdc4',
+            '6M': '#a29bfe',
+            '9M': '#fd79a8',
+            '1Y': '#fdcb6e'
+        };
+
+        // Create series for each tenor (each tenor is a line)
+        const series = sortedTenors.map((tenor, index) => {
+            const values = sortedDates.map(date => {
+                const found = filteredData.find(d => d.date === date && d.tenor_label === tenor);
                 if (viewMode === 'rates') {
                     return found ? found.rate : null;
                 } else {
@@ -135,11 +152,11 @@ const InterbankRatesChart: React.FC = () => {
             });
 
             const baseConfig: any = {
-                name: date,
+                name: tenor,
                 type: seriesType,
                 data: values,
                 itemStyle: {
-                    color: index === 0 ? '#00e676' : (index === 1 ? '#ffea00' : '#2979ff')
+                    color: tenorColors[tenor] || `hsl(${index * 45}, 70%, 60%)`
                 }
             };
 
@@ -147,7 +164,7 @@ const InterbankRatesChart: React.FC = () => {
                 baseConfig.smooth = true;
                 baseConfig.symbol = 'circle';
                 baseConfig.symbolSize = 6;
-                baseConfig.lineStyle = { width: index === 0 ? 3 : 1 };
+                baseConfig.lineStyle = { width: 2 };
             }
 
             if (isStacked) {
@@ -184,7 +201,7 @@ const InterbankRatesChart: React.FC = () => {
                 formatter: tooltipFormatter
             },
             legend: {
-                data: targetDates,
+                data: sortedTenors,
                 textStyle: { color: '#ccc' },
                 bottom: 0
             },
@@ -198,7 +215,7 @@ const InterbankRatesChart: React.FC = () => {
             xAxis: {
                 type: 'category',
                 boundaryGap: seriesType === 'bar',
-                data: sortedTenors,
+                data: sortedDates,
                 axisLine: { lineStyle: { color: '#333' } },
                 axisLabel: { color: '#9ca3af' }
             },
