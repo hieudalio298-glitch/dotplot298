@@ -188,7 +188,7 @@ const InterbankRatesChart: React.FC = () => {
                 formatter: tooltipFormatter
             },
             legend: {
-                data: sortedTenors,
+                data: selectedTenors, // Only show selected tenors in legend
                 textStyle: { color: '#ccc' },
                 bottom: 0
             },
@@ -223,10 +223,8 @@ const InterbankRatesChart: React.FC = () => {
         setChartOption(option);
     };
 
-    const handleTenorChange = (checkedValues: string[]) => {
-        if (checkedValues.length > 0) {
-            setSelectedTenors(checkedValues);
-        }
+    const handleTenorChange = (checkedValues: any[]) => {
+        setSelectedTenors(checkedValues);
     };
 
     if (loading) return <div className="flex justify-center p-10"><Spin /></div>;
@@ -295,6 +293,7 @@ const InterbankRatesChart: React.FC = () => {
                 option={chartOption}
                 style={{ height: '400px', width: '100%' }}
                 theme="dark"
+                notMerge={true}
             />
         </div>
     );

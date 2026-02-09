@@ -192,7 +192,18 @@ class SBVInterbankProvider:
                 if text.count('.') > 1:
                     text = text.replace('.', '')
             
-            return float(text)
+            val = float(text)
+            
+            # Rate scaling logic: if the value is an integer > 15, it's likely missing a decimal
+            # e.g., 885 -> 8.85, 85 -> 8.5
+            # We only apply this to interest rates (usually < 20%)
+            # This is a heuristic based on user feedback
+            if val >= 100:
+                val = val / 100.0
+            elif val >= 20:
+                val = val / 10.0
+                
+            return val
         except (ValueError, AttributeError):
             logger.warning(f"Could not parse float from: {text}")
             return None
