@@ -15,6 +15,7 @@ import FinancialChart from './components/FinancialChart';
 import MetricsSidebar from './components/MetricsSidebar';
 import FinancialTable from './components/FinancialTable';
 import IndustryComparison from './components/IndustryComparison';
+import BondMarketDashboard from './components/BondMarket/BondMarketDashboard';
 import { AVAILABLE_METRICS } from './types';
 import logo from './assets/logo.png';
 import 'antd/dist/reset.css';
@@ -329,6 +330,11 @@ const App: React.FC = () => {
                                                                 label: 'NGÀNH',
                                                                 key: 'industry',
                                                                 children: <IndustryComparison user={user} />
+                                                            },
+                                                            {
+                                                                label: 'BOND MARKET',
+                                                                key: 'bond',
+                                                                children: <BondMarketDashboard />
                                                             }
                                                         ]}
                                                     />
