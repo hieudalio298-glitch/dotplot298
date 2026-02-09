@@ -5,9 +5,7 @@ from supabase import create_client, Client
 from dotenv import load_dotenv
 import logging
 from providers.hnx_yield_curve import HNXYieldCurveProvider
-from providers.hnx_yield_curve import HNXYieldCurveProvider
 from providers.sbv_interbank import SBVInterbankProvider
-from providers.abo_market_watch import ABOMarketWatchProvider
 
 # Load environment variables
 load_dotenv()
@@ -47,39 +45,44 @@ def ingest_yield_curve(days_back=30):
         current_date += timedelta(days=1)
 
 def ingest_interbank_rates():
-    logger.info("Fetching Interbank Rates (Latest)...")
+    """Fetch interbank rates from SBV (State Bank of Vietnam)"""
+    logger.info("Fetching Interbank Rates from SBV...")
     
-    # Try ABO first
     try:
-        logger.info("Attempting ABO...")
-        provider = ABOMarketWatchProvider()
-        data = provider.fetch(date.today())
-        if data:
-            logger.info(f"Found {len(data)} records from ABO. Inserting...")
-            supabase.table("interbank_rates").upsert(data, on_conflict="date,tenor_label,source").execute()
-            logger.info("Interbank Rates (ABO) inserted.")
-            return # Success
-    except Exception as e:
-        logger.error(f"Error fetching ABO: {e}")
-
-    # Try SBV as fallback
-    try:
-        logger.info("Attempting SBV...")
         provider = SBVInterbankProvider()
-        # SBV provider ignores date, returns latest
         data = provider.fetch(date.today())
+        
         if data:
             logger.info(f"Found {len(data)} records from SBV. Inserting...")
-            # Supabase insert
-            try:
-                supabase.table("interbank_rates").upsert(data, on_conflict="date,tenor_label,source").execute()
-                logger.info("Interbank Rates (SBV) inserted.")
-            except Exception as e:
-                logger.error(f"Failed to insert Interbank Rates: {e}")
+            supabase.table("interbank_rates").upsert(data, on_conflict="date,tenor_label,source").execute()
+            logger.info("✅ Interbank Rates (SBV) inserted successfully.")
         else:
-            logger.info("No Interbank Rates found from SBV.")
+            logger.warning("⚠️ No Interbank Rates found from SBV.")
+            
     except Exception as e:
-        logger.error(f"Error fetching Interbank Rates (SBV): {e}")
+        logger.error(f"❌ Error fetching Interbank Rates (SBV): {e}")
+        raise
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--days", type=int, default=30, help="Number of days to backfill")
+    parser.add_argument("--start-date", type=str, help="Start date in YYYY-MM-DD format (overrides --days)")
+    args = parser.parse_args()
+    
+    if args.start_date:
+        try:
+            start_dt = datetime.strptime(args.start_date, "%Y-%m-%d").date()
+            days = (date.today() - start_dt).days
+            print(f"Fetching from {start_dt} ({days} days ago)...")
+            ingest_yield_curve(days)
+        except ValueError:
+            print("Invalid date format. Please use YYYY-MM-DD")
+    else:
+        ingest_yield_curve(args.days)
+        
+    # Always try to fetch latest interbank rates
+    ingest_interbank_rates()
 
 if __name__ == "__main__":
     import argparse
