@@ -127,12 +127,22 @@ const InterbankRatesChart: React.FC = () => {
             '1Y': '#fdcb6e'
         };
 
-        // Create series for each tenor (each tenor is a line)
-        const series = sortedTenors.map((tenor, index) => {
+        // Create series EXPLICITLY based on selectedTenors to prevent old data from sticking around
+        const series = selectedTenors.map((tenor, index) => {
             const values = sortedDates.map(date => {
-                const found = filteredData.find(d => d.date === date && d.tenor_label === tenor);
+                // Find matching data - be case-insensitive and handle space trimming
+                const found = rawData.find(d =>
+                    d.date === date &&
+                    d.tenor_label.trim().toUpperCase() === tenor.toUpperCase()
+                );
+
                 if (viewMode === 'rates') {
-                    return found ? found.rate : null;
+                    if (!found) return null;
+                    let val = found.rate;
+                    // Safety scaling: if value is clearly an unscaled integer (e.g. 885 or 85)
+                    if (val >= 100) val = val / 100.0;
+                    else if (val >= 20) val = val / 10.0;
+                    return val;
                 } else {
                     return found && found.volume !== null ? found.volume : null;
                 }
@@ -144,13 +154,15 @@ const InterbankRatesChart: React.FC = () => {
                 data: values,
                 itemStyle: {
                     color: tenorColors[tenor] || `hsl(${index * 45}, 70%, 60%)`
-                }
+                },
+                // Handle null values better (connect dots for lines)
+                connectNulls: true
             };
 
             if (seriesType === 'line') {
                 baseConfig.smooth = true;
                 baseConfig.symbol = 'circle';
-                baseConfig.symbolSize = 6;
+                baseConfig.symbolSize = 4; // Smaller symbols for cleaner look
                 baseConfig.lineStyle = { width: 2 };
             }
 
