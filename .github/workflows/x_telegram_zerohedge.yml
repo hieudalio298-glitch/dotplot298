@@ -1,0 +1,43 @@
+name: X-to-Telegram (Zerohedge)
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'  # Every 30 minutes
+  workflow_dispatch: # Manual trigger
+
+jobs:
+  fetch-and-translate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+      
+      - name: Install dependencies
+        run: pip install httpx feedparser deep-translator
+      
+      - name: Restore state
+        uses: actions/cache@v4
+        with:
+          path: vnstock-live/worker/.x_telegram_state.json
+          key: x-state-zerohedge-${{ github.run_number }}
+          restore-keys: |
+            x-state-zerohedge-
+      
+      - name: Run X-to-Telegram
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python vnstock-live/worker/x_telegram.py --accounts zerohedge
+      
+      - name: Save state
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: vnstock-live/worker/.x_telegram_state.json
+          key: x-state-zerohedge-${{ github.run_number }}
