@@ -10,6 +10,7 @@ import io
 import time
 import logging
 import math
+import threading
 from datetime import datetime, timedelta, timezone
 from typing import List, Dict, Optional
 
@@ -51,6 +52,71 @@ logging.basicConfig(
     datefmt="%H:%M:%S",
 )
 logger = logging.getLogger("volume-alert")
+
+
+# ============================================================
+# RATE LIMITER — auto-detect tier and throttle API calls
+# ============================================================
+class RateLimiter:
+    """Thread-safe sliding-window rate limiter for vnstock API."""
+
+    def __init__(self):
+        self._lock = threading.Lock()
+        self._timestamps: list[float] = []
+        # Detect tier:
+        #   sponsor (vnstock_data installed) → up to 600/min
+        #   silver/paid API key set          → up to 180/min
+        #   guest (no key)                   → 20/min
+        try:
+            import vnstock_data  # noqa: F401
+            self.max_per_min = 150  # sponsor, leave headroom
+            self.tier = "sponsor"
+        except ImportError:
+            if os.getenv("VNSTOCK_API_KEY"):
+                self.max_per_min = 150  # silver/paid key, leave headroom
+                self.tier = "silver"
+            else:
+                self.max_per_min = 15  # guest, leave headroom
+                self.tier = "guest"
+        logger.info(f"🔑 API tier detected: {self.tier} ({self.max_per_min} req/min effective)")
+
+    def wait(self):
+        """Block until it is safe to make a new request."""
+        with self._lock:
+            now = time.time()
+            # Remove timestamps older than 60s
+            self._timestamps = [t for t in self._timestamps if now - t < 60]
+            if len(self._timestamps) >= self.max_per_min:
+                sleep_for = 60 - (now - self._timestamps[0]) + 0.5
+                if sleep_for > 0:
+                    logger.info(f"⏳ Rate limit: waiting {sleep_for:.0f}s...")
+                    time.sleep(sleep_for)
+                    now = time.time()
+                    self._timestamps = [t for t in self._timestamps if now - t < 60]
+            self._timestamps.append(time.time())
+
+
+rate_limiter = RateLimiter()
+
+
+def api_call_with_retry(fn, *args, max_retries=3, **kwargs):
+    """Wrap any vnstock API call with rate limiting + retry on failure."""
+    for attempt in range(max_retries):
+        rate_limiter.wait()
+        try:
+            return fn(*args, **kwargs)
+        except Exception as e:
+            err_msg = str(e).lower()
+            if "rate limit" in err_msg or "429" in err_msg or "giới hạn" in err_msg:
+                wait = min(60 * (attempt + 1), 120)
+                logger.warning(f"⚠️ Rate limited (attempt {attempt+1}/{max_retries}), waiting {wait}s...")
+                time.sleep(wait)
+            else:
+                if attempt < max_retries - 1:
+                    time.sleep(2)
+                else:
+                    raise
+    return None
 
 
 # ============================================================
@@ -263,6 +329,20 @@ def scan_and_alert():
         logger.error("❌ vnstock not installed")
         return
 
+    # --- Register API key if provided (enables Silver/paid tier rate limits) ---
+    api_key = os.getenv("VNSTOCK_API_KEY")
+    if api_key:
+        try:
+            success = vnstock.change_api_key(api_key)
+            if success:
+                logger.info(f"🔑 API key registered successfully (Silver tier)")
+            else:
+                logger.warning("⚠️ API key registration returned False — check key validity")
+        except Exception as e:
+            logger.warning(f"⚠️ API key registration failed: {e}")
+    else:
+        logger.info("ℹ️ No VNSTOCK_API_KEY set — running as Guest (20 req/min)")
+
     # --- Get all stock symbols (Supabase first, vnstock fallback) ---
     symbols = []
     try:
@@ -307,12 +387,17 @@ def scan_and_alert():
     logger.info("📊 Fetching price board...")
     candidates = []
 
-    batch_size = 50
+    # Adjust batch size based on API tier
+    batch_size = 50 if rate_limiter.tier == "sponsor" else 20
+    total_batches = (len(symbols) + batch_size - 1) // batch_size
+    logger.info(f"📦 Processing {total_batches} batches (size={batch_size}, tier={rate_limiter.tier})")
+
     for i in range(0, len(symbols), batch_size):
         batch = symbols[i:i + batch_size]
+        batch_num = i // batch_size + 1
         try:
             trading = vnstock.Trading(source="VCI")
-            board = trading.price_board(batch)
+            board = api_call_with_retry(trading.price_board, batch)
             if board is None or board.empty:
                 continue
 
@@ -352,11 +437,11 @@ def scan_and_alert():
                     continue
 
         except Exception as e:
-            logger.debug(f"Batch error: {e}")
+            logger.warning(f"Batch {batch_num}/{total_batches} error: {e}")
             continue
 
-        if (i + batch_size) % 200 == 0:
-            time.sleep(0.5)
+        if batch_num % 10 == 0:
+            logger.info(f"   ⏱️ Progress: {batch_num}/{total_batches} batches")
 
     logger.info(f"🔍 {len(candidates)} stocks with change ≥ +{MIN_CHANGE_PCT}% and volume ≥ {MIN_VOLUME:,}")
 
@@ -370,7 +455,7 @@ def scan_and_alert():
         symbol = c["symbol"]
         try:
             q = vnstock.Quote(source="VCI", symbol=symbol)
-            hist = q.history(start=start_date, end=today, interval="1D")
+            hist = api_call_with_retry(q.history, start=start_date, end=today, interval="1D")
             if hist is None or len(hist) < 10:
                 continue
 
@@ -396,8 +481,6 @@ def scan_and_alert():
                 )
         except Exception as e:
             logger.debug(f"   Skip {symbol}: {e}")
-        if (j + 1) % 10 == 0:
-            time.sleep(1)
 
     logger.info(f"🚨 Total alerts: {len(alerts)}")
 
