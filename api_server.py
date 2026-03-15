@@ -59,17 +59,22 @@ async def get_history(symbol: str, start: str, end: str):
         df = q.history(start=start, end=end, interval="1D")
         
         if df is None or df.empty:
+            logger.warning(f"No history data for {symbol}")
             return []
             
-        # Convert date column to string and ensure names match what frontend expects
+        # Standardize columns
+        if "date" not in df.columns and "time" not in df.columns:
+            df = df.reset_index()
+            
         if "time" in df.columns:
             df["date"] = df["time"].astype(str)
         elif "date" in df.columns:
             df["date"] = df["date"].astype(str)
+
+        # Filter to ensure we don't have data beyond requested 'end' if API misbehaves
+        # and ensure prices are numeric
+        df = df[df["date"] <= end]
             
-        # Select and rename columns correctly
-        # Usually: time, open, high, low, close, volume
-        # Or: date, open, high, low, close, volume
         records = df.to_dict(orient="records")
         return records
         

@@ -8,7 +8,7 @@ const { RangePicker } = DatePicker;
 
 // ── Config ──────────────────────────────────────────────────
 const DEFAULT_EXCLUDED = ['VIC', 'VHM', 'VRE', 'VPL'];
-const MCAP_SCALE = 4e9; // VND per VNI point (rough total HOSE market cap approximation)
+const MCAP_SCALE = 4.1e12; // VND per VNI point (Total HOSE Mcap ~5 quadrillion / Index ~1250)
 
 // ── Popular large-cap symbols for quick selection ───────────
 const POPULAR_SYMBOLS = [
@@ -96,21 +96,23 @@ function calculateAdjustedIndex(
     const dateMap = new Map<string, { vniClose: number; stockPrices: Record<string, number> }>();
 
     for (const d of vniHistory) {
-        dateMap.set(d.date, { vniClose: d.close, stockPrices: {} });
+        const norm = d.date.substring(0, 10);
+        dateMap.set(norm, { vniClose: d.close, stockPrices: {} });
     }
 
     for (const sym of excludedSymbols) {
-        if (stockHistories[sym]) {
-            for (const d of stockHistories[sym]) {
-                const entry = dateMap.get(d.date);
-                if (entry) {
-                    entry.stockPrices[sym] = d.close;
-                }
+        const history = stockHistories[sym] || [];
+        for (const d of history) {
+            const norm = d.date.substring(0, 10);
+            if (dateMap.has(norm)) {
+                // Ensure price is in thousands if it looks like real VND
+                let p = d.close;
+                if (p > 500000) p /= 1000; // Handle some APIs returning units
+                dateMap.get(norm)!.stockPrices[sym] = p;
             }
         }
     }
 
-    // Sort by date
     const dates = Array.from(dateMap.keys()).sort();
     const result: AdjustedData[] = [];
     let prevVni = 0;
@@ -123,43 +125,51 @@ function calculateAdjustedIndex(
 
         if (vniClose <= 0) continue;
 
-        // Calculate excluded market cap
-        let excludedMcap = 0;
-        for (const sym of excludedSymbols) {
-            const price = entry.stockPrices[sym] || prevPrices[sym] || 0;
-            const shares = listedShares[sym] || 0;
-            excludedMcap += price * shares;
-            if (price > 0) prevPrices[sym] = price;
-        }
-
         const totalMcap = vniClose * MCAP_SCALE;
-        const excludedWeight = Math.min(excludedMcap / totalMcap, 0.5);
+        
+        let currentExcludedMcap = 0;
+        for (const sym of excludedSymbols) {
+            const p = entry.stockPrices[sym] || prevPrices[sym] || 0;
+            currentExcludedMcap += p * (listedShares[sym] || 0) * 1000;
+        }
+        const excludedWeight = Math.min(currentExcludedMcap / totalMcap, 0.5);
 
         if (prevVni <= 0) {
             // First day
             prevVni = vniClose;
             prevAdj = vniClose;
+            for (const sym of excludedSymbols) {
+                prevPrices[sym] = entry.stockPrices[sym] || 0;
+            }
             result.push({ date, vniClose, adjClose: vniClose, excludedWeight });
             continue;
         }
 
         const vniReturn = (vniClose - prevVni) / prevVni;
 
-        // Calculate weighted return of excluded stocks
+        // Calculate weighted return of excluded stocks based on PREVIOUS weight
         let excludedWeightedReturn = 0;
+        const prevTotalMcap = prevVni * MCAP_SCALE;
+
         for (const sym of excludedSymbols) {
             const currPrice = entry.stockPrices[sym] || prevPrices[sym] || 0;
             const symPrevPrice = prevPrices[sym] || currPrice;
+            
             if (symPrevPrice > 0 && currPrice > 0) {
                 const symReturn = (currPrice - symPrevPrice) / symPrevPrice;
-                const symWeight = (currPrice * (listedShares[sym] || 0)) / totalMcap;
-                excludedWeightedReturn += symWeight * symReturn;
+                const symWeightPrev = (symPrevPrice * (listedShares[sym] || 0) * 1000) / prevTotalMcap;
+                excludedWeightedReturn += symWeightPrev * symReturn;
             }
         }
 
-        // Adjusted return
-        const adjReturn = excludedWeight < 1
-            ? (vniReturn - excludedWeightedReturn) / (1 - excludedWeight)
+        // Adjusted return for the rest of the market
+        const combinedPrevWeight = Object.keys(prevPrices).reduce((sum, sym) => {
+            return sum + (prevPrices[sym] * (listedShares[sym] || 0) * 1000) / prevTotalMcap;
+        }, 0);
+        const effectWeight = Math.min(combinedPrevWeight, 0.5);
+
+        const adjReturn = effectWeight < 0.99
+            ? (vniReturn - excludedWeightedReturn) / (1 - effectWeight)
             : vniReturn;
 
         const adjClose = prevAdj * (1 + adjReturn);
@@ -183,8 +193,8 @@ function calculateAdjustedIndex(
 const AdjustedVNIndex: React.FC = () => {
     const [excludedSymbols, setExcludedSymbols] = useState<string[]>(DEFAULT_EXCLUDED);
     const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-        dayjs().subtract(2, 'year'),
-        dayjs(),
+        dayjs('2023-01-01'),
+        dayjs('2024-03-15'),
     ]);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<AdjustedData[]>([]);
