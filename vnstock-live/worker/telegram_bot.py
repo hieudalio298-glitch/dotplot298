@@ -31,7 +31,7 @@ from matplotlib.gridspec import GridSpec
 
 from telegram import Update
 from telegram.ext import (
-    ApplicationBuilder, CommandHandler, ContextTypes
+    ApplicationBuilder, CommandHandler, ContextTypes, filters
 )
 
 # ============================================================
@@ -208,7 +208,7 @@ async def cmd_help(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "/bot — Top 10 giảm giá\n\n"
         "/help — Xem hướng dẫn này"
     )
-    await update.message.reply_text(text, parse_mode="HTML")
+    await update.effective_message.reply_text(text, parse_mode="HTML")
 
 
 async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -221,7 +221,7 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     min_vol_ratio = 1 + min_vol_pct / 100
     min_volume = int(min_vol_m * 1_000_000)
 
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         f"🔍 Đang lọc: giá ≥ +{min_change}% · KL ≥ {min_vol_m:.0f}M · KL ≥ +{min_vol_pct:.0f}% TB20\n⏳ Chờ 1-2 phút...",
         parse_mode="HTML"
     )
@@ -280,7 +280,7 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                 continue
 
         if not alerts:
-            await update.message.reply_text("💤 Không tìm thấy mã nào đạt điều kiện.")
+            await update.effective_message.reply_text("💤 Không tìm thấy mã nào đạt điều kiện.")
             return
 
         alerts.sort(key=lambda x: x["vol_ratio"], reverse=True)
@@ -289,29 +289,29 @@ async def cmd_scan(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         lines = [f"🚨 <b>Breakout: {len(alerts)} mã</b>\n"]
         for a in alerts[:20]:
             lines.append(f"📈 <b>{a['symbol']}</b> +{a['change_pct']:.1f}% · KL: {a['volume']/1e6:.1f}M ({a['vol_ratio']:.1f}x)")
-        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+        await update.effective_message.reply_text("\n".join(lines), parse_mode="HTML")
 
         # Charts (top 5)
         for a in alerts[:5]:
             try:
                 img = generate_chart(a["symbol"], a["hist"], a["volume"], a["avg_vol"], a["change_pct"], a["price"])
                 cap = f"📈 <b>{a['symbol']}</b> +{a['change_pct']:.1f}% · KL: {a['volume']/1e6:.1f}M ({a['vol_ratio']:.1f}x TB20)"
-                await update.message.reply_photo(photo=img, caption=cap, parse_mode="HTML")
+                await update.effective_message.reply_photo(photo=img, caption=cap, parse_mode="HTML")
             except:
                 pass
 
     except Exception as e:
-        await update.message.reply_text(f"❌ Lỗi: {e}")
+        await update.effective_message.reply_text(f"❌ Lỗi: {e}")
 
 
 async def cmd_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     """Show price + chart for a single stock."""
     if not ctx.args:
-        await update.message.reply_text("⚠️ Dùng: <code>/price VCB</code>", parse_mode="HTML")
+        await update.effective_message.reply_text("⚠️ Dùng: <code>/price VCB</code>", parse_mode="HTML")
         return
 
     symbol = ctx.args[0].upper()
-    await update.message.reply_text(f"📊 Đang tải {symbol}...")
+    await update.effective_message.reply_text(f"📊 Đang tải {symbol}...")
 
     try:
         vnstock = get_vnstock()
@@ -320,7 +320,7 @@ async def cmd_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 
         hist = vnstock.Quote(source="VCI", symbol=symbol).history(start=start, end=today, interval="1D")
         if hist is None or hist.empty:
-            await update.message.reply_text(f"❌ Không tìm thấy dữ liệu cho {symbol}")
+            await update.effective_message.reply_text(f"❌ Không tìm thấy dữ liệu cho {symbol}")
             return
 
         tcol = "time" if "time" in hist.columns else "date"
@@ -338,9 +338,9 @@ async def cmd_price(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                f"Giá: {price/1000:.1f}K ({chg:+.1f}%)\n"
                f"KL: {vol/1e6:.1f}M" +
                (f" ({vol/avg:.1f}x TB20)" if avg > 0 else ""))
-        await update.message.reply_photo(photo=img, caption=cap, parse_mode="HTML")
+        await update.effective_message.reply_photo(photo=img, caption=cap, parse_mode="HTML")
     except Exception as e:
-        await update.message.reply_text(f"❌ Lỗi: {e}")
+        await update.effective_message.reply_text(f"❌ Lỗi: {e}")
 
 
 async def cmd_top(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -352,7 +352,7 @@ async def cmd_bot_bottom(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await _top_bot(update, ctx, mode="bot")
 
 async def _top_bot(update: Update, ctx: ContextTypes.DEFAULT_TYPE, mode="top"):
-    await update.message.reply_text(f"{'📈' if mode=='top' else '📉'} Đang tải...")
+    await update.effective_message.reply_text(f"{'📈' if mode=='top' else '📉'} Đang tải...")
     try:
         vnstock = get_vnstock()
         sb = get_supabase()
@@ -395,9 +395,9 @@ async def _top_bot(update: Update, ctx: ContextTypes.DEFAULT_TYPE, mode="top"):
         for i, s in enumerate(top):
             lines.append(f"{i+1}. <b>{s['symbol']}</b>  {s['change_pct']:+.1f}%  ·  {s['price']/1000:.1f}K  ·  KL: {s['volume']/1e6:.1f}M")
 
-        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+        await update.effective_message.reply_text("\n".join(lines), parse_mode="HTML")
     except Exception as e:
-        await update.message.reply_text(f"❌ Lỗi: {e}")
+        await update.effective_message.reply_text(f"❌ Lỗi: {e}")
 
 
 async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -413,7 +413,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     # Check if cache exists
     meta_path = CACHE_DIR / "meta.json"
     if not meta_path.exists() or not list(CACHE_DIR.glob("*.parquet")):
-        await update.message.reply_text(
+        await update.effective_message.reply_text(
             "⚠️ Cache chưa được build!\n"
             "Đang build lần đầu... ⏳ mất 20-40 phút.\n"
             "Bot sẽ thông báo khi xong.",
@@ -423,7 +423,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         loop = asyncio.get_event_loop()
         from build_cache import build_cache
         await loop.run_in_executor(None, build_cache)
-        await update.message.reply_text("✅ Cache đã sẵn sàng! Đang scan...")
+        await update.effective_message.reply_text("✅ Cache đã sẵn sàng! Đang scan...")
 
     mode_emoji = {"quick": "⚡", "normal": "📐", "deep": "🔬"}[mode]
     mode_desc = {
@@ -432,7 +432,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "deep": "chặt (7 tiêu chí — score ≥ 65)",
     }[mode]
 
-    await update.message.reply_text(
+    await update.effective_message.reply_text(
         f"{mode_emoji} Đang scan sideway [{mode_desc}]...\n⏳ Vài giây...",
     )
 
@@ -445,7 +445,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         results = await loop.run_in_executor(None, lambda: scan_sideway(top_n=20, mode=mode))
 
         if not results:
-            await update.message.reply_text(
+            await update.effective_message.reply_text(
                 f"💤 Không tìm mã sideway nào (mode: {mode}).\n"
                 "Thử /sideway quick để nới lỏng tiêu chí."
             )
@@ -469,7 +469,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                 f"ADX:{adx:.0f}"
             )
 
-        await update.message.reply_text("\n".join(lines), parse_mode="HTML")
+        await update.effective_message.reply_text("\n".join(lines), parse_mode="HTML")
 
         # Charts top 5 kèm chi tiết tiêu chí
         for r in results[:5]:
@@ -490,7 +490,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                     f"{'✅' if c.get('obv_higher_highs',{}).get('pass') else '❌'} OBV higher highs",
                     f"{'✅' if c.get('adx_low',{}).get('pass') else '❌'} ADX: {r.get('adx',99):.0f} (<25)",
                 ]
-                await update.message.reply_photo(
+                await update.effective_message.reply_photo(
                     photo=img,
                     caption="\n".join(cap_lines),
                     parse_mode="HTML"
@@ -499,7 +499,7 @@ async def cmd_sideway(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
                 pass
 
     except Exception as e:
-        await update.message.reply_text(f"❌ Lỗi: {e}")
+        await update.effective_message.reply_text(f"❌ Lỗi: {e}")
 
 
 async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
@@ -511,18 +511,19 @@ async def cmd_start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
 # ============================================================
 def main():
     logger.info("🤖 Starting VNStock Telegram Bot...")
-    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app = ApplicationBuilder().token(BOT_TOKEN).connect_timeout(30.0).read_timeout(30.0).get_updates_read_timeout(42.0).build()
 
-    app.add_handler(CommandHandler("start", cmd_start))
-    app.add_handler(CommandHandler("help", cmd_help))
-    app.add_handler(CommandHandler("scan", cmd_scan))
-    app.add_handler(CommandHandler("price", cmd_price))
-    app.add_handler(CommandHandler("top", cmd_top))
-    app.add_handler(CommandHandler("bot", cmd_bot_bottom))
-    app.add_handler(CommandHandler("sideway", cmd_sideway))
+    cmd_filters = filters.COMMAND | filters.UpdateType.CHANNEL_POST
+    app.add_handler(CommandHandler("start", cmd_start, filters=cmd_filters))
+    app.add_handler(CommandHandler("help", cmd_help, filters=cmd_filters))
+    app.add_handler(CommandHandler("scan", cmd_scan, filters=cmd_filters))
+    app.add_handler(CommandHandler("price", cmd_price, filters=cmd_filters))
+    app.add_handler(CommandHandler("top", cmd_top, filters=cmd_filters))
+    app.add_handler(CommandHandler("bot", cmd_bot_bottom, filters=cmd_filters))
+    app.add_handler(CommandHandler("sideway", cmd_sideway, filters=cmd_filters))
 
     logger.info("✅ Bot is running! Send /help in Telegram.")
-    app.run_polling()
+    app.run_polling(drop_pending_updates=True, timeout=60)
 
 
 if __name__ == "__main__":
