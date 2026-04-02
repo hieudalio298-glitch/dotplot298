@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import logging
+import pandas as pd
 from update_financials import FinancialFetcher, SUPABASE_URL, SUPABASE_KEY
 from pydantic import BaseModel
 from typing import List
@@ -113,6 +114,46 @@ async def get_shares(req: SharesRequest):
         return result
     except Exception as e:
         logger.error(f"Error fetching shares: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/oil_prices")
+async def get_oil_prices():
+    logger.info("API oil prices requested since 2026-02-27")
+    try:
+        import yfinance as yf
+        from datetime import datetime
+        
+        # Start of the war as requested
+        start_date = "2026-02-27"
+        # Today's date (April 2, 2026)
+        end_date = datetime.now().strftime("%Y-%m-%d")
+        
+        # BZ=F (Brent), CL=F (WTI), DCB=F (Dubai)
+        symbols = ['BZ=F', 'CL=F', 'DCB=F']
+        df = yf.download(symbols, start=start_date, end=end_date)
+        
+        if df is None or df.empty:
+            logger.warning("No oil price data found")
+            return []
+            
+        # Standardize periods
+        df = df['Close'].reset_index()
+        df['date'] = df['Date'].dt.strftime('%Y-%m-%d')
+        
+        # Format the result nicely
+        result = []
+        for _, row in df.iterrows():
+            result.append({
+                "date": row['date'],
+                "brent": float(row['BZ=F']) if pd.notnull(row['BZ=F']) else None,
+                "wti": float(row['CL=F']) if pd.notnull(row['CL=F']) else None,
+                "dubai": float(row['DCB=F']) if pd.notnull(row['DCB=F']) else None
+            })
+            
+        return result
+        
+    except Exception as e:
+        logger.error(f"Error fetching oil prices: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
