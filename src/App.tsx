@@ -15,6 +15,7 @@ import FinancialChart from './components/FinancialChart';
 import MetricsSidebar from './components/MetricsSidebar';
 import FinancialTable from './components/FinancialTable';
 import IndustryComparison from './components/IndustryComparison';
+import OilPricesChart from './components/OilPricesChart';
 import { AVAILABLE_METRICS } from './types';
 import logo from './assets/logo.png';
 import 'antd/dist/reset.css';
@@ -248,100 +249,122 @@ const App: React.FC = () => {
                                             </div>
                                         </div>
 
-                                        {selectedSymbol ? (
-                                            <AnimatePresence mode="wait">
-                                                <motion.div
-                                                    key={selectedSymbol}
-                                                    initial={{ opacity: 0 }}
-                                                    animate={{ opacity: 1 }}
-                                                    exit={{ opacity: 0 }}
-                                                    transition={{ duration: 0.2 }}
-                                                >
-                                                    <Tabs
-                                                        defaultActiveKey="income"
-                                                        className="trading-tabs font-mono"
-                                                        items={[
-                                                            {
-                                                                label: 'CHART ANALYSIS',
-                                                                key: 'chart',
-                                                                children: (
-                                                                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-                                                                        <div className="lg:col-span-1">
-                                                                            <div className="border border-[#333] bg-black h-[calc(100vh-200px)] overflow-y-auto sticky top-20">
-                                                                                <div className="p-2 border-b border-[#333] flex items-center justify-between bg-[#0a0a0a]">
-                                                                                    <span className="text-[10px] font-bold text-[#ff9800] uppercase">Data Metrics</span>
-                                                                                    <Tooltip title="RESET VIEW">
-                                                                                        <RefreshCw
-                                                                                            size={12}
-                                                                                            className="cursor-pointer text-[#666] hover:text-[#ff9800]"
-                                                                                            onClick={resetMetrics}
-                                                                                        />
-                                                                                    </Tooltip>
-                                                                                </div>
-                                                                                <div className="p-2">
-                                                                                    <MetricsSidebar />
-                                                                                </div>
-                                                                            </div>
-                                                                        </div>
-                                                                        <div className="lg:col-span-4 border border-[#333] bg-black">
-                                                                            <FinancialChart
-                                                                                symbol={selectedSymbol}
-                                                                                user={user}
-                                                                                refreshTrigger={refreshTrigger}
+                                        <Tabs
+                                            defaultActiveKey="chart"
+                                            className="trading-tabs font-mono"
+                                            items={[
+                                                {
+                                                    label: 'CHART ANALYSIS',
+                                                    key: 'chart',
+                                                    children: selectedSymbol ? (
+                                                        <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+                                                            <div className="lg:col-span-1">
+                                                                <div className="border border-[#333] bg-black h-[calc(100vh-200px)] overflow-y-auto sticky top-20">
+                                                                    <div className="p-2 border-b border-[#333] flex items-center justify-between bg-[#0a0a0a]">
+                                                                        <span className="text-[10px] font-bold text-[#ff9800] uppercase">Data Metrics</span>
+                                                                        <Tooltip title="RESET VIEW">
+                                                                            <RefreshCw
+                                                                                size={12}
+                                                                                className="cursor-pointer text-[#666] hover:text-[#ff9800]"
+                                                                                onClick={resetMetrics}
                                                                             />
-                                                                        </div>
+                                                                        </Tooltip>
                                                                     </div>
-                                                                )
-                                                            },
-                                                            {
-                                                                label: 'FINANCIAL STATEMENTS',
-                                                                key: 'statement',
-                                                                children: (
-                                                                    <Tabs
-                                                                        type="card"
-                                                                        className="sub-tabs"
-                                                                        items={[
-                                                                            {
-                                                                                label: 'INCOME STATEMENT (VAS)',
-                                                                                key: 'income',
-                                                                                children: <VASIncomeStatement symbol={selectedSymbol} />
-                                                                            },
-                                                                            {
-                                                                                label: 'BALANCE SHEET (VAS)',
-                                                                                key: 'balance',
-                                                                                children: <VASBalanceSheet symbol={selectedSymbol} />
-                                                                            },
-                                                                            {
-                                                                                label: 'CASH FLOW (VAS)',
-                                                                                key: 'cashflow',
-                                                                                children: <VASCashFlow symbol={selectedSymbol} />
-                                                                            }
-                                                                        ]}
-                                                                    />
-                                                                )
-                                                            },
-                                                            {
-                                                                label: 'KEY RATIOS',
-                                                                key: 'ratio',
-                                                                children: <FinancialTable symbol={selectedSymbol} type="ratio" />
-                                                            },
-                                                            {
-                                                                label: 'NGÀNH',
-                                                                key: 'industry',
-                                                                children: <IndustryComparison user={user} />
-                                                            }
-                                                        ]}
-                                                    />
-                                                </motion.div>
-                                            </AnimatePresence>
-                                        ) : (
-                                            <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4 opacity-50">
-                                                <div className="w-16 h-16 border border-[#333] flex items-center justify-center rounded-sm">
-                                                    <Search size={32} className="text-[#666]" />
-                                                </div>
-                                                <p className="text-sm font-mono text-[#666] uppercase">Initialize Terminal: Select Ticker</p>
-                                            </div>
-                                        )}
+                                                                    <div className="p-2">
+                                                                        <MetricsSidebar />
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                            <div className="lg:col-span-4 border border-[#333] bg-black">
+                                                                <FinancialChart
+                                                                    symbol={selectedSymbol}
+                                                                    user={user}
+                                                                    refreshTrigger={refreshTrigger}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    ) : (
+                                                        <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                                            <div className="w-16 h-16 border border-[#333] flex items-center justify-center rounded-sm">
+                                                                <Search size={32} className="text-[#666]" />
+                                                            </div>
+                                                            <p className="text-sm font-mono text-[#666] uppercase">Select a ticker to view chart analysis</p>
+                                                        </div>
+                                                    )
+                                                },
+                                                {
+                                                    label: 'FINANCIAL STATEMENTS',
+                                                    key: 'statement',
+                                                    children: selectedSymbol ? (
+                                                        <Tabs
+                                                            type="card"
+                                                            className="sub-tabs"
+                                                            items={[
+                                                                {
+                                                                    label: 'INCOME STATEMENT (VAS)',
+                                                                    key: 'income',
+                                                                    children: <VASIncomeStatement symbol={selectedSymbol} />
+                                                                },
+                                                                {
+                                                                    label: 'BALANCE SHEET (VAS)',
+                                                                    key: 'balance',
+                                                                    children: <VASBalanceSheet symbol={selectedSymbol} />
+                                                                },
+                                                                {
+                                                                    label: 'CASH FLOW (VAS)',
+                                                                    key: 'cashflow',
+                                                                    children: <VASCashFlow symbol={selectedSymbol} />
+                                                                }
+                                                            ]}
+                                                        />
+                                                    ) : (
+                                                        <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                                            <div className="w-16 h-16 border border-[#333] flex items-center justify-center rounded-sm">
+                                                                <Search size={32} className="text-[#666]" />
+                                                            </div>
+                                                            <p className="text-sm font-mono text-[#666] uppercase">Select a ticker to view financial statements</p>
+                                                        </div>
+                                                    )
+                                                },
+                                                {
+                                                    label: 'KEY RATIOS',
+                                                    key: 'ratio',
+                                                    children: selectedSymbol ? (
+                                                        <FinancialTable symbol={selectedSymbol} type="ratio" />
+                                                    ) : (
+                                                        <div className="h-[60vh] flex flex-col items-center justify-center text-center space-y-4 opacity-50">
+                                                            <div className="w-16 h-16 border border-[#333] flex items-center justify-center rounded-sm">
+                                                                <Search size={32} className="text-[#666]" />
+                                                            </div>
+                                                            <p className="text-sm font-mono text-[#666] uppercase">Select a ticker to view key ratios</p>
+                                                        </div>
+                                                    )
+                                                },
+                                                {
+                                                    label: 'NGÀNH',
+                                                    key: 'industry',
+                                                    children: <IndustryComparison user={user} />
+                                                },
+                                                {
+                                                    label: 'CHIẾN SỰ',
+                                                    key: 'war',
+                                                    children: (
+                                                        <div className="space-y-4">
+                                                            <OilPricesChart />
+                                                            <div className="w-full h-[calc(100vh-600px)] border border-[#333] bg-[#0a0a0a] overflow-hidden">
+                                                                <iframe
+                                                                    src="https://dotplot298.vercel.app"
+                                                                    className="w-full h-full border-none"
+                                                                    title="Chiến Sự"
+                                                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                                    allowFullScreen
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )
+                                                }
+                                            ]}
+                                        />
                                     </motion.div>
                                 </Content>
                             </Layout>
