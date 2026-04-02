@@ -1,6 +1,7 @@
+
 import React, { useEffect, useState, useMemo } from 'react';
 import { Card, Select, Button, Table, Empty, Spin, Input, Modal, Tooltip, Space, Dropdown, Statistic, Tag, Popover, Checkbox, Divider } from 'antd';
-import { Plus, Trash2, Save, FolderOpen, BarChart3, LineChart, TrendingUp, Search, RefreshCw, Settings, Eye, EyeOff, Download, Layers, Activity, Maximize2, Minimize2 } from 'lucide-react';
+import { BarChart3, TrendingUp, Filter, Download, Plus, Trash2, Maximize2, Minimize2, LineChart, BarChart, Layers, Settings2, MoreHorizontal, Check, X, Sparkles, FolderOpen, Save, Search, Eye, EyeOff, RefreshCw, Activity, Settings } from 'lucide-react';
 import ReactECharts from 'echarts-for-react';
 import { supabase } from '../supabaseClient';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
@@ -13,14 +14,32 @@ interface StockSymbol {
 
 interface Watchlist {
     id: string;
+    user_id: string;
     name: string;
     symbols: string[];
+    created_at: string;
+    updated_at: string;
 }
 
 interface FinancialData {
     symbol: string;
     period: string;
     [key: string]: any;
+}
+
+interface ChartConfig {
+    id: string;
+    metric: string;
+    period: 'year' | 'quarter';
+    type: 'bar' | 'line' | 'stacked';
+}
+
+interface ChartTemplate {
+    id: string;
+    user_id: string;
+    name: string;
+    config: ChartConfig[];
+    created_at: string;
 }
 
 const CHART_COLORS = [
@@ -42,23 +61,76 @@ interface Props {
     user: SupabaseUser | null;
 }
 
+const CALCULATED_METRICS = {
+    'Biên lợi nhuận gộp (%)': {
+        numerator: ['5. Lợi nhuận gộp về bán hàng và cung cấp dịch vụ', 'Tổng lợi nhuận gộp', 'Lợi nhuận gộp', '14. Lợi nhuận gộp hoạt động kinh doanh bảo hiểm', 'I. Thu nhập lãi thuần'], // Bank uses Net Interest Income as proxy? Maybe not standard but useful.
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', '1. Doanh thu phí bảo hiểm thuần', 'I. Thu nhập lãi thuần'], // Using Net Interest Income as revenue for Banks
+        type: 'percentage'
+    },
+    'Biên lợi nhuận ròng (%)': {
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', '1. Doanh thu phí bảo hiểm thuần', 'I. Thu nhập lãi thuần', 'Doanh thu thuần HĐKD BH'],
+        type: 'percentage'
+    },
+    'ROA (%)': {
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['270. Tổng cộng tài sản', 'Tổng cộng tài sản', 'TỔNG CỘNG TÀI SẢN', 'Tài sản'],
+        type: 'percentage'
+    },
+    'ROE (%)': {
+        numerator: ['60. Lợi nhuận sau thuế thu nhập doanh nghiệp', 'Lợi nhuận sau thuế', 'XI. Lợi nhuận sau thuế', 'XIII. Lợi nhuận sau thuế', '29. Lợi nhuận sau thuế thu nhập doanh nghiệp'],
+        denominator: ['400. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'B. VỐN CHỦ SỞ HỮU', 'VIII. Vốn và các quỹ', 'Vốn và các quỹ'],
+        type: 'percentage'
+    },
+    'Tỷ số thanh toán hiện hành': {
+        numerator: ['A. TÀI SẢN NGẮN HẠN', 'Tài sản ngắn hạn'],
+        denominator: ['I. Nợ ngắn hạn', 'Nợ ngắn hạn'],
+        type: 'number'
+    },
+    'Tỷ số Nợ/Vốn chủ sở hữu': {
+        numerator: ['A. NỢ PHẢI TRẢ', 'Nợ phải trả', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['B. VỐN CHỦ SỞ HỮU', 'Vốn chủ sở hữu', 'VIII. Vốn và các quỹ'],
+        type: 'number'
+    },
+    'Tỷ số nợ trên vốn chủ sở hữu': {
+        numerator: ['300. Nợ phải trả', 'Nợ phải trả', 'A. NỢ PHẢI TRẢ', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['400. Vốn chủ sở hữu', 'Vốn chủ sở hữu', 'B. VỐN CHỦ SỞ HỮU', 'VIII. Vốn và các quỹ', 'Vốn và các quỹ'],
+        type: 'ratio'
+    },
+    'Tỷ số nợ trên tổng tài sản': {
+        numerator: ['300. Nợ phải trả', 'Nợ phải trả', 'A. NỢ PHẢI TRẢ', 'TỔNG NỢ PHẢI TRẢ'],
+        denominator: ['270. Tổng cộng tài sản', 'Tổng cộng tài sản', 'TỔNG CỘNG TÀI SẢN'],
+        type: 'ratio'
+    },
+    'Vòng quay tài sản': {
+        numerator: ['3. Doanh thu thuần về bán hàng và cung cấp dịch vụ', 'Doanh thu thuần', 'I. Thu nhập lãi thuần', '5. Doanh thu thuần HĐKD BH (10=03+04)'],
+        denominator: ['TỔNG CỘNG TÀI SẢN', 'Tổng cộng tài sản'],
+        type: 'number'
+    }
+};
+
 const IndustryComparison: React.FC<Props> = ({ user }) => {
     // State
     const [loading, setLoading] = useState(false);
     const [allSymbols, setAllSymbols] = useState<StockSymbol[]>([]);
     const [selectedSymbols, setSelectedSymbols] = useState<string[]>([]);
+    const [searchResults, setSearchResults] = useState<StockSymbol[]>([]);
+    const [searching, setSearching] = useState(false);
     const [watchlists, setWatchlists] = useState<Watchlist[]>([]);
     const [currentWatchlistId, setCurrentWatchlistId] = useState<string | null>(null);
     const [watchlistName, setWatchlistName] = useState('');
     const [showSaveModal, setShowSaveModal] = useState(false);
     const [showLoadModal, setShowLoadModal] = useState(false);
+    const [savingWatchlist, setSavingWatchlist] = useState(false);
+    const [loadingWatchlists, setLoadingWatchlists] = useState(false);
 
-    const [financialData, setFinancialData] = useState<Record<string, FinancialData[]>>({});
+    const [financialData, setFinancialData] = useState<Record<string, { year: FinancialData[], quarter: FinancialData[] }>>({});
+
     const [selectedMetrics, setSelectedMetrics] = useState<string[]>(['Chỉ số giá thị trường trên thu nhập (P/E)', 'Giá trị sổ sách của cổ phiếu (BVPS)', 'Thu nhập trên mỗi cổ phần của 4 quý gần nhất (EPS)']);
     const [period, setPeriod] = useState<'year' | 'quarter'>('year');
     const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear() - 1);
     const [selectedQuarter, setSelectedQuarter] = useState<number>(1);
-    const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)');
+
 
     const [availableKeys, setAvailableKeys] = useState<{
         ratios: Set<string>;
@@ -71,7 +143,21 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         balance: new Set(),
         cashflow: new Set()
     });
-    const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar');
+
+    const [charts, setCharts] = useState<ChartConfig[]>([
+        { id: '1', metric: 'Chỉ số giá thị trường trên thu nhập (P/E)', period: 'year', type: 'bar' }
+    ]);
+
+    const [templates, setTemplates] = useState<ChartTemplate[]>([]);
+    const [showTemplateModal, setShowTemplateModal] = useState(false);
+    const [showSaveTemplateModal, setShowSaveTemplateModal] = useState(false);
+    const [templateName, setTemplateName] = useState('');
+    const [templateInput, setTemplateInput] = useState(''); // For searching/filtering templates if needed, or duplicate state? Re-use templateName for saving.
+    const [loadingTemplates, setLoadingTemplates] = useState(false);
+
+    const [chartMetric, setChartMetric] = useState<string>('Chỉ số giá thị trường trên thu nhập (P/E)'); // Keep for fallback logic
+    const [chartType, setChartType] = useState<'bar' | 'line' | 'stacked'>('bar'); // Keep for fallback logic
+
     const [searchSymbol, setSearchSymbol] = useState('');
     const [metricSearch, setMetricSearch] = useState('');
     const [showMetricModal, setShowMetricModal] = useState(false);
@@ -80,14 +166,42 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     const [maximizedPanel, setMaximizedPanel] = useState<'none' | 'left' | 'right'>('none');
     const [isFullScreen, setIsFullScreen] = useState(false);
 
+    // New states for chart management
+    const [metricModalVisible, setMetricModalVisible] = useState(false);
+    const [currentChartId, setCurrentChartId] = useState<string | null>(null);
+    const [zoomedChartId, setZoomedChartId] = useState<string | null>(null);
+    const [chartMetricSearch, setChartMetricSearch] = useState('');
+
+
     // Fetch all symbols
     useEffect(() => {
         const fetchSymbols = async () => {
-            const { data } = await supabase
+            const { data, error } = await supabase
                 .from('stock_symbols')
                 .select('symbol, company_name, icb_name2')
-                .order('symbol');
-            if (data) setAllSymbols(data);
+                .order('symbol')
+                .range(0, 9999); // Fetch up to 10000 symbols (bypasses default 1000 limit)
+
+            if (error) {
+                console.error('Error fetching symbols:', error);
+                return;
+            }
+
+            if (data) {
+                console.log(`✅ Loaded ${data.length} symbols from database`);
+                console.log('First 5:', data.slice(0, 5).map(s => s.symbol));
+                console.log('Last 5:', data.slice(-5).map(s => s.symbol));
+
+                // Check if specific symbols exist
+                const testSymbols = ['VND', 'SSI', 'VCB', 'VPB', 'HCM', 'HPG', 'VNM'];
+                const found = testSymbols.filter(sym => data.some(d => d.symbol === sym));
+                const missing = testSymbols.filter(sym => !data.some(d => d.symbol === sym));
+
+                if (found.length > 0) console.log('✅ Found symbols:', found);
+                if (missing.length > 0) console.warn('⚠️ Missing symbols:', missing);
+
+                setAllSymbols(data);
+            }
         };
         fetchSymbols();
     }, []);
@@ -97,21 +211,99 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         if (user) loadWatchlists();
     }, [user]);
 
-    // Fetch financial data when symbols change
+    // Fetch financial data when symbols change. Note: logic changed to fetch ALL period types.
     useEffect(() => {
         if (selectedSymbols.length > 0) {
             fetchFinancialData();
         }
-    }, [selectedSymbols, period]);
+    }, [selectedSymbols]); // Remove period dependency as we fetch both now
 
     const loadWatchlists = async () => {
         if (!user) return;
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('user_watchlists')
             .select('*')
             .eq('user_id', user.id)
             .order('updated_at', { ascending: false });
+
+        if (error) {
+            // Table might not exist yet - silently ignore
+            console.log('Watchlists not available (table may not exist)');
+            return;
+        }
+
         if (data) setWatchlists(data);
+    };
+
+    const saveWatchlist = async () => {
+        if (!user || !watchlistName.trim()) {
+            alert('Vui lòng nhập tên watchlist');
+            return;
+        }
+
+        if (selectedSymbols.length === 0) {
+            alert('Vui lòng chọn ít nhất 1 mã chứng khoán');
+            return;
+        }
+
+        setSavingWatchlist(true);
+
+        const watchlistData = {
+            user_id: user.id,
+            name: watchlistName.trim(),
+            symbols: selectedSymbols
+        };
+
+        const { error } = await supabase
+            .from('user_watchlists')
+            .upsert(watchlistData, {
+                onConflict: 'user_id,name'
+            });
+
+        if (error) {
+            console.error('Error saving watchlist:', error);
+            alert('Không thể lưu watchlist');
+        } else {
+            alert(`Watchlist "${watchlistName}" đã được lưu`);
+            setWatchlistName('');
+            setShowSaveModal(false);
+            loadWatchlists(); // Refresh list
+        }
+
+        setSavingWatchlist(false);
+    };
+
+    const applyWatchlist = async (watchlist: Watchlist) => {
+        try {
+            // Simply load the symbols
+            setSelectedSymbols(watchlist.symbols);
+            setShowLoadModal(false);
+
+            // Fetch financial data for the symbols
+            fetchFinancialData();
+        } catch (error) {
+            console.error('Error applying watchlist:', error);
+            alert('Không thể load watchlist');
+        }
+    };
+
+    const deleteWatchlist = async (watchlistId: string, watchlistName: string) => {
+        if (!confirm(`Bạn có chắc muốn xóa watchlist "${watchlistName}" ? `)) {
+            return;
+        }
+
+        const { error } = await supabase
+            .from('user_watchlists')
+            .delete()
+            .eq('id', watchlistId);
+
+        if (error) {
+            console.error('Error deleting watchlist:', error);
+            alert('Không thể xóa watchlist');
+        } else {
+            alert(`Watchlist "${watchlistName}" đã được xóa`);
+            loadWatchlists(); // Refresh list
+        }
     };
 
     const fetchFinancialData = async () => {
@@ -119,7 +311,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         setLoading(true);
 
         try {
-            const results: Record<string, FinancialData[]> = {};
+            const results: Record<string, { year: FinancialData[], quarter: FinancialData[] }> = {};
             const newKeys = {
                 ratios: new Set<string>(),
                 income: new Set<string>(),
@@ -128,39 +320,44 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             };
 
             await Promise.all(selectedSymbols.map(async (symbol) => {
+                // Fetch ALL period types (year and quarter)
                 const [ratioRes, incomeRes, balanceRes, cashflowRes] = await Promise.all([
-                    supabase.from('financial_ratios').select('data').eq('symbol', symbol).eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'income_statement').eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'balance_sheet').eq('period_type', period),
-                    supabase.from('financial_statements').select('data').eq('symbol', symbol).eq('statement_type', 'cash_flow').eq('period_type', period)
+                    supabase.from('financial_ratios').select('data, period_type').eq('symbol', symbol),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'income_statement'),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'balance_sheet'),
+                    supabase.from('financial_statements').select('data, period_type').eq('symbol', symbol).eq('statement_type', 'cash_flow')
                 ]);
 
-                const dataMap = new Map();
+                const dataMapYear = new Map();
+                const dataMapQuarter = new Map();
 
                 const processSource = (res: any, category: keyof typeof newKeys) => {
                     if (res.data) {
                         res.data.forEach((row: any) => {
+                            const pType = row.period_type; // 'year' or 'quarter'
+                            const targetMap = pType === 'year' ? dataMapYear : dataMapQuarter;
+
                             const innerData = Array.isArray(row.data) ? row.data : [row.data];
                             innerData.forEach((d: any) => {
                                 const year = d.Năm || d.year || d.Year || d.report_year;
                                 const quarter = d.Quý || d.quarter || d.Quarter || d.report_quarter || 0;
                                 if (!year) return;
 
-                                const key = `${year}-${quarter}`;
-                                const existing = dataMap.get(key) || {};
+                                const key = pType === 'year' ? `${year} ` : `${year} -${quarter} `;
+                                const existing = targetMap.get(key) || {};
 
                                 const cleanD: any = {};
                                 Object.keys(d).forEach(k => {
-                                    // Trim key and remove leading underscores
-                                    const ck = k.trim().replace(/^_+/, '');
+                                    // Trim key, remove leading underscores, and normalize unicode
+                                    const ck = k.trim().replace(/^_+/, '').normalize('NFC');
                                     cleanD[ck] = d[k];
 
-                                    if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter'].includes(ck)) {
+                                    if (!['symbol', 'period', 'year', 'quarter', 'year_quarter', 'Quarter', 'Year', 'Năm', 'Quý', 'report_year', 'report_quarter', 'period_type'].includes(ck)) {
                                         newKeys[category].add(ck);
                                     }
                                 });
 
-                                dataMap.set(key, { ...existing, ...cleanD });
+                                targetMap.set(key, { ...existing, ...cleanD });
                             });
                         });
                     }
@@ -171,16 +368,23 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 processSource(balanceRes, 'balance');
                 processSource(cashflowRes, 'cashflow');
 
-                results[symbol] = Array.from(dataMap.values()).map(d => ({
-                    ...d,
-                    symbol,
-                    period: period === 'year' ? `${d.Năm || d.year || d.Year}` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
-                    year: parseInt(d.Năm || d.year || d.Year || 0),
-                    quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
-                })).sort((a, b) => {
-                    if (b.year !== a.year) return b.year - a.year;
-                    return b.quarter - a.quarter;
-                });
+                const formatData = (map: Map<any, any>, isYear: boolean) => {
+                    return Array.from(map.values()).map(d => ({
+                        ...d,
+                        symbol,
+                        period: isYear ? `${d.Năm || d.year || d.Year} ` : `Q${d.Quý || d.quarter || d.Quarter}/${d.Năm || d.year || d.Year}`,
+                        year: parseInt(d.Năm || d.year || d.Year || 0),
+                        quarter: parseInt(d.Quý || d.quarter || d.Quarter || 0)
+                    })).sort((a, b) => {
+                        if (b.year !== a.year) return b.year - a.year;
+                        return b.quarter - a.quarter;
+                    });
+                };
+
+                results[symbol] = {
+                    year: formatData(dataMapYear, true),
+                    quarter: formatData(dataMapQuarter, false)
+                };
             }));
 
             console.log(`Fetched financial data for ${selectedSymbols.length} symbols. Found keys:`,
@@ -209,44 +413,62 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
 
     const removeSymbol = (symbol: string) => {
         setSelectedSymbols(selectedSymbols.filter(s => s !== symbol));
+        // Also remove financial data for this symbol
+        setFinancialData(prevData => {
+            const newData = { ...prevData };
+            delete newData[symbol];
+            return newData;
+        });
     };
 
-    const saveWatchlist = async () => {
-        if (!user || !watchlistName.trim()) return;
+    // Server-side search function
+    const searchSymbols = async (searchTerm: string): Promise<StockSymbol[]> => {
+        if (!searchTerm || searchTerm.trim().length < 1) {
+            return [];
+        }
+
+        const term = searchTerm.trim();
+        console.log(`[SERVER SEARCH] Searching for: "${term}"`);
 
         try {
-            const watchlistData = {
-                user_id: user.id,
-                name: watchlistName,
-                symbols: selectedSymbols,
-                updated_at: new Date().toISOString()
-            };
+            const { data, error } = await supabase
+                .from('stock_symbols')
+                .select('symbol, company_name, icb_name2')
+                .or(`symbol.ilike.%${term}%,company_name.ilike.%${term}%`)
+                .order('symbol')
+                .limit(200);
 
-            if (currentWatchlistId) {
-                await supabase.from('user_watchlists').update(watchlistData).eq('id', currentWatchlistId);
-            } else {
-                const { data } = await supabase.from('user_watchlists').insert(watchlistData).select().single();
-                if (data) setCurrentWatchlistId(data.id);
+            if (error) {
+                console.error('[SERVER SEARCH] Error:', error);
+                return [];
             }
 
-            setShowSaveModal(false);
-            loadWatchlists();
+            console.log(`[SERVER SEARCH] Found ${data?.length || 0} results`);
+            return data || [];
         } catch (e) {
-            console.error(e);
+            console.error('[SERVER SEARCH] Exception:', e);
+            return [];
         }
     };
 
-    const loadWatchlist = (watchlist: Watchlist) => {
-        setSelectedSymbols(watchlist.symbols);
-        setCurrentWatchlistId(watchlist.id);
-        setWatchlistName(watchlist.name);
-        setShowLoadModal(false);
+    // Handle search input with server-side query
+    const handleSearch = async (value: string) => {
+        const trimmed = value.trim();
+        setSearchSymbol(trimmed);
+
+        if (!trimmed || trimmed.length < 1) {
+            setSearchResults([]);
+            setSearching(false);
+            return;
+        }
+
+        setSearching(true);
+        const results = await searchSymbols(trimmed);
+        setSearchResults(results);
+        setSearching(false);
     };
 
-    const deleteWatchlist = async (id: string) => {
-        await supabase.from('user_watchlists').delete().eq('id', id);
-        loadWatchlists();
-    };
+
 
     // Helper to parse numeric values from strings
     const parseValue = (v: any) => {
@@ -269,12 +491,40 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
         return val.toFixed(precision);
     };
 
+    // Helper to find value with fuzzy matching
+    const getValue = (data: Record<string, any>, key: string) => {
+        if (!data) return undefined;
+
+        // 1. Exact match
+        if (data[key] !== undefined) return parseValue(data[key]);
+
+        // 2. Normalized match
+        const normalizeKey = (k: string) => {
+            return k.toLowerCase()
+                .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Remove accents
+                .replace(/\(.*\)/g, "") // Remove suffixes like (270=...)
+                .replace(/^[0-9ivx]+\.\s*/, "") // Remove prefixes like "1. ", "II. "
+                .replace(/[^a-z0-9]/g, ""); // Remove non-alphanumeric
+        };
+
+        const targetKey = normalizeKey(key);
+        const foundKey = Object.keys(data).find(k => normalizeKey(k) === targetKey || normalizeKey(k).includes(targetKey)); // Added includes for robustness
+
+        if (foundKey) {
+            // console.log(`[Fuzzy Match] '${key}' -> '${foundKey}'`);
+            return parseValue(data[foundKey]);
+        }
+
+        return undefined;
+    };
+
     // Get comparison data for selected year/quarter
     const comparisonData = useMemo(() => {
         if (selectedSymbols.length === 0) return [];
 
-        return selectedSymbols.map(symbol => {
-            const data = financialData[symbol] || [];
+        return selectedSymbols.map((symbol, symbolIdx) => {
+            const dataObj = financialData[symbol] || { year: [], quarter: [] };
+            const data = period === 'year' ? dataObj.year : dataObj.quarter;
             // Find data for selected year and quarter
             const yearDataMatch = data.find(d => {
                 const yMatch = d.year === selectedYear;
@@ -286,13 +536,174 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
             const targetData = (yearDataMatch || {}) as Record<string, any>;
 
             const row: any = { symbol, _hasData: hasData };
-            selectedMetrics.forEach(metric => {
-                const val = targetData[metric];
-                row[metric] = parseValue(val);
+            selectedMetrics.forEach((metric, idx) => {
+                // Check if it's a calculated metric
+                if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                    const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
+
+                    const getMetricValue = (keys: string | string[]) => {
+                        const keyList = Array.isArray(keys) ? keys : [keys];
+                        for (const k of keyList) {
+                            const val = getValue(targetData, k);
+                            if (val !== undefined) return val;
+                        }
+                        return undefined;
+                    };
+
+                    const num = getMetricValue(config.numerator);
+                    const den = getMetricValue(config.denominator);
+
+                    if (num !== undefined && den !== undefined && den !== 0) {
+                        const val = num / den;
+                        row[metric] = config.type === 'percentage' ? val * 100 : val;
+                    } else {
+                        // DEBUG: Log why it failed
+                        if (symbolIdx === 0) { // Only log for first symbol to avoid spam
+                            console.log(`[Calc Failed] ${metric}:`);
+                            console.log(`  Expected Numerator keys: ${Array.isArray(config.numerator) ? config.numerator.join(', ') : config.numerator}`);
+                            console.log(`  Found Numerator: ${num}`);
+                            console.log(`  Expected Denominator keys: ${Array.isArray(config.denominator) ? config.denominator.join(', ') : config.denominator}`);
+                            console.log(`  Found Denominator: ${den}`);
+
+                            if (num === undefined && targetData && Object.keys(targetData).length > 0) {
+                                // console.log('Available keys:', Object.keys(targetData).slice(0, 20));
+                            }
+                        }
+                        row[metric] = undefined;
+                    }
+                } else {
+                    // Standard metric
+                    const val = targetData[metric];
+                    row[metric] = parseValue(val);
+                }
             });
             return row;
         });
     }, [financialData, selectedSymbols, selectedMetrics, selectedYear, selectedQuarter, period]);
+
+    const exportToCSV = () => {
+        // Use the same periods as the table
+        const periods = tableColumns.slice(1).map(c => c.title as string);
+        const headers = ['Mã', 'Chỉ tiêu', ...periods];
+        const csvRows = [headers.join(',')];
+
+        selectedSymbols.forEach(symbol => {
+            const dataObj = financialData[symbol];
+            if (!dataObj) return;
+
+            const data = period === 'year' ? dataObj.year : dataObj.quarter;
+
+            selectedMetrics.forEach(metric => {
+                const row = [symbol, metric];
+                periods.forEach(p => {
+                    const match = data.find((d: any) => d.period === p);
+                    if (!match) {
+                        row.push('');
+                        return;
+                    }
+
+                    let val: number | undefined;
+
+                    if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                        const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
+                        const getMetricValue = (keys: string | string[]) => {
+                            const keyList = Array.isArray(keys) ? keys : [keys];
+                            for (const k of keyList) {
+                                const val = getValue(match, k);
+                                if (val !== undefined) return val;
+                            }
+                            return undefined;
+                        };
+                        const num = getMetricValue(config.numerator);
+                        const den = getMetricValue(config.denominator);
+                        if (num !== undefined && den !== undefined && den !== 0) {
+                            val = num / den;
+                            // Export raw value, let user format
+                        }
+                    } else {
+                        val = getValue(match, metric);
+                    }
+
+                    row.push(val !== undefined ? val.toString() : '');
+                });
+                csvRows.push(row.join(','));
+            });
+        });
+
+        const blob = new Blob([csvRows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.setAttribute('href', url);
+        link.setAttribute('download', `financial_comparison_${new Date().toISOString().slice(0, 10)}.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    // --- Template Logic ---
+    const fetchTemplates = async () => {
+        if (!user) return;
+        setLoadingTemplates(true);
+        const { data, error } = await supabase
+            .from('chart_templates')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('Error fetching templates:', error);
+        } else {
+            setTemplates(data || []);
+        }
+        setLoadingTemplates(false);
+    };
+
+    const saveTemplate = async () => {
+        if (!user || !templateName.trim()) return;
+        setSavingWatchlist(true); // Using this for spinner/loading visual
+
+        try {
+            const { error } = await supabase.from('chart_templates').insert({
+                user_id: user.id,
+                name: templateName.trim(),
+                config: charts
+            });
+
+            if (error) throw error;
+
+            setTemplateName('');
+            setShowSaveTemplateModal(false);
+            fetchTemplates();
+        } catch (e) {
+            console.error('Error saving template:', e);
+            alert('Lỗi khi lưu mẫu biểu đồ (Có thể do chưa tạo bảng CSDL).');
+        }
+        setSavingWatchlist(false);
+    };
+
+    const deleteTemplate = async (id: string) => {
+        if (!user) return;
+        const { error } = await supabase.from('chart_templates').delete().eq('id', id);
+        if (!error) {
+            setTemplates(templates.filter(t => t.id !== id));
+        }
+    };
+
+    const applyTemplate = (template: ChartTemplate) => {
+        try {
+            const newCharts = template.config.map(c => ({ ...c, id: Date.now() + Math.random().toString() }));
+            setCharts(newCharts);
+            setShowTemplateModal(false);
+        } catch (e) {
+            console.error('Error applying template', e);
+        }
+    };
+
+    useEffect(() => {
+        if (showTemplateModal && user) {
+            fetchTemplates();
+        }
+    }, [showTemplateModal, user]);
 
     // Statistics
     const statistics = useMemo(() => {
@@ -325,127 +736,214 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [comparisonData, selectedMetrics]);
 
     // Grouping metrics for the specialized selector
-    const metricGroups = useMemo(() => {
-        const groups = [
-            { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
-            { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
-            { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
-            { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
-        ];
+    // Base grouping of metrics (unfiltered)
+    const baseMetricGroups = useMemo(() => [
+        { key: 'ratios', name: 'Key Ratios', color: '#ff9800', keys: Array.from(availableKeys.ratios) },
+        { key: 'calculated', name: 'Chỉ số tính toán (Advanced)', color: '#e91e63', keys: Object.keys(CALCULATED_METRICS) },
+        { key: 'income', name: 'Báo cáo thu nhập', color: '#00e676', keys: Array.from(availableKeys.income) },
+        { key: 'balance', name: 'Bảng cân đối kế toán', color: '#2196f3', keys: Array.from(availableKeys.balance) },
+        { key: 'cashflow', name: 'Lưu chuyển tiền tệ', color: '#9c27b0', keys: Array.from(availableKeys.cashflow) },
+    ], [availableKeys]);
 
-        return groups.map(g => ({
+    // Derived groups for Table (filtered by metricSearch)
+    const filteredMetricGroups = useMemo(() => {
+        return baseMetricGroups.map(g => ({
             ...g,
             filteredKeys: g.keys.filter(k =>
                 !metricSearch || k.toLowerCase().includes(metricSearch.toLowerCase())
             ).sort()
         }));
-    }, [availableKeys, metricSearch]);
+    }, [baseMetricGroups, metricSearch]);
 
-    // Chart options - Independent Time Series
-    const chartOptions = useMemo(() => {
-        if (selectedSymbols.length === 0 || !chartMetric) return {};
+    // Derived groups for Chart (filtered by chartMetricSearch)
+    const chartMetricGroups = useMemo(() => {
+        return baseMetricGroups.map(g => ({
+            ...g,
+            filteredKeys: g.keys.filter(k =>
+                !chartMetricSearch || k.toLowerCase().includes(chartMetricSearch.toLowerCase())
+            ).sort()
+        }));
+    }, [baseMetricGroups, chartMetricSearch]);
 
-        // 1. Collect all unique time periods across all selected symbols
-        const periodsSet = new Set<string>();
-        selectedSymbols.forEach(symbol => {
-            const data = financialData[symbol] || [];
-            data.forEach(d => periodsSet.add(d.period));
+    // Generate chart options based on config
+    const getChartOption = (config: ChartConfig, isZoomed: boolean) => {
+        const { metric, period: chartPeriod, type } = config;
+
+        // 1. Collect all periods from RELEVANT data (year or quarter)
+        const allPeriods = new Set<string>();
+        Object.values(financialData).forEach(dataObj => {
+            const data = chartPeriod === 'year' ? dataObj.year : dataObj.quarter;
+            data.forEach((d: any) => allPeriods.add(d.period));
         });
 
-        // 2. Sort periods chronologically (Year -> Quarter)
-        const sortedPeriods = Array.from(periodsSet).sort((a, b) => {
-            const parsePeriod = (p: string) => {
+        // Sort periods chronologically
+        const sortedPeriods = Array.from(allPeriods).sort((a, b) => {
+            // Extract year/quarter from string "2023" or "Q1/2023"
+            const parseP = (p: string) => {
                 if (p.startsWith('Q')) {
-                    const [qPart, yPart] = p.split('/');
-                    return parseInt(yPart) * 10 + parseInt(qPart.slice(1));
+                    const [q, y] = p.replace('Q', '').split('/');
+                    return parseInt(y) * 10 + parseInt(q);
                 }
                 return parseInt(p) * 10;
             };
-            return parsePeriod(a) - parsePeriod(b);
+            return parseP(a) - parseP(b);
         });
 
-        // 3. Create series for each symbol
         const series = selectedSymbols.map((symbol, idx) => {
-            const symbolData = financialData[symbol] || [];
-            const isStacked = chartType === 'stacked';
-            const type = isStacked ? 'bar' : chartType;
+            const dataObj = financialData[symbol];
+            if (!dataObj) return null;
+
+            const symbolData = chartPeriod === 'year' ? dataObj.year : dataObj.quarter;
+
+            const isStacked = type === 'stacked';
+            const actualType = isStacked ? 'bar' : type;
+
+            console.log(`[Chart Debug] Symbol: ${symbol} | Type: ${type} | IsStacked: ${isStacked} | Stack: ${isStacked ? 'total' : 'none'}`);
 
             return {
                 name: symbol,
-                type: type,
+                type: actualType,
                 stack: isStacked ? 'total' : undefined,
                 data: sortedPeriods.map(p => {
-                    const match = symbolData.find(d => d.period === p);
-                    return match ? parseValue(match[chartMetric]) : null;
+                    const match = symbolData.find((d: any) => d.period === p);
+                    if (!match) return null;
+
+                    if (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]) {
+                        const config = CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS];
+
+                        const getMetricValue = (keys: string | string[]) => {
+                            const keyList = Array.isArray(keys) ? keys : [keys];
+                            for (const k of keyList) {
+                                const val = getValue(match, k);
+                                if (val !== undefined) return val;
+                            }
+                            return undefined;
+                        };
+
+                        const num = getMetricValue(config.numerator);
+                        const den = getMetricValue(config.denominator);
+
+                        if (num !== undefined && den !== undefined && den !== 0) {
+                            const val = num / den;
+                            return config.type === 'percentage' ? val * 100 : val;
+                        }
+                        return null;
+                    }
+
+                    return getValue(match, metric);
                 }),
                 connectNulls: true,
-                smooth: chartType === 'line',
+                smooth: type === 'line',
                 emphasis: { focus: 'series' },
                 itemStyle: {
-                    borderRadius: type === 'bar' && !isStacked ? [4, 4, 0, 0] : 0
+                    color: CHART_COLORS[idx % CHART_COLORS.length]
                 }
             };
-        });
+        }).filter(Boolean);
+
+        const isPercentage = metric.includes('(%)') ||
+            (CALCULATED_METRICS[metric as keyof typeof CALCULATED_METRICS]?.type === 'percentage');
 
         return {
-            backgroundColor: 'transparent',
+            backgroundColor: '#000000',
+            title: {
+                text: `${metric} (${chartPeriod === 'year' ? 'Năm' : 'Quý'})`,
+                left: 'center',
+                textStyle: { color: '#fff', fontSize: isZoomed ? 18 : 14 }
+            },
             tooltip: {
                 trigger: 'axis',
-                backgroundColor: 'rgba(20, 20, 20, 0.9)',
+                backgroundColor: 'rgba(30, 30, 30, 0.9)',
                 borderColor: '#444',
-                padding: [10, 15],
-                textStyle: { color: '#e0e0e0', fontSize: 12 },
-                axisPointer: { type: 'cross', label: { backgroundColor: '#333' } }
+                textStyle: { color: '#fff' },
+                valueFormatter: (value: number) => {
+                    if (value === undefined || value === null) return '-';
+                    return formatFinancialValue(value, 2) + (isPercentage ? '%' : '');
+                }
+            },
+            legend: {
+                data: selectedSymbols,
+                top: isZoomed ? 35 : 20,
+                type: 'scroll',
+                itemWidth: 6,
+                itemHeight: 6,
+                itemGap: 5,
+                icon: 'circle',
+                textStyle: { color: '#ccc', fontSize: 9 },
+                pageIconColor: '#ff9800',
+                pageTextStyle: { color: '#ccc' }
+            },
+            grid: {
+                left: '3%',
+                right: '4%',
+                bottom: 25,
+                top: isZoomed ? 80 : 60,
+                containLabel: true
             },
             dataZoom: [
                 {
-                    type: 'inside',
-                    start: 0,
-                    end: 100
-                },
-                {
                     type: 'slider',
                     show: true,
-                    bottom: 10,
-                    height: 20,
-                    borderColor: 'transparent',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    fillerColor: 'rgba(22, 119, 255, 0.2)',
-                    handleStyle: { color: '#1677ff' },
-                    textStyle: { color: '#888' }
+                    xAxisIndex: [0],
+                    start: 0,
+                    end: 100,
+                    bottom: 0,
+                    height: 16,
+                    borderColor: '#2a2a2a',
+                    fillerColor: 'rgba(255, 152, 0, 0.15)',
+                    handleSize: '80%',
+                    handleStyle: {
+                        color: '#ff9800',
+                        shadowBlur: 2,
+                        shadowColor: 'rgba(0,0,0,0.5)'
+                    },
+                    textStyle: { color: 'transparent' }, // Hide text
+                    moveHandleSize: 0,
+                    showDetail: false, // Hide detail text
+                    selectedDataBackground: {
+                        lineStyle: { color: '#ff9800', opacity: 0.5 },
+                        areaStyle: { color: '#ff9800', opacity: 0.1 }
+                    }
                 }
             ],
-            legend: {
-                textStyle: { color: '#888', fontSize: 10 },
-                top: 0
-            },
-            grid: {
-                left: '2%',
-                right: '4%',
-                bottom: '12%',
-                top: '15%',
-                containLabel: true
-            },
             xAxis: {
                 type: 'category',
+                boundaryGap: type !== 'line',
                 data: sortedPeriods,
-                axisLabel: { color: '#888', rotate: 30, fontSize: 10 },
-                axisLine: { lineStyle: { color: '#222' } }
+                axisLine: { lineStyle: { color: '#555' } },
+                axisLabel: { color: '#aaa', rotate: 45 }
             },
             yAxis: {
                 type: 'value',
+                axisLine: { lineStyle: { color: '#555' } },
                 axisLabel: {
-                    color: '#666',
-                    fontSize: 10,
-                    formatter: (val: number) => formatFinancialValue(val, 1)
+                    color: '#aaa',
+                    formatter: (value: number) => {
+                        if (Math.abs(value) >= 1e12) return (value / 1e12).toFixed(1) + 'kT';
+                        if (Math.abs(value) >= 1e9) return (value / 1e9).toFixed(1) + ' tỷ';
+                        if (Math.abs(value) >= 1e6) return (value / 1e6).toFixed(0) + ' tr';
+                        return value;
+                    }
                 },
-                splitLine: { lineStyle: { color: '#1a1a1a' } },
-                axisLine: { show: false }
+                splitLine: { lineStyle: { color: '#333' } }
             },
-            color: CHART_COLORS,
-            series
+            series: series
         };
-    }, [financialData, selectedSymbols, chartMetric, chartType, period]);
+    };
+
+    // Update chart config
+    const updateChart = (id: string, updates: Partial<ChartConfig>) => {
+        setCharts(prevCharts =>
+            prevCharts.map(chart =>
+                chart.id === id ? { ...chart, ...updates } : chart
+            )
+        );
+    };
+
+    // Remove chart
+    const removeChart = (id: string) => {
+        setCharts(prevCharts => prevCharts.filter(chart => chart.id !== id));
+    };
 
     // Table columns
     const tableColumns = useMemo(() => {
@@ -462,7 +960,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             <span className="font-bold text-[#ff9800]">{text}</span>
                             {!record._hasData && (
                                 <Tooltip title={`Không tìm thấy dữ liệu cho ${period === 'quarter' ? `Q${selectedQuarter} ` : ''}${selectedYear}`}>
-                                    <Activity size={10} className="text-gray-600" />
+                                    <Sparkles size={10} className="text-gray-600" />
                                 </Tooltip>
                             )}
                         </div>
@@ -503,8 +1001,8 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     // Available years
     const availableYears = useMemo(() => {
         const years = new Set<number>();
-        Object.values(financialData).forEach(data => {
-            data.forEach(d => years.add(d.year));
+        Object.values(financialData).forEach(dataObj => {
+            dataObj.year.forEach((d: any) => years.add(d.year));
         });
         return Array.from(years).sort((a, b) => b - a);
     }, [financialData]);
@@ -517,12 +1015,48 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
     }, [availableYears]);
 
     const filteredSymbols = useMemo(() => {
-        if (!searchSymbol) return allSymbols.slice(0, 100);
-        const search = searchSymbol.toLowerCase();
-        return allSymbols.filter(s =>
+        if (!searchSymbol) return allSymbols.slice(0, 500);
+
+        const search = searchSymbol.toLowerCase().trim();
+        if (!search) return allSymbols.slice(0, 500);
+
+        console.log(`[SEARCH] Looking for: "${search}" in ${allSymbols.length} total symbols`);
+
+        // Filter matching symbols
+        const matches = allSymbols.filter(s =>
             s.symbol.toLowerCase().includes(search) ||
             s.company_name?.toLowerCase().includes(search)
-        ).slice(0, 100);
+        );
+
+        console.log(`[SEARCH] Found ${matches.length} matches for "${search}"`);
+        if (matches.length > 0) {
+            console.log(`[SEARCH] Top matches:`, matches.slice(0, 5).map(s => s.symbol));
+        }
+
+        // Sort by relevance: exact match > starts with > contains
+        const sorted = matches.sort((a, b) => {
+            const aSymbol = a.symbol.toLowerCase();
+            const bSymbol = b.symbol.toLowerCase();
+            const aName = (a.company_name || '').toLowerCase();
+            const bName = (b.company_name || '').toLowerCase();
+
+            // Exact match in symbol (highest priority)
+            if (aSymbol === search && bSymbol !== search) return -1;
+            if (bSymbol === search && aSymbol !== search) return 1;
+
+            // Starts with in symbol
+            if (aSymbol.startsWith(search) && !bSymbol.startsWith(search)) return -1;
+            if (bSymbol.startsWith(search) && !aSymbol.startsWith(search)) return 1;
+
+            // Contains in symbol
+            if (aSymbol.includes(search) && !bSymbol.includes(search)) return -1;
+            if (bSymbol.includes(search) && !aSymbol.includes(search)) return 1;
+
+            // Alphabetical order
+            return aSymbol.localeCompare(bSymbol);
+        });
+
+        return sorted.slice(0, 200); // Limit to 200 for performance
     }, [allSymbols, searchSymbol]);
 
     return (
@@ -546,7 +1080,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     title={
                         <div className="flex justify-between items-center">
                             <Space>
-                                <Activity size={16} className="text-[#ff9800]" />
+                                <TrendingUp size={16} className="text-[#ff9800]" />
                                 <span className="text-[#e0e0e0] font-mono font-bold">SO SÁNH DỮ LIỆU</span>
                             </Space>
                             <Space>
@@ -576,10 +1110,11 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             placeholder="Thêm mã chứng khoán..."
                             className="flex-1"
                             filterOption={false}
-                            onSearch={setSearchSymbol}
-                            onSelect={(val) => { if (val) { addSymbol(val); setSearchSymbol(''); } }}
+                            onSearch={handleSearch}
+                            onSelect={(val) => { if (val) { addSymbol(val); setSearchSymbol(''); setSearchResults([]); } }}
                             value={undefined}
-                            options={filteredSymbols.map(s => ({
+                            loading={searching}
+                            options={searchResults.map(s => ({
                                 value: s.symbol,
                                 label: (
                                     <div className="flex items-center justify-between w-full">
@@ -590,7 +1125,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                     </div>
                                 )
                             }))}
-                            notFoundContent={<Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Không tìm thấy mã" />}
+                            notFoundContent={searching ? <Spin size="small" /> : <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="Nhập để tìm kiếm mã" />}
                         />
 
                         <Select value={period} onChange={setPeriod} style={{ width: 80 }}>
@@ -652,7 +1187,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                     {/* Metric Selector Button */}
                     <div className="mb-4">
                         <Button
-                            icon={<Settings size={14} />}
+                            icon={<Settings2 size={14} />}
                             onClick={() => setShowMetricModal(true)}
                             className="bg-transparent border-[#ff9800] text-[#ff9800] hover:bg-[#ff9800]/10 uppercase font-mono font-bold h-9"
                         >
@@ -709,7 +1244,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-[65vh] overflow-y-auto pr-2 custom-scrollbar">
-                                    {metricGroups.filter(g => activeSource === 'all' || g.key === activeSource).map(group => (
+                                    {filteredMetricGroups.filter(g => activeSource === 'all' || g.key === activeSource).map(group => (
                                         <div key={group.key} className="bg-[#111] border border-[#222] rounded p-0 flex flex-col group">
                                             <div
                                                 className="p-3 font-mono font-bold text-[10px] flex items-center justify-between sticky top-0 bg-[#161616] z-10 border-b border-[#222]"
@@ -737,13 +1272,17 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                                             <span className={`text-[11px] truncate flex-1 ${isChecked ? 'text-[#ff9800] font-bold' : 'text-gray-400'}`}>
                                                                 {key}
                                                             </span>
-                                                            <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này">
-                                                                <Activity
+                                                            <Tooltip title="Xem biểu đồ TREND cho chỉ tiêu này (Biểu đồ 1)">
+                                                                <TrendingUp
                                                                     size={14}
-                                                                    className={`cursor-pointer hover:text-[#1677ff] transition-colors ${chartMetric === key ? 'text-[#1677ff]' : 'text-gray-700'}`}
+                                                                    className={`cursor-pointer hover:text-[#1677ff] transition-colors ${charts.some(c => c.metric === key) ? 'text-[#1677ff]' : 'text-gray-700'}`}
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        setChartMetric(key);
+                                                                        const newCharts = [...charts];
+                                                                        if (newCharts.length > 0) {
+                                                                            newCharts[0].metric = key;
+                                                                            setCharts(newCharts);
+                                                                        }
                                                                     }}
                                                                 />
                                                             </Tooltip>
@@ -851,90 +1390,155 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 </Card>
             </div>
 
-            {/* RIGHT PANEL - CHART */}
+            {/* RIGHT PANEL - CHARTS */}
             <div className={`flex flex-col gap-4 transition-all duration-300 ${maximizedPanel === 'right' ? 'absolute inset-0 z-50 w-full h-full bg-[#030712]' :
                 maximizedPanel === 'left' ? 'hidden' : 'w-1/2'
                 }`}>
-                <Card
-                    className="border-none bg-[#0b0e11] shadow-2xl flex-1"
-                    title={
-                        <div className="flex justify-between items-center gap-4">
-                            <div className="flex items-center gap-2 min-w-fit">
-                                <Activity size={16} className="text-[#1677ff]" />
-                                <span className="text-[#e0e0e0] font-mono font-bold text-xs uppercase">Phân tích Trend</span>
-                            </div>
-
-                            <Select
-                                showSearch
-                                placeholder="Tìm chỉ tiêu..."
-                                className="flex-1 max-w-[500px]"
+                <div className="bg-[#1e1e1e] rounded-lg border border-[#333] p-4 flex-1 flex flex-col overflow-hidden shadow-2xl">
+                    <div className="flex justify-between items-center mb-4 shrink-0">
+                        <div className="flex items-center gap-2">
+                            <TrendingUp size={18} className="text-[#ff9800]" />
+                            <h3 className="text-white font-bold uppercase text-sm">Phân tích Xu hướng</h3>
+                            <Button
+                                type="dashed"
                                 size="small"
-                                value={chartMetric}
-                                onChange={setChartMetric}
-                                dropdownStyle={{ backgroundColor: '#0a0a0a', border: '1px solid #333' }}
-                                optionFilterProp="children"
-                                filterOption={(input, option) =>
-                                    String(option?.value ?? "").toLowerCase().includes(input.toLowerCase())
-                                }
+                                icon={<Plus size={14} />}
+                                onClick={() => setCharts([...charts, { id: Date.now().toString(), metric: charts[charts.length - 1]?.metric || 'ROA (%)', period: 'year', type: 'line' }])}
+                                className="ml-2 text-xs border-dashed border-gray-600 text-gray-400 hover:text-[#ff9800] hover:border-[#ff9800]"
                             >
-                                {metricGroups.map(group => (
-                                    <Select.OptGroup key={group.key} label={<span className="text-[10px] uppercase tracking-widest" style={{ color: group.color }}>{group.name}</span>}>
-                                        {group.filteredKeys.map(k => (
-                                            <Select.Option key={k} value={k}>
-                                                <span className="text-gray-300 text-[11px]">{k}</span>
-                                            </Select.Option>
-                                        ))}
-                                    </Select.OptGroup>
-                                ))}
-                            </Select>
-
-                            <div className="flex items-center gap-2">
-                                <Button.Group size="small" className="min-w-fit">
-                                    <Tooltip title="Biểu đồ cột">
-                                        <Button
-                                            icon={<BarChart3 size={12} />}
-                                            onClick={() => setChartType('bar')}
-                                            type={chartType === 'bar' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="Biểu đồ cột chồng">
-                                        <Button
-                                            icon={<Layers size={12} />}
-                                            onClick={() => setChartType('stacked')}
-                                            type={chartType === 'stacked' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                    <Tooltip title="Biểu đồ đường">
-                                        <Button
-                                            icon={<LineChart size={12} />}
-                                            onClick={() => setChartType('line')}
-                                            type={chartType === 'line' ? 'primary' : 'default'}
-                                        />
-                                    </Tooltip>
-                                </Button.Group>
-
-                                <Button
-                                    size="small"
-                                    icon={maximizedPanel === 'right' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
-                                    onClick={() => setMaximizedPanel(maximizedPanel === 'right' ? 'none' : 'right')}
-                                    className="bg-transparent border-gray-700 text-gray-500"
-                                />
-                            </div>
+                                Thêm biểu đồ
+                            </Button>
+                            <div className="h-4 w-[1px] bg-[#333] mx-2" />
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<Save size={14} />}
+                                onClick={() => setShowSaveTemplateModal(true)}
+                                className="text-xs text-gray-400 hover:text-[#ff9800]"
+                            >
+                                Lưu mẫu
+                            </Button>
+                            <Button
+                                type="text"
+                                size="small"
+                                icon={<FolderOpen size={14} />}
+                                onClick={() => setShowTemplateModal(true)}
+                                className="text-xs text-gray-400 hover:text-[#ff9800]"
+                            >
+                                Mẫu biểu đồ
+                            </Button>
                         </div>
-                    }
-                >
-                    {selectedSymbols.length > 0 ? (
-                        <ReactECharts
-                            option={chartOptions}
-                            style={{ height: '100%', minHeight: 400 }}
-                            theme="dark"
+                        <Button
+                            size="small"
+                            icon={maximizedPanel === 'right' ? <Minimize2 size={12} /> : <Maximize2 size={12} />}
+                            onClick={() => setMaximizedPanel(maximizedPanel === 'right' ? 'none' : 'right')}
+                            className="bg-transparent border-gray-700 text-gray-500 hover:text-white"
                         />
-                    ) : (
-                        <div className="flex items-center justify-center h-full">
-                            <Empty description="Chọn mã để xem biểu đồ" image={Empty.PRESENTED_IMAGE_SIMPLE} />
-                        </div>
-                    )}
-                </Card>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+                        {charts.map((chart, index) => (
+                            <div key={chart.id} className="bg-[#0a0a0a] border border-[#333] hover:border-[#555] transition-all duration-300 rounded overflow-hidden flex flex-col relative group">
+                                {/* Chart Header */}
+                                <div className="px-3 py-2 border-b border-[#333] flex items-center justify-between bg-[#0a0a0a]">
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-1 h-4 bg-[#ff9800] rounded-full" />
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-[#e0e0e0] text-xs font-mono font-bold truncate max-w-[200px]" title={chart.metric}>
+                                                {chart.metric}
+                                            </span>
+                                            <Tooltip title="Change Metric">
+                                                <button
+                                                    onClick={() => {
+                                                        setCurrentChartId(chart.id);
+                                                        setMetricModalVisible(true);
+                                                    }}
+                                                    className="text-[#666] hover:text-[#ff9800] transition-colors"
+                                                >
+                                                    <Settings2 size={12} />
+                                                </button>
+                                            </Tooltip>
+                                        </div>
+                                    </div>
+                                    <div className="flex bg-[#000] border border-[#333] rounded p-0.5 gap-0.5 items-center">
+                                        {/* Chart Type Toggles */}
+                                        {[
+                                            { id: 'line', icon: LineChart, label: 'Line' },
+                                            { id: 'bar', icon: BarChart, label: 'Bar' },
+                                            { id: 'stacked', icon: Layers, label: 'Stacked' }
+                                        ].map((type) => (
+                                            <Tooltip title={type.label} key={type.id}>
+                                                <button
+                                                    onClick={() => updateChart(chart.id, { type: type.id as any })}
+                                                    className={`
+                                                    w-6 h-6 flex items-center justify-center rounded-sm transition-all
+                                                    ${chart.type === type.id
+                                                            ? 'bg-[#ff9800] text-black shadow-sm'
+                                                            : 'text-[#666] hover:text-[#e0e0e0] hover:bg-[#222]'}
+                                                `}
+                                                >
+                                                    <type.icon size={12} strokeWidth={2} />
+                                                </button>
+                                            </Tooltip>
+                                        ))}
+
+                                        <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
+
+                                        {/* Period Toggle */}
+                                        <Tooltip title={chart.period === 'year' ? "Switch to Quarter" : "Switch to Year"}>
+                                            <button
+                                                onClick={() => updateChart(chart.id, { period: chart.period === 'year' ? 'quarter' : 'year' })}
+                                                className="h-6 px-1.5 flex items-center justify-center rounded-sm text-[9px] font-mono font-bold uppercase text-[#e0e0e0] hover:bg-[#222] transition-colors"
+                                            >
+                                                {chart.period === 'year' ? 'YR' : 'QTR'}
+                                            </button>
+                                        </Tooltip>
+
+                                        <div className="w-[1px] h-4 bg-[#333] mx-0.5" />
+
+                                        {/* Actions */}
+                                        <Tooltip title="Fullscreen">
+                                            <button
+                                                onClick={() => {
+                                                    setZoomedChartId(chart.id);
+                                                }}
+                                                className="w-6 h-6 flex items-center justify-center rounded-sm text-[#666] hover:text-[#1677ff] hover:bg-[#1677ff]/10 transition-colors"
+                                            >
+                                                <Maximize2 size={12} />
+                                            </button>
+                                        </Tooltip>
+
+                                        <Tooltip title="Remove Chart">
+                                            <button
+                                                onClick={() => removeChart(chart.id)}
+                                                className="w-6 h-6 flex items-center justify-center rounded-sm text-[#666] hover:text-red-500 hover:bg-red-500/10 transition-colors"
+                                            >
+                                                <Trash2 size={12} />
+                                            </button>
+                                        </Tooltip>
+                                    </div>
+                                </div>
+
+                                {/* Chart Body */}
+                                <div className="h-[300px] w-full bg-[#000]">
+                                    {selectedSymbols.length > 0 ? (
+                                        <ReactECharts
+                                            option={getChartOption(chart, false)}
+                                            style={{ height: '100%', width: '100%' }}
+                                            notMerge={true}
+                                            theme="dark"
+                                        />
+                                    ) : (
+                                        <div className="h-full flex flex-col items-center justify-center text-gray-500">
+                                            <BarChart3 size={32} className="mb-2 opacity-20" />
+                                            <p className="text-xs">Chọn mã để xem biểu đồ</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
 
             {/* Save Modal */}
@@ -945,6 +1549,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                 onCancel={() => setShowSaveModal(false)}
                 okText="Lưu"
                 cancelText="Hủy"
+                confirmLoading={savingWatchlist}
                 styles={{ body: { background: '#0a0a0a' }, header: { background: '#0a0a0a' }, content: { background: '#0a0a0a' } }}
             >
                 <Input
@@ -974,7 +1579,7 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                             <div
                                 key={wl.id}
                                 className="p-3 bg-[#111] border border-[#333] hover:border-[#ff9800] cursor-pointer transition-all flex justify-between items-center"
-                                onClick={() => loadWatchlist(wl)}
+                                onClick={() => applyWatchlist(wl)}
                             >
                                 <div>
                                     <div className="font-bold text-[#e0e0e0]">{wl.name}</div>
@@ -983,12 +1588,191 @@ const IndustryComparison: React.FC<Props> = ({ user }) => {
                                 <Trash2
                                     size={14}
                                     className="text-gray-600 hover:text-red-500"
-                                    onClick={e => { e.stopPropagation(); deleteWatchlist(wl.id); }}
+                                    onClick={e => { e.stopPropagation(); deleteWatchlist(wl.id, wl.name); }}
                                 />
                             </div>
                         ))}
                     </div>
                 )}
+            </Modal>
+
+            {/* Metric Selection Modal for Charts */}
+            <Modal
+                title={null}
+                open={metricModalVisible}
+                onCancel={() => setMetricModalVisible(false)}
+                footer={null}
+                width={900}
+                centered
+                styles={{ body: { background: '#0a0a0a', padding: 0, borderRadius: 8 }, content: { background: '#0a0a0a', padding: 0 } }}
+                closeIcon={<X className="text-gray-400 hover:text-white" />}
+                className="metric-selection-modal"
+            >
+                <div className="flex flex-col h-[70vh]">
+                    {/* Header with Search */}
+                    <div className="p-4 border-b border-[#333] flex items-center justify-between bg-[#111] rounded-t-lg">
+                        <div className="flex items-center gap-3">
+                            <Settings2 className="text-[#ff9800]" size={20} />
+                            <span className="text-lg font-bold text-[#e0e0e0] font-mono tracking-wide">CHỌN CHỈ TIÊU BIỂU ĐỒ</span>
+                        </div>
+                        <div className="w-[300px]">
+                            <Input
+                                prefix={<Search size={14} className="text-gray-500" />}
+                                placeholder="Tìm kiếm chỉ tiêu..."
+                                className="bg-[#222] border-[#333] text-white hover:border-[#ff9800] focus:border-[#ff9800]"
+                                value={chartMetricSearch}
+                                onChange={e => setChartMetricSearch(e.target.value)}
+                                allowClear
+                            />
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 overflow-y-auto custom-scrollbar p-4 bg-[#0a0a0a]">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {chartMetricGroups.map(group => (
+                                <div key={group.key} className="bg-[#111] border border-[#222] rounded-lg overflow-hidden flex flex-col hover:border-[#333] transition-colors">
+                                    <div
+                                        className="px-3 py-2 font-mono font-bold text-[11px] flex items-center justify-between bg-[#161616] border-b border-[#222]"
+                                        style={{ color: group.color }}
+                                    >
+                                        <span className="uppercase tracking-wider">{group.name}</span>
+                                        <span className="bg-[#222] px-2 py-0.5 rounded text-[10px] text-gray-400">{group.filteredKeys.length}</span>
+                                    </div>
+                                    <div className="p-2 space-y-0.5 max-h-[300px] overflow-y-auto custom-scrollbar">
+                                        {group.filteredKeys.length > 0 ? (
+                                            group.filteredKeys.map(key => {
+                                                const isActive = charts.find(c => c.id === currentChartId)?.metric === key;
+                                                return (
+                                                    <div
+                                                        key={key}
+                                                        onClick={() => {
+                                                            if (currentChartId) {
+                                                                updateChart(currentChartId, { metric: key });
+                                                                setMetricModalVisible(false);
+                                                            }
+                                                        }}
+                                                        className={`
+                                                            flex items-center gap-3 px-3 py-2 rounded cursor-pointer transition-all group
+                                                            ${isActive
+                                                                ? 'bg-[#ff9800]/10 border border-[#ff9800]/30'
+                                                                : 'hover:bg-[#222] border border-transparent'}
+                                                        `}
+                                                    >
+                                                        <div className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#ff9800]' : 'bg-gray-700 group-hover:bg-gray-500'}`} />
+                                                        <span className={`text-[12px] truncate flex-1 ${isActive ? 'text-[#ff9800] font-bold' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                                                            {key}
+                                                        </span>
+                                                        {isActive && <Check size={14} className="text-[#ff9800]" />}
+                                                    </div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="text-center py-4 text-gray-600 text-xs italic">
+                                                Không tìm thấy chỉ tiêu
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </Modal>
+
+
+            {/* Zoom Modal */}
+            <Modal
+                title={null}
+                open={!!zoomedChartId}
+                onCancel={() => setZoomedChartId(null)}
+                footer={null}
+                width="90%"
+                style={{ top: 20 }}
+                styles={{ body: { background: '#0a0a0a', padding: 0 }, content: { background: '#0a0a0a', padding: 0 } }}
+                closeIcon={<X className="text-gray-400 hover:text-white" />}
+            >
+                {zoomedChartId && (() => {
+                    const chart = charts.find(c => c.id === zoomedChartId);
+                    if (!chart) return null;
+                    return (
+                        <div className="h-[70vh] p-4 flex flex-col">
+                            <div className="flex justify-between items-center mb-4 border-b border-[#333] pb-2">
+                                <span className="text-lg font-bold text-[#ff9800] uppercase font-mono">{chart.metric}</span>
+                                <div className="text-xs text-gray-500">
+                                    {chart.period === 'year' ? 'Dữ liệu THEO NĂM' : 'Dữ liệu THEO QUÝ'} | {selectedSymbols.join(', ')}
+                                </div>
+                            </div>
+                            <div className="flex-1">
+                                <ReactECharts
+                                    option={getChartOption(chart, true)}
+                                    style={{ height: '100%', width: '100%' }}
+                                    theme="dark"
+                                    notMerge={true}
+                                />
+                            </div>
+                        </div>
+                    );
+                })()}
+            </Modal>
+
+            {/* Save Template Modal */}
+            <Modal
+                title={<span className="text-[#e0e0e0] font-mono">LƯU MẪU BIỂU ĐỒ</span>}
+                open={showSaveTemplateModal}
+                onOk={saveTemplate}
+                onCancel={() => setShowSaveTemplateModal(false)}
+                okText="Lưu"
+                cancelText="Hủy"
+                styles={{ body: { background: '#0a0a0a' }, content: { background: '#0a0a0a', border: '1px solid #333' }, header: { background: '#0a0a0a', borderBottom: '1px solid #333', paddingBottom: 10 } }}
+            >
+                <div className="py-4">
+                    <p className="text-gray-400 text-xs mb-2">Lưu cấu hình {charts.length} biểu đồ hiện tại để sử dụng lại sau này.</p>
+                    <Input
+                        placeholder="Tên mẫu biểu đồ (VD: Phân tích Bank, Tổng quan...)"
+                        value={templateName}
+                        onChange={e => setTemplateName(e.target.value)}
+                        className="bg-[#111] border-[#333] text-[#e0e0e0]"
+                    />
+                </div>
+            </Modal>
+
+            {/* Load Template Modal */}
+            <Modal
+                title={<span className="text-[#e0e0e0] font-mono">DANH SÁCH MẪU BIỂU ĐỒ</span>}
+                open={showTemplateModal}
+                onCancel={() => setShowTemplateModal(false)}
+                footer={null}
+                styles={{ body: { background: '#0a0a0a' }, content: { background: '#0a0a0a', border: '1px solid #333' }, header: { background: '#0a0a0a', borderBottom: '1px solid #333', paddingBottom: 10 } }}
+            >
+                <div className="max-h-[300px] overflow-y-auto custom-scrollbar py-2">
+                    {loadingTemplates ? (
+                        <div className="text-center py-4"><Spin /></div>
+                    ) : templates.length === 0 ? (
+                        <div className="text-center py-8 text-gray-500 italic">Chưa có mẫu nào được lưu.</div>
+                    ) : (
+                        <div className="space-y-2">
+                            {templates.map(t => (
+                                <div key={t.id} className="bg-[#111] p-3 rounded border border-[#222] hover:border-[#ff9800] transition-colors flex justify-between items-center group">
+                                    <div
+                                        className="flex-1 cursor-pointer"
+                                        onClick={() => applyTemplate(t)}
+                                    >
+                                        <div className="text-[#e0e0e0] font-bold text-sm">{t.name}</div>
+                                        <div className="text-gray-500 text-[10px]">{new Date(t.created_at).toLocaleDateString()} • {t.config.length} biểu đồ</div>
+                                    </div>
+                                    <Button
+                                        type="text"
+                                        danger
+                                        icon={<Trash2 size={14} />}
+                                        onClick={() => deleteTemplate(t.id)}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                    />
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </Modal>
 
             <style>{`

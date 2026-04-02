@@ -8,7 +8,7 @@ const { RangePicker } = DatePicker;
 
 // ── Config ──────────────────────────────────────────────────
 const DEFAULT_EXCLUDED = ['VIC', 'VHM', 'VRE', 'VPL'];
-const MCAP_SCALE = 4e9; // VND per VNI point (rough total HOSE market cap approximation)
+const MCAP_SCALE = 4.1e12; // VND per VNI point (Total HOSE Mcap ~5 quadrillion / Index ~1250)
 
 // ── Popular large-cap symbols for quick selection ───────────
 const POPULAR_SYMBOLS = [
@@ -41,46 +41,12 @@ interface OHLCV {
 }
 
 async function fetchHistory(symbol: string, start: string, end: string): Promise<OHLCV[]> {
-    const isIndex = symbol.toUpperCase() === 'VNINDEX';
-
-    // Try VNDirect API first
-    const baseUrl = isIndex
-        ? 'https://api-finfo.vndirect.com.vn/v4/vnindex_prices'
-        : 'https://api-finfo.vndirect.com.vn/v4/stock_prices';
-
-    const query = isIndex
-        ? `code:VNINDEX~date:gte:${start}~date:lte:${end}`
-        : `code:${symbol}~date:gte:${start}~date:lte:${end}`;
-
     try {
-        const resp = await fetch(`${baseUrl}?sort=date&size=5000&q=${query}`);
+        const resp = await fetch(`http://localhost:8000/api/history?symbol=${symbol}&start=${start}&end=${end}`);
         if (resp.ok) {
-            const json = await resp.json();
-            const items = json.data || [];
-            return items.map((d: any) => ({
-                date: (d.date || d.tradingDate || '').substring(0, 10),
-                open: Number(d.open || d.adOpen || 0),
-                high: Number(d.high || d.adHigh || 0),
-                low: Number(d.low || d.adLow || 0),
-                close: Number(d.close || d.adClose || 0),
-                volume: Number(d.nmVolume || d.volume || 0),
-            }));
-        }
-    } catch (_) { }
-
-    // Fallback: TCBS
-    try {
-        const fromTs = Math.floor(new Date(start).getTime() / 1000);
-        const toTs = Math.floor(new Date(end).getTime() / 1000);
-        const type = isIndex ? 'index' : 'stock';
-        const ticker = isIndex ? 'VNINDEX' : symbol;
-        const resp = await fetch(
-            `https://apipubaws.tcbs.com.vn/stock-insight/v2/stock/bars-long-term?ticker=${ticker}&type=${type}&resolution=D&from=${fromTs}&to=${toTs}`
-        );
-        if (resp.ok) {
-            const json = await resp.json();
-            return (json.data || []).map((d: any) => ({
-                date: new Date(d.tradingDate).toISOString().substring(0, 10),
+            const data = await resp.json();
+            return data.map((d: any) => ({
+                date: (d.date || d.time || '').substring(0, 10),
                 open: Number(d.open || 0),
                 high: Number(d.high || 0),
                 low: Number(d.low || 0),
@@ -88,44 +54,27 @@ async function fetchHistory(symbol: string, start: string, end: string): Promise
                 volume: Number(d.volume || 0),
             }));
         }
-    } catch (_) { }
-
+    } catch (err) {
+        console.error('fetchHistory error', err);
+    }
     return [];
 }
 
 async function fetchListedShares(symbols: string[]): Promise<Record<string, number>> {
-    const result: Record<string, number> = {};
-    // Fetch all at once
     try {
-        const codes = symbols.join(',');
-        const resp = await fetch(
-            `https://api-finfo.vndirect.com.vn/v4/stocks?q=code:${codes}&fields=code,listedShare&size=100`
-        );
+        const resp = await fetch(`http://localhost:8000/api/shares`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ symbols })
+        });
         if (resp.ok) {
-            const json = await resp.json();
-            for (const item of (json.data || [])) {
-                if (item.code && item.listedShare) {
-                    result[item.code] = Number(item.listedShare);
-                }
-            }
+            const data = await resp.json();
+            return data;
         }
-    } catch (_) {
-        // Try one by one as fallback
-        for (const sym of symbols) {
-            try {
-                const resp = await fetch(
-                    `https://api-finfo.vndirect.com.vn/v4/stocks?q=code:${sym}&fields=code,listedShare`
-                );
-                if (resp.ok) {
-                    const json = await resp.json();
-                    if (json.data?.[0]?.listedShare) {
-                        result[sym] = Number(json.data[0].listedShare);
-                    }
-                }
-            } catch (_) { }
-        }
+    } catch (err) {
+        console.error('fetchListedShares error', err);
     }
-    return result;
+    return {};
 }
 
 // ── Core Calculation ────────────────────────────────────────
@@ -142,25 +91,25 @@ function calculateAdjustedIndex(
     listedShares: Record<string, number>,
     excludedSymbols: string[]
 ): AdjustedData[] {
-    // Build a map date -> vni close
     const dateMap = new Map<string, { vniClose: number; stockPrices: Record<string, number> }>();
 
     for (const d of vniHistory) {
-        dateMap.set(d.date, { vniClose: d.close, stockPrices: {} });
+        const norm = d.date.substring(0, 10);
+        dateMap.set(norm, { vniClose: d.close, stockPrices: {} });
     }
 
     for (const sym of excludedSymbols) {
-        if (stockHistories[sym]) {
-            for (const d of stockHistories[sym]) {
-                const entry = dateMap.get(d.date);
-                if (entry) {
-                    entry.stockPrices[sym] = d.close;
-                }
+        const history = stockHistories[sym] || [];
+        for (const d of history) {
+            const norm = d.date.substring(0, 10);
+            if (dateMap.has(norm)) {
+                let p = d.close;
+                if (p > 500000) p /= 1000;
+                dateMap.get(norm)!.stockPrices[sym] = p;
             }
         }
     }
 
-    // Sort by date
     const dates = Array.from(dateMap.keys()).sort();
     const result: AdjustedData[] = [];
     let prevVni = 0;
@@ -173,52 +122,54 @@ function calculateAdjustedIndex(
 
         if (vniClose <= 0) continue;
 
-        // Calculate excluded market cap
-        let excludedMcap = 0;
-        for (const sym of excludedSymbols) {
-            const price = entry.stockPrices[sym] || prevPrices[sym] || 0;
-            const shares = listedShares[sym] || 0;
-            excludedMcap += price * shares;
-            if (price > 0) prevPrices[sym] = price;
-        }
-
         const totalMcap = vniClose * MCAP_SCALE;
-        const excludedWeight = Math.min(excludedMcap / totalMcap, 0.5);
+        
+        let currentExcludedMcap = 0;
+        for (const sym of excludedSymbols) {
+            const p = entry.stockPrices[sym] || prevPrices[sym] || 0;
+            currentExcludedMcap += p * (listedShares[sym] || 0) * 1000;
+        }
+        const excludedWeight = Math.min(currentExcludedMcap / totalMcap, 0.5);
 
         if (prevVni <= 0) {
-            // First day
             prevVni = vniClose;
             prevAdj = vniClose;
+            for (const sym of excludedSymbols) {
+                prevPrices[sym] = entry.stockPrices[sym] || 0;
+            }
             result.push({ date, vniClose, adjClose: vniClose, excludedWeight });
             continue;
         }
 
         const vniReturn = (vniClose - prevVni) / prevVni;
-
-        // Calculate weighted return of excluded stocks
         let excludedWeightedReturn = 0;
+        const prevTotalMcap = prevVni * MCAP_SCALE;
+
         for (const sym of excludedSymbols) {
             const currPrice = entry.stockPrices[sym] || prevPrices[sym] || 0;
             const symPrevPrice = prevPrices[sym] || currPrice;
+            
             if (symPrevPrice > 0 && currPrice > 0) {
                 const symReturn = (currPrice - symPrevPrice) / symPrevPrice;
-                const symWeight = (currPrice * (listedShares[sym] || 0)) / totalMcap;
-                excludedWeightedReturn += symWeight * symReturn;
+                const symWeightPrev = (symPrevPrice * (listedShares[sym] || 0) * 1000) / prevTotalMcap;
+                excludedWeightedReturn += symWeightPrev * symReturn;
             }
         }
 
-        // Adjusted return
-        const adjReturn = excludedWeight < 1
-            ? (vniReturn - excludedWeightedReturn) / (1 - excludedWeight)
+        const combinedPrevWeight = Object.keys(prevPrices).reduce((sum, sym) => {
+            return sum + (prevPrices[sym] * (listedShares[sym] || 0) * 1000) / prevTotalMcap;
+        }, 0);
+        const effectWeight = Math.min(combinedPrevWeight, 0.5);
+
+        const adjReturn = effectWeight < 0.99
+            ? (vniReturn - excludedWeightedReturn) / (1 - effectWeight)
             : vniReturn;
 
         const adjClose = prevAdj * (1 + adjReturn);
-
         result.push({ date, vniClose, adjClose, excludedWeight });
 
         prevVni = vniClose;
         prevAdj = adjClose;
-        // Update prevPrices
         for (const sym of excludedSymbols) {
             if (entry.stockPrices[sym]) {
                 prevPrices[sym] = entry.stockPrices[sym];
@@ -233,8 +184,8 @@ function calculateAdjustedIndex(
 const AdjustedVNIndex: React.FC = () => {
     const [excludedSymbols, setExcludedSymbols] = useState<string[]>(DEFAULT_EXCLUDED);
     const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([
-        dayjs().subtract(2, 'year'),
-        dayjs(),
+        dayjs('2023-01-01'),
+        dayjs('2024-03-15'),
     ]);
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState<AdjustedData[]>([]);
@@ -255,20 +206,18 @@ const AdjustedVNIndex: React.FC = () => {
             const start = dateRange[0].format('YYYY-MM-DD');
             const end = dateRange[1].format('YYYY-MM-DD');
 
-            // Fetch VN-Index + all excluded stocks in parallel
             const [vniHistory, ...stockResults] = await Promise.all([
                 fetchHistory('VNINDEX', start, end),
                 ...excludedSymbols.map(sym => fetchHistory(sym, start, end)),
             ]);
 
-            if (fetchId !== fetchRef.current) return; // stale
+            if (fetchId !== fetchRef.current) return;
 
             const stockHistories: Record<string, OHLCV[]> = {};
             excludedSymbols.forEach((sym, i) => {
                 stockHistories[sym] = stockResults[i];
             });
 
-            // Fetch listed shares
             const listedShares = await fetchListedShares(excludedSymbols);
             if (fetchId !== fetchRef.current) return;
 
@@ -295,7 +244,6 @@ const AdjustedVNIndex: React.FC = () => {
         loadData();
     }, [loadData]);
 
-    // ── Stats ─────────────────────────────────────────────────
     const stats = useMemo(() => {
         if (data.length < 2) return null;
         const last = data[data.length - 1];
@@ -308,7 +256,6 @@ const AdjustedVNIndex: React.FC = () => {
         return { last, diff, diffPct, avgWeight, vniChange, adjChange };
     }, [data]);
 
-    // ── ECharts Options ───────────────────────────────────────
     const chartOption = useMemo(() => {
         if (data.length === 0) return {};
 
@@ -445,10 +392,8 @@ const AdjustedVNIndex: React.FC = () => {
         };
     }, [data, excludedSymbols]);
 
-    // ── Render ────────────────────────────────────────────────
     return (
         <div className="space-y-4">
-            {/* Control Bar */}
             <div className="border border-[#333] bg-black p-4">
                 <div className="flex flex-col lg:flex-row lg:items-center gap-4">
                     <div className="flex-1">
@@ -510,7 +455,6 @@ const AdjustedVNIndex: React.FC = () => {
                 />
             )}
 
-            {/* Stats Cards */}
             {stats && !loading && (
                 <Row gutter={[12, 12]}>
                     <Col xs={12} lg={6}>
@@ -560,7 +504,6 @@ const AdjustedVNIndex: React.FC = () => {
                 </Row>
             )}
 
-            {/* Chart */}
             <div className="border border-[#333] bg-black">
                 <div className="px-4 py-2 border-b border-[#333] flex items-center justify-between">
                     <div className="flex items-center gap-2">

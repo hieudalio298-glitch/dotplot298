@@ -16,6 +16,8 @@ import MetricsSidebar from './components/MetricsSidebar';
 import FinancialTable from './components/FinancialTable';
 import IndustryComparison from './components/IndustryComparison';
 import OilPricesChart from './components/OilPricesChart';
+import BondMarketDashboard from './components/BondMarket/BondMarketDashboard';
+import AdjustedVNIndex from './components/AdjustedVNIndex';
 import { AVAILABLE_METRICS } from './types';
 import logo from './assets/logo.png';
 import 'antd/dist/reset.css';
@@ -250,9 +252,14 @@ const App: React.FC = () => {
                                         </div>
 
                                         <Tabs
-                                            defaultActiveKey="chart"
+                                            defaultActiveKey={selectedSymbol ? 'chart' : 'vnindex'}
                                             className="trading-tabs font-mono"
                                             items={[
+                                                {
+                                                    label: 'VN-INDEX',
+                                                    key: 'vnindex',
+                                                    children: <AdjustedVNIndex />
+                                                },
                                                 {
                                                     label: 'CHART ANALYSIS',
                                                     key: 'chart',
@@ -293,7 +300,7 @@ const App: React.FC = () => {
                                                     )
                                                 },
                                                 {
-                                                    label: 'FINANCIAL STATEMENTS',
+                                                    label: 'FINANCIALS',
                                                     key: 'statement',
                                                     children: selectedSymbol ? (
                                                         <Tabs
@@ -322,7 +329,7 @@ const App: React.FC = () => {
                                                             <div className="w-16 h-16 border border-[#333] flex items-center justify-center rounded-sm">
                                                                 <Search size={32} className="text-[#666]" />
                                                             </div>
-                                                            <p className="text-sm font-mono text-[#666] uppercase">Select a ticker to view financial statements</p>
+                                                            <p className="text-sm font-mono text-[#666] uppercase">Select a ticker to view financials</p>
                                                         </div>
                                                     )
                                                 },
@@ -344,6 +351,11 @@ const App: React.FC = () => {
                                                     label: 'NGÀNH',
                                                     key: 'industry',
                                                     children: <IndustryComparison user={user} />
+                                                },
+                                                {
+                                                    label: 'BOND MARKET',
+                                                    key: 'bond',
+                                                    children: <BondMarketDashboard />
                                                 },
                                                 {
                                                     label: 'CHIẾN SỰ',

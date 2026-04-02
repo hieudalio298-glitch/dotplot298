@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 import subprocess
 import logging
 from update_financials import FinancialFetcher, SUPABASE_URL, SUPABASE_KEY
+from pydantic import BaseModel
+from typing import List
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -45,6 +47,72 @@ async def update_stock_data(symbol: str):
             
     except Exception as e:
         logger.error(f"Exception during update: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/history")
+async def get_history(symbol: str, start: str, end: str):
+    logger.info(f"API history requested for {symbol} from {start} to {end}")
+    try:
+        from vnstock_data import Quote
+        # For vnstock_data, source='VCI' is premium
+        q = Quote(source="VCI", symbol=symbol)
+        df = q.history(start=start, end=end, interval="1D")
+        
+        if df is None or df.empty:
+            logger.warning(f"No history data for {symbol}")
+            return []
+            
+        # Standardize columns
+        if "date" not in df.columns and "time" not in df.columns:
+            df = df.reset_index()
+            
+        if "time" in df.columns:
+            df["date"] = df["time"].astype(str)
+        elif "date" in df.columns:
+            df["date"] = df["date"].astype(str)
+
+        # Filter to ensure we don't have data beyond requested 'end' if API misbehaves
+        # and ensure prices are numeric
+        df = df[df["date"] <= end]
+            
+        records = df.to_dict(orient="records")
+        return records
+        
+    except Exception as e:
+        logger.error(f"Error fetching history for {symbol}: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+class SharesRequest(BaseModel):
+    symbols: List[str]
+
+@app.post("/api/shares")
+async def get_shares(req: SharesRequest):
+    logger.info(f"API shares requested for {req.symbols}")
+    try:
+        from vnstock_data import Company
+        result = {}
+        for sym in req.symbols:
+            try:
+                # Use Company overview to get shares
+                cp = Company(source="VCI", symbol=sym)
+                df = cp.overview()
+                if df is not None and not df.empty:
+                    val = 0
+                    if "issue_share" in df.columns:
+                        val = df.iloc[0]["issue_share"]
+                    elif "outstanding_share" in df.columns:
+                        val = df.iloc[0]["outstanding_share"]
+                    elif "financial_ratio_issue_share" in df.columns:
+                        val = df.iloc[0]["financial_ratio_issue_share"]
+                    
+                    if val > 0:
+                        result[sym] = float(val)
+            except Exception as e:
+                logger.error(f"Error fetching shares for {sym}: {e}")
+                pass
+        return result
+    except Exception as e:
+        logger.error(f"Error fetching shares: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 if __name__ == "__main__":
