@@ -116,7 +116,7 @@ const MetricsSidebar: React.FC = () => {
             : AVAILABLE_METRICS;
 
         return fullList.filter(m =>
-            ['P/E', 'P/B', 'ROE', 'ROA', 'EPS', 'Biên', 'ROIC', 'Thanh toán', 'Nợ', 'Vòng quay', 'Chu kỳ', 'Tăng trưởng', 'CCC', 'DSI', 'DSO', 'FAT'].some(key => m.includes(key))
+            ['P/E', 'P/B', 'ROE', 'ROA', 'EPS', 'Biên', 'ROIC', 'Thanh toán', 'Nợ', 'Vòng quay', 'Chu kỳ', 'Tăng trưởng', 'CCC', 'DSI', 'DSO', 'FAT', 'Vốn hóa'].some(key => m.includes(key))
         );
     }, [dynamicMetrics]);
 

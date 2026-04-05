@@ -46,7 +46,7 @@ export const AVAILABLE_METRICS = [
     'Thanh toán hiện hành (Current Ratio)', 'Thanh toán nhanh (Quick Ratio)', 'Thanh toán tức thời (Cash Ratio)',
     'Nợ/Tổng tài sản (%)', 'VCSH/Tổng tài sản (%)', 'Nợ/VCSH (D/E)',
     'Vòng quay hàng tồn kho (lần)', 'Số ngày tồn kho (DSI)', 'Vòng quay khoản phải thu (lần)',
-    'Số ngày phải thu (DSO)', 'Chu kỳ tiền mặt (CCC)', 'Vòng quay tài sản cố định (FAT)',
+    'Số ngày phải thu (DSO)', 'Chu kỳ tiền mặt (CCC)', 'Vòng quay tài sản cố định (FAT)', 'Vốn hóa',
 
     // --- INCOME STATEMENT ---
     'Doanh thu bán hàng và cung cấp dịch vụ',

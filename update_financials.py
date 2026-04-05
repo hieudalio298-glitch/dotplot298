@@ -6,6 +6,7 @@ import pandas as pd
 from typing import List, Dict, Any, Optional
 from supabase import create_client, Client
 from vnstock_data import Finance, Listing, Company
+from vnstock import Vnstock
 
 # --- Configuration ---
 # User provided credentials
@@ -177,6 +178,24 @@ class FinancialFetcher:
             logger.info(f"[{symbol}] Fetching Financial Ratios...")
             self._process_ratios(symbol, finance.ratio(period='year', lang='vi', size=100), 'year')
             self._process_ratios(symbol, finance.ratio(period='quarter', lang='vi', size=100), 'quarter')
+            
+            # 5. Market Capitalization (using Vnstock V3)
+            try:
+                logger.info(f"[{symbol}] Fetching Market Cap via Vnstock V3...")
+                v = Vnstock()
+                df_market_cap = v.stock(symbol=symbol, source='VCI').finance.ratio()
+                if df_market_cap is not None and not df_market_cap.empty:
+                    # Map 'Market Capital (Bn. VND)' to 'Vốn hóa'
+                    if isinstance(df_market_cap.columns[0], tuple):
+                         df_market_cap.columns = ['_'.join(col).strip() for col in df_market_cap.columns.values]
+                    
+                    market_cap_key = next((c for c in df_market_cap.columns if 'Market Capital' in c), None)
+                    if market_cap_key:
+                        df_market_cap = df_market_cap.rename(columns={market_cap_key: 'Vốn hóa'})
+                        # We use the existing _process_ratios logic
+                        self._process_ratios(symbol, df_market_cap, 'quarter')
+            except Exception as e:
+                logger.warning(f"[{symbol}] Could not fetch Market Cap via Vnstock V3: {e}")
             
             # Mark completion
             self.supabase.table('stock_symbols').update({'last_updated_at': pd.Timestamp.now().isoformat()}).eq('symbol', symbol).execute()
