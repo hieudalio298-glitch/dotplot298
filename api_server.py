@@ -6,7 +6,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from supabase import create_client, Client
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
+import json
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -263,6 +264,25 @@ async def get_foreign_trade(symbol: str, start: str, end: str):
         return []
 
     return sorted(cached_records, key=lambda r: r.get('date', ''))
+
+
+
+@app.get("/api/market_overview")
+async def get_market_overview():
+    logger.info("API market overview requested")
+    try:
+        csv_path = os.path.join(os.getcwd(), 'market_data_cache.csv')
+        if not os.path.exists(csv_path):
+            logger.warning(f"File not found: {csv_path}")
+            return []
+        
+        df = pd.read_csv(csv_path)
+        # Handle NaN values for JSON compatibility
+        df = df.where(pd.notnull(df), None)
+        return df.to_dict(orient="records")
+    except Exception as e:
+        logger.error(f"Error fetching market overview: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 if __name__ == "__main__":
