@@ -1,0 +1,30 @@
+[33mcommit 914cd49ade12e3f073b64db146196e83d7b72e84[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;31morigin/main[m[33m)[m
+Author: hieuco298 <hieuco298@gmail.com>
+Date:   Fri Apr 10 11:42:44 2026 +0700
+
+    Thêm tab Danh sách Cổ phiếu vào Dashboard
+
+[33mcommit a2ecbc7b08df19a5773ec6b94b7a12d6da0d9c9c[m
+Author: hieuco298 <hieuco298@gmail.com>
+Date:   Sun Apr 5 19:52:52 2026 +0700
+
+    feat: redesign PriceChart with TradingView pure black theme, PineScript S/R touch strength, RSI, right margin and fullscreen toggle
+
+[33mcommit e93e07067219a9ed325e97bd82e351cd1953ceaa[m
+Author: hieuco298 <hieuco298@gmail.com>
+Date:   Thu Apr 2 09:30:33 2026 +0700
+
+    feat: add oil prices api and update dashboard reference
+
+[33mcommit 0dca34bd5b467fc8710f3f48b1a3e994c51bfc3a[m
+Merge: 11adf1ac 541bff53
+Author: hieuco298 <hieudalio298@gmail.com>
+Date:   Thu Apr 2 09:30:05 2026 +0700
+
+    feat: merge OilPricesChart with remote updates (Bond, VNIndex)
+
+[33mcommit 11adf1ac8111881fbb05cae5d215ef50eca987c8[m
+Author: hieuco298 <hieudalio298@gmail.com>
+Date:   Thu Apr 2 09:23:35 2026 +0700
+
+    Update Dashboard: add CHIẾN SỰ tab and OilPricesChart
